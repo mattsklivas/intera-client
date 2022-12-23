@@ -12,4 +12,4 @@
 
 To start the dev environment: `pnpm dev`
 
-To add a package: `pnpm add **package_name**`
+To add a package: `pnpm add {package_name}`
