@@ -1,6 +1,4 @@
-# Intera - An ASL/Speech to Text Faciliator & Learning Platform
-
-Web client for Intera
+# Intera - An ASL/Speech to Text Faciliator & Learning Platform ((Web Client)
 
 ### Installation Guide
 
