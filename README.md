@@ -8,8 +8,8 @@
 
 3. Execute the command `./install.sh` to run the installation script
 
-### Setup Guide
+### Dev Environment
 
-Start the dev environment: `pnpm dev`
+To start the dev environment: `pnpm dev`
 
-Add a package: `pnpm add **package_name**`
+To add a package: `pnpm add **package_name**`
