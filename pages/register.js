@@ -22,7 +22,7 @@ function Register({ accessT }) {
     router.push(redirectUrl)
   })
 
-  return <Loading msg="Registering User..." />
+  return <Loading msg="User registration in progress" />
 }
 
 export default Register
