@@ -54,24 +54,13 @@ export default function Home({ accessT, pc }) {
             </div>
             <div class={styles.rightColumn}>
               <Button
-                style={{
-                  color: '#063970',
-                  height: 40,
-                  position: 'absolute',
-                  top: '40%',
-                }}
+                className={styles.buttonCreateRoom}
                 onClick={showCreateMeetinRoomModal}
               >
                 Create Meeting Room
               </Button>
               <Button
-                style={{
-                  color: '#063970',
-                  height: 40,
-                  position: 'absolute',
-                  width: 170,
-                  top: '50%',
-                }}
+                className={styles.buttonJoinRoom}
                 onClick={showJoinMeetingRoomModal}
               >
                 Join Meeting Room

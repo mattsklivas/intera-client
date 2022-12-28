@@ -1,16 +1,12 @@
 import React from 'react'
 import { Row, Spin } from 'antd'
+import styles from '../styles/Home.module.css'
 
 function Loading({ msg }) {
   return (
-    <Row
-      type="flex"
-      justify="center"
-      align="middle"
-      style={{ minHeight: '100vh' }}
-    >
+    <Row className={styles.loadingRow}>
       <Spin />
-      <div style={{ fontSize: 'large', padding: '0 0 5px 15px' }}>{msg}</div>
+      <div className={styles.loadingDiv}>{msg}</div>
     </Row>
   )
 }
