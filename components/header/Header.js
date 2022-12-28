@@ -2,7 +2,7 @@ import { React } from 'react'
 import { Row, Col, Space, Button } from 'antd'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
-import styles from '../styles/Home.module.css'
+import styles from '../../styles/Home.module.css'
 
 function Header(props) {
   const user = props.user
@@ -41,7 +41,7 @@ function Header(props) {
             <Space size={15}>
               <Button
                 type="primary"
-                className={styles.buttonHeader1}
+                className={styles.buttonPracticeModule}
                 onClick={practicModule}
               >
                 Practice Module
@@ -49,7 +49,7 @@ function Header(props) {
 
               <Button
                 type="primary"
-                className={styles.buttonHeader2}
+                className={styles.buttonLogout}
                 onClick={logOut}
               >
                 Logout

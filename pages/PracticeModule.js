@@ -1,5 +1,4 @@
-import PracticeModuleHeader from '../components/praticeModuleHeader'
-import styles from '../styles/Home.module.css'
+import PracticeModuleHeader from '../components/header/PraticeModuleHeader'
 import { useUser } from '@auth0/nextjs-auth0/client'
 
 export default function PracticeModule() {
@@ -7,7 +6,7 @@ export default function PracticeModule() {
   return (
     <div>
       <PracticeModuleHeader user={user} />
-      <main class={styles.main}>
+      <main>
         <p>Hello</p>
       </main>
     </div>
