@@ -6,9 +6,10 @@ import Link from 'next/link'
 function Header(props) {
   const user = props.user
   const router = useRouter()
+  console.log(router.pathname) // Gives the path which has called this component
 
   const practicModule = async () => {
-    // Router.push()
+    router.push('/practiceModule')
   }
 
   const logOut = async () => {
@@ -17,7 +18,7 @@ function Header(props) {
 
   return (
     <div>
-      <Row style={{ background: '#063970', marginBottom: '5px' }}>
+      <Row style={{ background: '#063970', marginBottom: '-5px' }}>
         <Col span={8}>
           <div
             style={{
@@ -103,7 +104,7 @@ function Header(props) {
                 }}
                 onClick={logOut}
               >
-                logout
+                Logout
               </Button>
             </Space>
           </div>

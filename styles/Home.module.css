@@ -1,0 +1,24 @@
+.row {
+  text-align: center;
+  padding: 20px;
+  height: 100vh;
+}
+
+.leftColumn {
+  float: left;
+  width: 40%;
+  overflow-y: scroll;
+  height: 100vh;
+  color: #063970;
+}
+
+.rightColumn {
+  float: right;
+  width: 60%;
+  height: 100vh;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  text-align: center;
+  color: #063970;
+}
