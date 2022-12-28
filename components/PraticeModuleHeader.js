@@ -1,15 +1,14 @@
 import { React } from 'react'
 import { Row, Col, Space, Button } from 'antd'
 import { useRouter } from 'next/router'
-import Link from 'next/link'
 
-function Header(props) {
+function PracticeModuleHeader(props) {
   const user = props.user
   const router = useRouter()
   console.log(router.pathname) // Gives the path which has called this component
 
-  const practicModule = async () => {
-    router.push('/PracticeModule')
+  const exitButton = async () => {
+    router.push('/')
   }
 
   const logOut = async () => {
@@ -19,7 +18,7 @@ function Header(props) {
   return (
     <div>
       <Row style={{ background: '#063970', marginBottom: '-5px' }}>
-        <Col span={8}>
+        <Col span={12}>
           <div
             style={{
               width: 200,
@@ -51,26 +50,7 @@ function Header(props) {
           </div>
         </Col>
 
-        <Col span={8}>
-          <Link href="/">
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <span
-                style={{
-                  display: 'inline-block',
-                  color: '#e28743',
-                  paddingLeft: '6px',
-                  paddingTop: '8px',
-                  fontSize: '20px',
-                  cursor: 'pointer',
-                }}
-              >
-                {' '}
-                Intera{' '}
-              </span>
-            </div>
-          </Link>
-        </Col>
-        <Col span={8}>
+        <Col span={12}>
           <div
             style={{
               display: 'flex',
@@ -87,12 +67,12 @@ function Header(props) {
                   background: 'transparent',
                   borderColor: '#e28743',
                   color: '#e28743',
-                  width: 140,
+                  width: 70,
                   height: 30,
                 }}
-                onClick={practicModule}
+                onClick={exitButton}
               >
-                Practice Module
+                Exit
               </Button>
 
               <Button
@@ -116,4 +96,4 @@ function Header(props) {
   )
 }
 
-export default Header
+export default PracticeModuleHeader

@@ -15,10 +15,10 @@ function Register({ accessT }) {
   const stateParse = parseDataTwo[1].split(':')[1].replace('"', '').substring(0)
   const stateCode = stateParse.replace('"}', '')
 
-  // Redirected to this url after registration process
+  // Redirect url after registration
   const redirectUrl = `https://dev-0vyfxcr9.us.auth0.com/continue?state=${stateCode}`
   useEffect(() => {
-    // Register user here
+    // Register user code
     router.push(redirectUrl)
   })
 
