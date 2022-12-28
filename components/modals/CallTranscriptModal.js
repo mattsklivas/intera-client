@@ -19,8 +19,8 @@ function CallTranscriptModal(props) {
         okButtonProps={{ children: 'Custom OK' }}
         okText="Close"
         cancelButtonProps={{ style: { display: 'none' } }}
-        width={850}
-        bodyStyle={{ height: '50vh', overflowY: 'scroll' }}
+        width={650}
+        bodyStyle={{ height: 250, overflowY: 'scroll' }}
       >
         <Typography>
           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec auctor
