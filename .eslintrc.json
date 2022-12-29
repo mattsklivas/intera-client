@@ -1,27 +1,30 @@
 {
-  "extends": "next/core-web-vitals",
-  "plugins": ["unused-imports", "import-quotes"],
-  "rules": {
-    "indent": ["error", 2],
-    "comma-spacing": ["error", { "before": false, "after": true }],
-    "brace-style": ["error", "1tbs", { "allowSingleLine": true }],
-    "capitalized-comments": ["error"],
-    "spaced-comment": ["error", "always", { "block": { "exceptions": ["*"] } }],
-    "camelcase": "error",
-    "react-hooks/exhaustive-deps": "off",
-    "no-unused-vars": "off",
-    "no-multiple-empty-lines": ["error", { "max": 1 }],
-    "unused-imports/no-unused-imports": "error",
-    "semi": ["error", "never"],
-    "padded-blocks": ["error", "never"],
-    "import-quotes/import-quotes": [1, "single"],
-    "jsx-quotes": ["error", "prefer-double"],
-    "quotes": ["error", "single"],
-    "no-var": "error",
-    "keyword-spacing": ["error", { "before": true, "after": true }],
-    "space-in-parens": ["error", "never"],
-    "space-before-blocks": ["error", "always"],
-    "object-curly-spacing": ["error", "always"],
-    "react/jsx-indent-props":["error", "first"]
-  }
+    "extends": "next/core-web-vitals",
+    "plugins": ["unused-imports", "import-quotes"],
+    "rules": {
+        "indent": ["error", 4],
+        "comma-spacing": ["error", { "before": false, "after": true }],
+        "brace-style": ["error", "1tbs", { "allowSingleLine": true }],
+        "spaced-comment": [
+            "error",
+            "always",
+            { "block": { "exceptions": ["*"] } }
+        ],
+        "camelcase": "error",
+        "react-hooks/exhaustive-deps": "off",
+        "no-unused-vars": "off",
+        "no-multiple-empty-lines": ["error", { "max": 1 }],
+        "unused-imports/no-unused-imports": "error",
+        "semi": ["error", "never"],
+        "padded-blocks": ["error", "never"],
+        "import-quotes/import-quotes": [1, "single"],
+        "jsx-quotes": ["error", "prefer-double"],
+        "quotes": ["error", "single"],
+        "no-var": "error",
+        "keyword-spacing": ["error", { "before": true, "after": true }],
+        "space-in-parens": ["error", "never"],
+        "space-before-blocks": ["error", "always"],
+        "object-curly-spacing": ["error", "always"],
+        "react/jsx-indent-props": ["error", "first"]
+    }
 }
