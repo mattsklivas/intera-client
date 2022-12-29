@@ -21,14 +21,11 @@
 
 .headerLogo {
     padding-left: 2px;
-    /* filter: hue-rotate(90deg) brightness(100%) grayscale(100%) */
     filter: sepia(100%) hue-rotate(90deg) saturate(100%);
 }
 
 .headerCol1 {
     display: flex;
-    /* justify-content: left; */
-    /* align-items: center; */
     color: #ffffff;
     padding: 5px 0 5px 15px;
 }
