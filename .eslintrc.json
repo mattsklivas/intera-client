@@ -2,7 +2,11 @@
     "extends": "next/core-web-vitals",
     "plugins": ["unused-imports", "import-quotes"],
     "rules": {
-        "indent": ["error", 4],
+        "indent": [
+            "error",
+            4,
+            { "SwitchCase": 1, "ignoredNodes": ["ConditionalExpression"] }
+        ],
         "comma-spacing": ["error", { "before": false, "after": true }],
         "brace-style": ["error", "1tbs", { "allowSingleLine": true }],
         "spaced-comment": [

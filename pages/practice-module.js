@@ -1,4 +1,4 @@
-import PracticeModuleHeader from '../components/header/praticeModuleHeader'
+import HeaderComponent from '../components/HeaderComponent'
 // Import styles from '../styles/Home.module.css'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { Row, Col, Button } from 'antd'
@@ -30,7 +30,7 @@ export default function PracticeModule() {
 
     return (
         <>
-            <PracticeModuleHeader user={user} />
+            <HeaderComponent user={user} />
             <div style={{ height: '100vh ', padding: '20px' }}>
                 <Row
                     style={{
@@ -88,7 +88,7 @@ export default function PracticeModule() {
                             }}
                             onClick={StopWebcam}
                         >
-                            New Word(test stop)
+                            New Word (test stop)
                         </Button>
                     </Col>
                 </Row>

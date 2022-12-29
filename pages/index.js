@@ -4,7 +4,7 @@ import { useRouter } from 'next/router'
 import auth0 from '../auth/auth0'
 import { React, useState } from 'react'
 import Loading from '../components/Loading'
-import Header from '../components/header/Header'
+import Header from '../components/HeaderComponent'
 import { Button, Tabs, ConfigProvider } from 'antd'
 import CallTranscriptModal from '../components/modals/CallTranscriptModal'
 import JoinMeetingRoomModal from '../components/modals/JoinMeetingRoomModal'
@@ -38,66 +38,70 @@ export default function Home({ accessT, pc }) {
 
     if (user) {
         return (
-            <ConfigProvider theme={theme}>
-                <Header user={user} />
-                <main class={styles.main}>
-                    <div class={styles.row}>
-                        <div class={styles.leftColumn}>
-                            <>
-                                <h2>Call History</h2>
-                                {pc.map((user) => {
-                                    return (
-                                        <Tabs
-                                            key={user.id}
-                                            onClick={showCallTranscriptModal}
-                                        >
-                                            <p>{user.name}</p>
-                                        </Tabs>
-                                    )
-                                })}
-                            </>
+            <div styles={{ width: '100%' }}>
+                <ConfigProvider theme={theme}>
+                    <main class={styles.main}>
+                        <Header user={user} />
+                        <div class={styles.row}>
+                            <div class={styles.leftColumn}>
+                                <>
+                                    <h2>Call History</h2>
+                                    {pc.map((user) => {
+                                        return (
+                                            <Tabs
+                                                key={user.id}
+                                                onClick={
+                                                    showCallTranscriptModal
+                                                }
+                                            >
+                                                <p>{user.name}</p>
+                                            </Tabs>
+                                        )
+                                    })}
+                                </>
+                            </div>
+                            <div class={styles.rightColumn}>
+                                <Button
+                                    className={styles.buttonCreateRoom}
+                                    onClick={showCreateMeetinRoomModal}
+                                >
+                                    Create Meeting Room
+                                </Button>
+                                <Button
+                                    className={styles.buttonJoinRoom}
+                                    onClick={showJoinMeetingRoomModal}
+                                >
+                                    Join Meeting Room
+                                </Button>
+                            </div>
                         </div>
-                        <div class={styles.rightColumn}>
-                            <Button
-                                className={styles.buttonCreateRoom}
-                                onClick={showCreateMeetinRoomModal}
-                            >
-                                Create Meeting Room
-                            </Button>
-                            <Button
-                                className={styles.buttonJoinRoom}
-                                onClick={showJoinMeetingRoomModal}
-                            >
-                                Join Meeting Room
-                            </Button>
-                        </div>
-                    </div>
-                </main>
-                {isCallTranscriptModalOpen && (
-                    <CallTranscriptModal
-                        demo={placeholder}
-                        hideCallTranscriptModal={() => {
-                            setIsCallTranscriptModalOpen(false)
-                        }}
-                    />
-                )}
-                {isJoinMeetingRoomModalOpen && (
-                    <JoinMeetingRoomModal
-                        demo={placeholder}
-                        hideJoinMeetingRoomModal={() => {
-                            setIsJoinMeetingRoomModalOpen(false)
-                        }}
-                    />
-                )}
-                {isCreateMeetingRoomModalOpen && (
-                    <CreateMeetingRoomModal
-                        demo={placeholder}
-                        hideCreateMeetingRoomModal={() => {
-                            setIsCreateMeetingRoomModalOpen(false)
-                        }}
-                    />
-                )}
-            </ConfigProvider>
+                    </main>
+                    {isCallTranscriptModalOpen && (
+                        <CallTranscriptModal
+                            demo={placeholder}
+                            hideCallTranscriptModal={() => {
+                                setIsCallTranscriptModalOpen(false)
+                            }}
+                        />
+                    )}
+                    {isJoinMeetingRoomModalOpen && (
+                        <JoinMeetingRoomModal
+                            demo={placeholder}
+                            hideJoinMeetingRoomModal={() => {
+                                setIsJoinMeetingRoomModalOpen(false)
+                            }}
+                        />
+                    )}
+                    {isCreateMeetingRoomModalOpen && (
+                        <CreateMeetingRoomModal
+                            demo={placeholder}
+                            hideCreateMeetingRoomModal={() => {
+                                setIsCreateMeetingRoomModalOpen(false)
+                            }}
+                        />
+                    )}
+                </ConfigProvider>
+            </div>
         )
     } else if (isLoading) {
         return <Loading msg="User Loading" />

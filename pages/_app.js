@@ -5,7 +5,7 @@ import { UserProvider } from '@auth0/nextjs-auth0/client'
 
 export default function App({ Component, pageProps }) {
     return (
-        <UserProvider>
+        <>
             <Head>
                 <title>Intera</title>
                 <meta
@@ -18,7 +18,9 @@ export default function App({ Component, pageProps }) {
                 />
                 <link rel="icon" href="/favicon.ico" />
             </Head>
-            <Component {...pageProps} />
-        </UserProvider>
+            <UserProvider>
+                <Component {...pageProps} />
+            </UserProvider>
+        </>
     )
 }
