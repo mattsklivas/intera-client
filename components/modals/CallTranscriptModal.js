@@ -3,9 +3,9 @@ import { React, useState } from 'react'
 
 function CallTranscriptModal(props) {
     const [visible, setVisible] = useState(true)
-    const placeholder = props.demo
+    const transcript = props.transcript
 
-    const handleOk = () => {
+    const handleClose = () => {
         setVisible(false)
         props.hideCallTranscriptModal()
     }
@@ -13,14 +13,15 @@ function CallTranscriptModal(props) {
     return (
         <>
             <Modal
-                title="Call Details: "
+                title={`${transcript.user} - ${transcript.date}`}
                 open={visible}
-                onOk={handleOk}
+                onOk={handleClose}
+                onCancel={handleClose}
                 okButtonProps={{ children: 'Custom OK' }}
                 okText="Close"
                 cancelButtonProps={{ style: { display: 'none' } }}
                 width={650}
-                bodyStyle={{ height: 250, overflowY: 'scroll' }}
+                bodyStyle={{ height: 400, overflowY: 'scroll' }}
             >
                 <Typography>
                     Lorem ipsum dolor sit amet, consectetur adipiscing elit.

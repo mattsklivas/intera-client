@@ -1,7 +1,7 @@
 import { React, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import auth0 from '../auth/auth0'
-import Loading from '../components/Loading'
+import LoadingComponent from '../components/LoadingComponent'
 
 function Register({ accessT }) {
     const router = useRouter()
@@ -19,13 +19,13 @@ function Register({ accessT }) {
     const stateCode = stateParse.replace('"}', '')
 
     // Redirect url after registration
-    const redirectUrl = `https://dev-0vyfxcr9.us.auth0.com/continue?state=${stateCode}`
+    const redirectUrl = `${process.env.AUTH0_ISSUER_BASE_URL}/continue?state=${stateCode}`
     useEffect(() => {
         // Register user code
         router.push(redirectUrl)
     })
 
-    return <Loading msg="User registration in progress" />
+    return <LoadingComponent msg="User registration in progress" />
 }
 
 export default Register

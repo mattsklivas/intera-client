@@ -1,8 +1,9 @@
 import HeaderComponent from '../components/HeaderComponent'
-// Import styles from '../styles/Home.module.css'
+// Import styles from '../styles/Home.module.css' <- should make a separate CSS file called Practice.module.css
 import { useUser } from '@auth0/nextjs-auth0/client'
-import { Row, Col, Button } from 'antd'
+import { Row, Col, Button, ConfigProvider } from 'antd'
 import { useRef, useState } from 'react'
+import { theme } from '../core/theme'
 // In progress
 
 export default function PracticeModule() {
@@ -29,7 +30,7 @@ export default function PracticeModule() {
     const StartRecording = () => {}
 
     return (
-        <>
+        <ConfigProvider theme={theme}>
             <HeaderComponent user={user} />
             <div style={{ height: '100vh ', padding: '20px' }}>
                 <Row
@@ -103,6 +104,6 @@ export default function PracticeModule() {
                     <Button>View Answer</Button>
                 </Row>
             </div>
-        </>
+        </ConfigProvider>
     )
 }

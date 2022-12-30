@@ -1,15 +1,6 @@
 .row {
     text-align: center;
-    padding: 20px;
     height: 100vh;
-}
-
-.leftColumn {
-    float: left;
-    width: 30%;
-    overflow-y: scroll;
-    height: 100vh;
-    color: #063970;
 }
 
 .rightColumn {
@@ -20,11 +11,9 @@
     justify-content: center;
     margin: 0 auto;
     text-align: center;
-    color: #063970;
 }
 
 .buttonCreateRoom {
-    color: #063970;
     height: 40px;
     position: absolute;
     top: 40%;
@@ -33,7 +22,6 @@
 }
 
 .buttonJoinRoom {
-    color: #063970;
     height: 40px;
     position: absolute;
     display: inline-block;

@@ -3,38 +3,25 @@ import { useUser } from '@auth0/nextjs-auth0/client'
 import { useRouter } from 'next/router'
 import auth0 from '../auth/auth0'
 import { React, useState } from 'react'
-import Loading from '../components/Loading'
+import LoadingComponent from '../components/LoadingComponent'
 import Header from '../components/HeaderComponent'
-import { Button, Tabs, ConfigProvider } from 'antd'
-import CallTranscriptModal from '../components/modals/CallTranscriptModal'
+import { Button, ConfigProvider } from 'antd'
 import JoinMeetingRoomModal from '../components/modals/JoinMeetingRoomModal'
 import CreateMeetingRoomModal from '../components/modals/CreateMeetingRoomModal'
-
-const theme = { token: { colorPrimary: '#008F8C' } }
+import HistoryComponent from '../components/HistoryComponent'
+import { theme } from '../core/theme'
 
 export default function Home({ accessT, pc }) {
-    const [isCallTranscriptModalOpen, setIsCallTranscriptModalOpen] =
-        useState(false)
+    const router = useRouter()
     const [isJoinMeetingRoomModalOpen, setIsJoinMeetingRoomModalOpen] =
         useState(false)
     const [isCreateMeetingRoomModalOpen, setIsCreateMeetingRoomModalOpen] =
         useState(false)
-    const router = useRouter()
+
     const { user, error, isLoading } = useUser()
+
     const accessToken = accessT
     const placeholder = pc
-
-    const showCallTranscriptModal = () => {
-        setIsCallTranscriptModalOpen(true)
-    }
-
-    const showJoinMeetingRoomModal = () => {
-        setIsJoinMeetingRoomModalOpen(true)
-    }
-
-    const showCreateMeetinRoomModal = () => {
-        setIsCreateMeetingRoomModalOpen(true)
-    }
 
     if (user) {
         return (
@@ -43,47 +30,27 @@ export default function Home({ accessT, pc }) {
                     <main class={styles.main}>
                         <Header user={user} />
                         <div class={styles.row}>
-                            <div class={styles.leftColumn}>
-                                <>
-                                    <h2>Call History</h2>
-                                    {pc.map((user) => {
-                                        return (
-                                            <Tabs
-                                                key={user.id}
-                                                onClick={
-                                                    showCallTranscriptModal
-                                                }
-                                            >
-                                                <p>{user.name}</p>
-                                            </Tabs>
-                                        )
-                                    })}
-                                </>
-                            </div>
+                            <HistoryComponent transcripts={placeholder} />
                             <div class={styles.rightColumn}>
                                 <Button
                                     className={styles.buttonCreateRoom}
-                                    onClick={showCreateMeetinRoomModal}
+                                    onClick={() =>
+                                        setIsJoinMeetingRoomModalOpen(true)
+                                    }
                                 >
                                     Create Meeting Room
                                 </Button>
                                 <Button
                                     className={styles.buttonJoinRoom}
-                                    onClick={showJoinMeetingRoomModal}
+                                    onClick={() =>
+                                        setIsJoinMeetingRoomModalOpen(true)
+                                    }
                                 >
                                     Join Meeting Room
                                 </Button>
                             </div>
                         </div>
                     </main>
-                    {isCallTranscriptModalOpen && (
-                        <CallTranscriptModal
-                            demo={placeholder}
-                            hideCallTranscriptModal={() => {
-                                setIsCallTranscriptModalOpen(false)
-                            }}
-                        />
-                    )}
                     {isJoinMeetingRoomModalOpen && (
                         <JoinMeetingRoomModal
                             demo={placeholder}
@@ -104,7 +71,7 @@ export default function Home({ accessT, pc }) {
             </div>
         )
     } else if (isLoading) {
-        return <Loading msg="User Loading" />
+        return <LoadingComponent msg="User Loading" />
     } else if (!user && !isLoading) {
         router.push('/api/auth/login')
     }

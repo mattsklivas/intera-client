@@ -7,13 +7,14 @@
 }
 
 .headerLanding {
+    padding-left: 20%;
     display: flex;
     justify-content: flex-start;
     align-items: center;
 }
 
 .headerTitle {
-    color: #b7e4c7;
+    color: #fff;
     font-size: 20px;
     padding-left: 10%;
     padding-right: 2px;
@@ -21,7 +22,8 @@
 
 .headerLogo {
     padding-left: 2px;
-    filter: sepia(100%) hue-rotate(90deg) saturate(100%);
+    filter: sepia(100%) hue-rotate(90deg) saturate(1000%) grayscale(1)
+        brightness(100);
 }
 
 .headerCol1 {

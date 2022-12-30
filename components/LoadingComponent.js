@@ -2,7 +2,7 @@ import React from 'react'
 import { Row, Spin } from 'antd'
 import styles from '../styles/Home.module.css'
 
-function Loading({ msg }) {
+function LoadingComponent({ msg }) {
     return (
         <Row className={styles.loadingRow}>
             <Spin />
@@ -11,4 +11,4 @@ function Loading({ msg }) {
     )
 }
 
-export default Loading
+export default LoadingComponent
