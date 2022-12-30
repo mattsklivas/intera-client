@@ -35,7 +35,7 @@ export default function Home({ accessT, pc }) {
                                 <Button
                                     className={styles.buttonCreateRoom}
                                     onClick={() =>
-                                        setIsJoinMeetingRoomModalOpen(true)
+                                        setIsCreateMeetingRoomModalOpen(true)
                                     }
                                 >
                                     Create Meeting Room
