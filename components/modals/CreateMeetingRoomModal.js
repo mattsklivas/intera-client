@@ -1,9 +1,18 @@
 import { Modal, Typography, Input, Button, Select, Row, Col, Space } from 'antd'
-import { React, useState } from 'react'
+import { React, useState, useEffect } from 'react'
+
+// put this elsewhere
+let API_URL = 'http://127.0.0.1:5000'
+let headers = new Headers()
+headers.append('Content-Type', 'application/json')
+headers.append('Accept', 'application/json')
+headers.append('Origin', '0.0.0.0:3000')
 
 function CreateMeetingRoomModal(props) {
     const [visible, setVisible] = useState(true)
     const { Paragraph } = Typography
+    const [roomId, setRoomId] = useState('')
+    const [inviteLink, setInviteLink] = useState('')
 
     const handleOk = () => {
         setVisible(false)
@@ -18,6 +27,38 @@ function CreateMeetingRoomModal(props) {
     const handleChange = (value) => {
         // Do something
     }
+
+    // data: {room_id: val, invite_link: str}
+    const getRoomData = async () => {
+        const res = new Promise((resolve, reject) => {
+            fetch(`${API_URL}/api/rooms/create_room_id`, {
+                method: 'GET',
+                headers: headers,
+            })
+                .then(async (response) => {
+                    const json = await response.json()
+
+                    return resolve(json)
+                })
+                .catch((error) => {
+                    reject(error)
+                })
+        })
+
+        return res
+    }
+
+    const populateRoomData = () => {
+        getRoomData().then((response) => {
+            console.log(response.data)
+            setRoomId(response.data?.room_id)
+            setInviteLink(response.data?.invite_link)
+        })
+    }
+
+    useEffect(() => {
+        populateRoomData()
+    }, [])
 
     return (
         <>
@@ -34,8 +75,8 @@ function CreateMeetingRoomModal(props) {
             >
                 <Row>
                     <Col span={24}>
-                        <Paragraph copyable>
-                            This is the meeting link{' '}
+                        <Paragraph copyable={{ text: inviteLink }}>
+                            Copy meeting link: {roomId}
                         </Paragraph>
                     </Col>
                 </Row>
