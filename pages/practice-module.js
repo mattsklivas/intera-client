@@ -146,7 +146,7 @@ function PracticeModule() {
                 ) : (
                     <Row className={styles.row3StartStop}>
                         {isRecording ? (
-                            <Button onClick={stopRecording}>
+                            <Button onClick={StopWebcam}>
                                 Start/Stop Recording
                             </Button>
                         ) : (
