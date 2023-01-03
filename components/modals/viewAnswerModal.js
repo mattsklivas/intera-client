@@ -4,6 +4,7 @@ import { React, useState } from 'react'
 function ViewAnswerModal(props) {
     const [visible, setVisible] = useState(true)
     const wordDetails = props.word // Should have the video url or the id
+    const embedID = 'dQw4w9WgXcQ'
 
     const handleClose = () => {
         setVisible(false)
@@ -29,11 +30,12 @@ function ViewAnswerModal(props) {
                 }}
             >
                 <iframe
-                    src={'https://www.youtube.com/embed/dQw4w9WgXcQ'}
+                    src={`https://www.youtube.com/embed/${embedID}`}
                     style={{
                         width: 500,
                         height: 300,
                         border: '1px solid black',
+                        allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
                     }}
                     allowFullScreen
                 />
