@@ -13,10 +13,8 @@ import { theme } from '../core/theme'
 
 export default function Home({ accessT, pc }) {
     const router = useRouter()
-    const [isJoinMeetingRoomModalOpen, setIsJoinMeetingRoomModalOpen] =
-        useState(false)
-    const [isCreateMeetingRoomModalOpen, setIsCreateMeetingRoomModalOpen] =
-        useState(false)
+    const [isJoinMeetingRoomModalOpen, setIsJoinMeetingRoomModalOpen] = useState(false)
+    const [isCreateMeetingRoomModalOpen, setIsCreateMeetingRoomModalOpen] = useState(false)
 
     const { user, error, isLoading } = useUser()
 
@@ -30,21 +28,17 @@ export default function Home({ accessT, pc }) {
                     <main class={styles.main}>
                         <Header user={user} />
                         <div class={styles.row}>
-                            <HistoryComponent transcripts={placeholder} />
+                            <HistoryComponent transcripts={placeholder} user={user} />
                             <div class={styles.rightColumn}>
                                 <Button
                                     className={styles.buttonCreateRoom}
-                                    onClick={() =>
-                                        setIsJoinMeetingRoomModalOpen(true)
-                                    }
+                                    onClick={() => setIsJoinMeetingRoomModalOpen(true)}
                                 >
                                     Create Meeting Room
                                 </Button>
                                 <Button
                                     className={styles.buttonJoinRoom}
-                                    onClick={() =>
-                                        setIsJoinMeetingRoomModalOpen(true)
-                                    }
+                                    onClick={() => setIsJoinMeetingRoomModalOpen(true)}
                                 >
                                     Join Meeting Room
                                 </Button>

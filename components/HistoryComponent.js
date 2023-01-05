@@ -4,8 +4,7 @@ import CallTranscriptModal from '../components/modals/CallTranscriptModal'
 import { Tabs } from 'antd'
 
 export default function HistoryComponent(props) {
-    const [isCallTranscriptModalOpen, setIsCallTranscriptModalOpen] =
-        useState(false)
+    const [isCallTranscriptModalOpen, setIsCallTranscriptModalOpen] = useState(false)
     const [activeTranscript, setActiveTranscript] = useState(null)
 
     return (
@@ -22,7 +21,7 @@ export default function HistoryComponent(props) {
                             }}
                         >
                             <p>
-                                <span>{transcript.user || 'N/A'} </span>
+                                <span>{transcript.username || 'N/A'} </span>
                                 <span style={{ color: '#8c8c8c' }}>
                                     (Date: {transcript.date || 'N/A'})
                                 </span>
@@ -34,6 +33,7 @@ export default function HistoryComponent(props) {
             {isCallTranscriptModalOpen && (
                 <CallTranscriptModal
                     transcript={activeTranscript}
+                    user={props.user}
                     hideCallTranscriptModal={() => {
                         setActiveTranscript(null)
                         setIsCallTranscriptModalOpen(false)
