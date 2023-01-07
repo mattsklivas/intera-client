@@ -3,8 +3,9 @@ import { React, useState } from 'react'
 
 function ViewAnswerModal(props) {
     const [visible, setVisible] = useState(true)
-    const wordDetails = props.word // Should have the video url or the id
-    const embedID = 'dQw4w9WgXcQ'
+    const wordDetails = props.word // Has the youtube url, need to parse the id
+    const midPoint = wordDetails.indexOf('=')
+    const embedID = wordDetails.substr(midPoint + 1)
 
     const handleClose = () => {
         setVisible(false)

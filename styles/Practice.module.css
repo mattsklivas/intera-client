@@ -33,20 +33,23 @@
     padding: 20px;
 }
 
-.row3ButtonRetry {
+.row3col {
     display: flex;
     justify-content: center;
-    align-items: right;
-    margin-left: 200px;
-    width: 140px;
+    align-items: center;
 }
 
+.typo {
+    font-size: 15px;
+}
+
+.row3ButtonRetry {
+    margin-left: 250px;
+    width: 130px;
+}
 .row3ButtonNewWord {
-    display: flex;
-    justify-content: center;
-    align-items: left;
-    width: 150px;
-    margin-left: 20px;
+    margin-right: 250px;
+    width: 130px;
 }
 
 .row3StartStop {
@@ -54,6 +57,19 @@
     justify-content: center;
     align-items: center;
     padding: 20px;
+}
+
+.StopButton {
+    background-color: red;
+    color: white;
+}
+
+.StartButton {
+    align-items: center;
+}
+
+.viewAnswerButton {
+    width: 130px;
 }
 
 .row4 {

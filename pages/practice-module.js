@@ -1,13 +1,16 @@
 import HeaderComponent from '../components/HeaderComponent'
 import styles from '../styles/Practice.module.css'
 import { useUser } from '@auth0/nextjs-auth0/client'
+import auth0 from '../auth/auth0'
 import { Row, Col, Button, ConfigProvider, Typography } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 import { theme } from '../core/theme'
 import ViewAnswerModal from '../components/modals/viewAnswerModal'
 // In progress
+// page consists of a video div at the bottom, used just for testing will be removed
 
-function PracticeModule() {
+export default function PracticeModule(accessT) {
+    const accessToken = accessT
     const [isviewAnswerModalOpen, setIsviewAnswerModalOpen] = useState(false)
     const { user, error, isLoading } = useUser()
     const videoReference = useRef(null)
@@ -20,6 +23,8 @@ function PracticeModule() {
     const [isResultView, SetIsResultView] = useState(false)
     const [randomWord, setRandomWord] = useState(null)
     const [isretry, setIsRetry] = useState(true)
+    const [wordYoutubeUrl, setWordYoutubeUrl] = useState(null)
+    const [translationResponse, setTranslationResponse] = useState(null)
 
     const startWebcam = () => {
         // Check to see if browser has camera support
@@ -64,10 +69,6 @@ function PracticeModule() {
             })
     }
 
-    const retry = () => {
-        SetIsResultView(false)
-    }
-
     const StopWebcam = () => {
         if (isRecording) {
             // Stop the media Recorder
@@ -82,25 +83,50 @@ function PracticeModule() {
             videoReference.current.srcObject = null
         }
         SetIsRecording(false)
-        // send the video to the server and get the response
-        // set url to null
-        setIsRetry(false)
-        SetIsResultView(true)
+        console.log('here')
+        // this is where you send the video and get the response
+        fetch('http://localhost:3000/api/video', {
+            method: 'POST',
+            body: url,
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                setTranslationResponse(data.result)
+                if (data.result == 'bad') {
+                    setIsviewAnswerModalOpen(true)
+                }
+                setUrl(null)
+                setIsRetry(false)
+                // change to result view only if response is received
+                SetIsResultView(true)
+            })
+    }
+
+    const retry = () => {
+        SetIsResultView(false)
+        setTranslationResponse(null)
     }
 
     const getNewWord = () => {
         setIsRetry(true)
         SetIsResultView(false)
+        setTranslationResponse(null)
     }
 
     useEffect(() => {
         if (isretry) {
-            const words = ['hello', 'hi', 'morning']
-            const index = Math.floor(Math.random() * words.length)
-            setRandomWord(words[index])
+            // to do: custom fetcher
+            fetch('http://127.0.0.1:5000/api/practice/get_word')
+                .then((response) => response.json())
+                .then((data) => {
+                    console.log(data.data.word, data.data.url)
+                    setRandomWord(data.data.word)
+                    setWordYoutubeUrl(data.data.url)
+                })
         }
     }, [isResultView])
 
+    // To do : change result text color based on server response
     return (
         <ConfigProvider theme={theme}>
             <HeaderComponent user={user} />
@@ -116,26 +142,31 @@ function PracticeModule() {
                 </Row>
                 {isResultView ? (
                     <Row className={styles.row2}>
-                        <Typography>Result: good</Typography>
+                        <Typography className={styles.typo}>
+                            <strong>Result: {translationResponse}</strong>
+                        </Typography>
                     </Row>
                 ) : (
                     <Row className={styles.row2}>
-                        <Typography>Sign the word : {randomWord}</Typography>
+                        <Typography className={styles.typo}>
+                            <strong>Sign the word : {randomWord}</strong>
+                        </Typography>
                     </Row>
                 )}
                 {isResultView ? (
                     <Row>
-                        <Col span={12}>
+                        <Col span={12} className={styles.row3col}>
                             <Button
+                                type="primary"
                                 className={styles.row3ButtonRetry}
                                 onClick={retry}
                             >
                                 Retry
                             </Button>
                         </Col>
-                        <Col span={12}>
+                        <Col span={12} className={styles.row3col}>
                             <Button
-                                Button
+                                type="primary"
                                 className={styles.row3ButtonNewWord}
                                 onClick={getNewWord}
                             >
@@ -146,36 +177,37 @@ function PracticeModule() {
                 ) : (
                     <Row className={styles.row3StartStop}>
                         {isRecording ? (
-                            <Button onClick={StopWebcam}>
-                                Start/Stop Recording
+                            <Button
+                                onClick={StopWebcam}
+                                className={styles.StopButton}
+                            >
+                                Stop Recording
                             </Button>
                         ) : (
-                            <Button onClick={startWebcam}>
-                                Start/Stop Recording
+                            <Button
+                                onClick={startWebcam}
+                                type="primary"
+                                className={styles.StartButton}
+                            >
+                                Start Recording
                             </Button>
                         )}
                     </Row>
                 )}
 
                 <Row className={styles.row4}>
-                    <Button onClick={() => setIsviewAnswerModalOpen(true)}>
+                    <Button
+                        onClick={() => setIsviewAnswerModalOpen(true)}
+                        type="primary"
+                        className={styles.viewAnswerButton}
+                    >
                         View Answer
                     </Button>
                 </Row>
-                {url && (
-                    <div>
-                        <video
-                            src={url}
-                            autoPlay
-                            className={styles.row1Col1}
-                            controls={true}
-                        />
-                    </div>
-                )}
             </div>
             {isviewAnswerModalOpen && (
                 <ViewAnswerModal
-                    // word = {} word, word's youtube video url
+                    word={wordYoutubeUrl}
                     hideViewAnswerModal={() => {
                         setIsviewAnswerModalOpen(false)
                     }}
@@ -184,5 +216,10 @@ function PracticeModule() {
         </ConfigProvider>
     )
 }
-
-export default PracticeModule
+export const getServerSideProps = async (context) => {
+    let accessT = (await auth0.getSession(context.req, context.res)) || null
+    if (accessT != null) {
+        accessT = accessT.idToken
+    }
+    return { props: { accessToken: accessT } }
+}
