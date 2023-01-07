@@ -13,8 +13,23 @@ function CreateMeetingRoomModal(props) {
     const { Paragraph } = Typography
     const [roomId, setRoomId] = useState('')
     const [inviteLink, setInviteLink] = useState('')
+    const [hostType, setHostType] = useState('ASL')
 
-    const handleOk = () => {
+    const handleOk = async () => {
+        fetch(`${API_URL}/api/rooms/register_room`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({ room_id: roomId, host_type: hostType }),
+        })
+            .then(async (response) => {
+                const json = await response.json()
+                return resolve(json)
+            })
+            .catch(() => {
+                setVisible(false)
+                props.hideCreateMeetingRoomModal()
+            })
+
         setVisible(false)
         props.hideCreateMeetingRoomModal()
     }
@@ -25,7 +40,7 @@ function CreateMeetingRoomModal(props) {
     }
 
     const handleChange = (value) => {
-        // Do something
+        setHostType(value)
     }
 
     // data: {room_id: val, invite_link: str}
@@ -99,7 +114,7 @@ function CreateMeetingRoomModal(props) {
                     <Row>
                         <Col span={24}>
                             <Select
-                                defaultValue="Choose role"
+                                defaultValue="ASL"
                                 onChange={handleChange}
                                 options={[
                                     {
