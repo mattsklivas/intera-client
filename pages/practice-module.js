@@ -134,7 +134,7 @@ export default function PracticeModule(accessT) {
     return (
         <ConfigProvider theme={theme}>
             <HeaderComponent user={user} />
-            <div style={{ height: '100vh ', padding: '20px' }}>
+            <div className={styles.main}>
                 <Row className={styles.row1}>
                     <Col>
                         <video
