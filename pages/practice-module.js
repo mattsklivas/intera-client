@@ -83,23 +83,27 @@ export default function PracticeModule(accessT) {
             videoReference.current.srcObject = null
         }
         SetIsRecording(false)
-        console.log('here')
+
         // this is where you send the video and get the response
-        fetch('http://localhost:3000/api/video', {
-            method: 'POST',
-            body: url,
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                setTranslationResponse(data.result)
-                if (data.result == 'bad') {
-                    setIsviewAnswerModalOpen(true)
-                }
-                setUrl(null)
-                setIsRetry(false)
-                // change to result view only if response is received
-                SetIsResultView(true)
-            })
+        // fetch('http://localhost:3000/api/video', {
+        //    method: 'POST',
+        //    body: url,
+        // })
+        //    .then((response) => response.json())
+        //    .then((data) => {
+        //        setTranslationResponse(data.result)
+        //        if (data.result == 'bad') {
+        //            setIsviewAnswerModalOpen(true)
+        //        }
+        //        setUrl(null)
+        //        setIsRetry(false)
+        // change to result view only if response is received
+        //        SetIsResultView(true)
+        //   })
+        setUrl(null)
+        setIsRetry(false)
+        // change to result view only if response is received
+        SetIsResultView(true)
     }
 
     const retry = () => {
