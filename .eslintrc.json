@@ -2,19 +2,11 @@
     "extends": "next/core-web-vitals",
     "plugins": ["unused-imports", "import-quotes"],
     "rules": {
-        "indent": [
-            "error",
-            4,
-            { "SwitchCase": 1, "ignoredNodes": ["ConditionalExpression"] }
-        ],
+        "indent": ["error", 4, { "SwitchCase": 1, "ignoredNodes": ["ConditionalExpression"] }],
         "comma-spacing": ["error", { "before": false, "after": true }],
         "brace-style": ["error", "1tbs", { "allowSingleLine": true }],
-        "spaced-comment": [
-            "error",
-            "always",
-            { "block": { "exceptions": ["*"] } }
-        ],
-        "camelcase": "error",
+        "spaced-comment": ["error", "always", { "block": { "exceptions": ["*"] } }],
+        // "camelcase": ["error", { "ignoreDestructuring": true }],
         "react-hooks/exhaustive-deps": "off",
         "no-unused-vars": "off",
         "no-multiple-empty-lines": ["error", { "max": 1 }],

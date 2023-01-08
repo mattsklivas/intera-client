@@ -13,9 +13,23 @@ function CreateMeetingRoomModal(props) {
     const [api, contextHolder] = notification.useNotification()
     const [roomId, setRoomId] = useState('')
     const [inviteLink, setInviteLink] = useState('')
-    const [role, setRole] = useState('')
+    const [hostType, setHostType] = useState('')
 
-    const handleOk = () => {
+    const handleOk = async () => {
+        fetch(`${API_URL}/api/rooms/register_room`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({ room_id: roomId, host_type: hostType }),
+        })
+            .then(async (response) => {
+                const json = await response.json()
+                return resolve(json)
+            })
+            .catch(() => {
+                setVisible(false)
+                props.hideCreateMeetingRoomModal()
+            })
+
         setVisible(false)
         props.hideCreateMeetingRoomModal()
     }
@@ -64,7 +78,7 @@ function CreateMeetingRoomModal(props) {
                 open={visible}
                 onOk={handleOk}
                 onCancel={handleCancel}
-                okButtonProps={{ disabled: role === '' ? true : false }}
+                okButtonProps={{ disabled: hostType === '' ? true : false }}
                 okText="Continue"
                 width={300}
                 bodyStyle={{ height: '46vh' }}
@@ -124,7 +138,7 @@ function CreateMeetingRoomModal(props) {
                         <Col span={24} style={{ display: 'flex', justifyContent: 'center' }}>
                             <Select
                                 defaultValue="Choose Role"
-                                onChange={(value) => setRole(value)}
+                                onChange={(value) => setHostType(value)}
                                 options={[
                                     {
                                         value: 'speaker',
