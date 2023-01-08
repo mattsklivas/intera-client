@@ -1,4 +1,4 @@
-import { Modal, Typography, Input, Space } from 'antd'
+import { Modal, Input, Space } from 'antd'
 import { React, useState } from 'react'
 
 function JoinMeetingRoomModal(props) {
@@ -21,15 +21,13 @@ function JoinMeetingRoomModal(props) {
                 open={visible}
                 onOk={handleOk}
                 onCancel={handleCancel}
-                okButtonProps={{ children: 'Custom OK' }}
-                cancelButtonProps={{ children: 'Custom cancel' }}
-                okText="submit"
-                width={500}
-                bodyStyle={{ height: '10vh' }}
+                okText="Submit"
+                width={250}
+                bodyStyle={{ height: '8vh', display: 'flex', justifyContent: 'center' }}
+                style={{ paddingTop: '9%' }}
             >
                 <Space>
-                    <Typography>Enter Meeting ID and click Submit</Typography>
-                    <Input placeholder="Enter Meeting ID" />
+                    <Input placeholder="Enter Meeting Room ID" />
                 </Space>
             </Modal>
         </>

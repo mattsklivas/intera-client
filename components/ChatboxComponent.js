@@ -22,21 +22,13 @@ function ChatboxComponent(props) {
                                             : styles.msgFromContent
                                     )}
                                 >
-                                    {msg.body}
-                                </li>
-                                <li
-                                    key={i}
-                                    className={cn(
-                                        styles.chatboxMsgTimestampWrapper,
-                                        msg.user === user.nickname
-                                            ? styles.msgToTimestamp
-                                            : styles.msgFromTimestamp
-                                    )}
-                                >
-                                    {msg.created.toLocaleTimeString([], {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                    })}
+                                    <div>{msg.body}</div>
+                                    <div style={{ float: 'right', paddingTop: 5, fontSize: 13 }}>
+                                        {msg.created.toLocaleTimeString([], {
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        })}
+                                    </div>
                                 </li>
                             </>
                         )

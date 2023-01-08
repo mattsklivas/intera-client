@@ -1,4 +1,4 @@
-import { Modal, Typography, Input, Button, Select, Row, Col, Space } from 'antd'
+import { Modal, Input, Button, Select, Row, Col, Space, notification, Divider } from 'antd'
 import { React, useState, useEffect } from 'react'
 
 // put this elsewhere
@@ -10,9 +10,10 @@ headers.append('Origin', '0.0.0.0:3000')
 
 function CreateMeetingRoomModal(props) {
     const [visible, setVisible] = useState(true)
-    const { Paragraph } = Typography
+    const [api, contextHolder] = notification.useNotification()
     const [roomId, setRoomId] = useState('')
     const [inviteLink, setInviteLink] = useState('')
+    const [role, setRole] = useState('')
 
     const handleOk = () => {
         setVisible(false)
@@ -22,10 +23,6 @@ function CreateMeetingRoomModal(props) {
     const handleCancel = () => {
         setVisible(false)
         props.hideCreateMeetingRoomModal()
-    }
-
-    const handleChange = (value) => {
-        // Do something
     }
 
     // data: {room_id: val, invite_link: str}
@@ -67,48 +64,75 @@ function CreateMeetingRoomModal(props) {
                 open={visible}
                 onOk={handleOk}
                 onCancel={handleCancel}
-                okButtonProps={{ children: 'Custom OK' }}
-                cancelButtonProps={{ children: 'Custom cancel' }}
+                okButtonProps={{ disabled: role === '' ? true : false }}
                 okText="Continue"
                 width={300}
-                bodyStyle={{ height: '40vh' }}
+                bodyStyle={{ height: '46vh' }}
             >
-                <Row>
-                    <Col span={24}>
-                        <Paragraph copyable={{ text: inviteLink }}>
-                            Copy meeting link: {roomId}
-                        </Paragraph>
-                    </Col>
-                </Row>
-                <Space direction="vertical" size="middle" style={{ display: 'flex' }}>
-                    <Row>
+                {contextHolder}
+                <Divider plain style={{ margin: '10px 0' }}>
+                    Meeting Info
+                </Divider>
+                <Space direction="vertical" size="middle">
+                    <Row type="flex" align="middle">
                         <Col span={24}>
-                            <Input
-                                placeholder="Enter Guest Email for invite"
-                                style={{ width: 250 }}
-                            />
+                            <div
+                                style={{
+                                    paddingBottom: 15,
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                }}
+                            >
+                                <span style={{ paddingRight: 2 }}>Room ID: </span>
+                                <span style={{ paddingLeft: 2, fontWeight: 500, color: '#1677ff' }}>
+                                    {' '}
+                                    {roomId}
+                                </span>
+                            </div>
+                            <Button
+                                block
+                                type="primary"
+                                onClick={() => {
+                                    navigator.clipboard.writeText(inviteLink)
+
+                                    api.info({
+                                        message: 'Meeting link copied to clipboard',
+                                    })
+                                }}
+                            >
+                                Copy Meeting Link
+                            </Button>
                         </Col>
                     </Row>
-
-                    <Row>
+                    <Divider plain style={{ margin: 0 }}>
+                        Guest Invitation
+                    </Divider>
+                    <Row type="flex" align="middle">
+                        <Col span={24} style={{ paddingBottom: 15 }}>
+                            <Input block placeholder="Enter Email of Guest to Invite" />
+                        </Col>
                         <Col span={24}>
-                            <Button>Email invite Submit</Button>
+                            <Button block type="primary">
+                                Send Invite
+                            </Button>
                         </Col>
                     </Row>
-
+                    <Divider plain style={{ margin: 0 }}>
+                        Role Selection <span style={{ color: 'red' }}>*</span>
+                    </Divider>
                     <Row>
-                        <Col span={24}>
+                        <Col span={24} style={{ display: 'flex', justifyContent: 'center' }}>
                             <Select
-                                defaultValue="Choose role"
-                                onChange={handleChange}
+                                defaultValue="Choose Role"
+                                onChange={(value) => setRole(value)}
                                 options={[
                                     {
-                                        value: 'Speaker',
+                                        value: 'speaker',
                                         label: 'Speaker',
                                     },
                                     {
-                                        value: 'ASL',
-                                        label: 'ASL',
+                                        value: 'signer',
+                                        label: 'ASL Signer',
                                     },
                                 ]}
                                 style={{ width: 150 }}

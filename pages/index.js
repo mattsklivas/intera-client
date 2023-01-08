@@ -9,6 +9,7 @@ import { Button, ConfigProvider } from 'antd'
 import JoinMeetingRoomModal from '../components/modals/JoinMeetingRoomModal'
 import CreateMeetingRoomModal from '../components/modals/CreateMeetingRoomModal'
 import HistoryComponent from '../components/HistoryComponent'
+import { MdCreate, MdSupervisorAccount } from 'react-icons/md'
 import { theme } from '../core/theme'
 
 export default function Home({ accessT, pc }) {
@@ -32,15 +33,21 @@ export default function Home({ accessT, pc }) {
                             <div class={styles.rightColumn}>
                                 <Button
                                     className={styles.buttonCreateRoom}
-                                    onClick={() => setIsJoinMeetingRoomModalOpen(true)}
+                                    onClick={() => setIsCreateMeetingRoomModalOpen(true)}
                                 >
-                                    Create Meeting Room
+                                    <span style={{ display: 'inline-flex' }}>
+                                        Create Meeting Room&nbsp;
+                                        <MdCreate size={20} />
+                                    </span>
                                 </Button>
                                 <Button
                                     className={styles.buttonJoinRoom}
                                     onClick={() => setIsJoinMeetingRoomModalOpen(true)}
                                 >
-                                    Join Meeting Room
+                                    <span style={{ display: 'inline-flex' }}>
+                                        Join Meeting Room&nbsp;&nbsp;&nbsp;
+                                        <MdSupervisorAccount size={20} />
+                                    </span>
                                 </Button>
                             </div>
                         </div>

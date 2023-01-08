@@ -48,7 +48,7 @@
 .chatboxMsgContentWrapper {
     position: relative;
     max-width: 270px;
-    margin-bottom: 5px;
+    margin-bottom: 20px;
     padding: 10px 15px;
     border-radius: 15px;
     line-height: 18px;
@@ -67,24 +67,4 @@
     margin-right: 2px;
     color: #fff;
     background: #1b98e0;
-}
-
-.chatboxMsgTimestampWrapper {
-    position: relative;
-    max-width: 270px;
-    margin-bottom: 5px;
-    border-radius: 15px;
-    color: #434343;
-    line-height: 18px;
-    word-wrap: break-word;
-}
-
-.msgFromTimestamp {
-    align-self: flex-start;
-    margin-left: 10px;
-}
-
-.msgToTimestamp {
-    align-self: flex-end;
-    margin-right: 10px;
 }
