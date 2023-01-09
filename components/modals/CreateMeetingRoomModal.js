@@ -141,11 +141,11 @@ function CreateMeetingRoomModal(props) {
                                 onChange={(value) => setHostType(value)}
                                 options={[
                                     {
-                                        value: 'speaker',
+                                        value: 'STT',
                                         label: 'Speaker',
                                     },
                                     {
-                                        value: 'signer',
+                                        value: 'ASL',
                                         label: 'ASL Signer',
                                     },
                                 ]}
