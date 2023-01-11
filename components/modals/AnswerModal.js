@@ -1,7 +1,7 @@
 import { Modal } from 'antd'
 import { React, useState } from 'react'
 
-function ViewAnswerModal(props) {
+function AnswerModal(props) {
     const [visible, setVisible] = useState(true)
     const wordDetails = props.word // Has the youtube url, need to parse the id
     const midPoint = wordDetails.indexOf('=')
@@ -9,7 +9,7 @@ function ViewAnswerModal(props) {
 
     const handleClose = () => {
         setVisible(false)
-        props.hideViewAnswerModal()
+        props.hideAnswerModal()
     }
     // Make sure the youtube url is of the format  yt.com/embed/id
     return (
@@ -45,4 +45,4 @@ function ViewAnswerModal(props) {
     )
 }
 
-export default ViewAnswerModal
+export default AnswerModal
