@@ -1,12 +1,6 @@
 import { Modal, Input, Button, Select, Row, Col, Space, notification, Divider } from 'antd'
 import { React, useState, useEffect } from 'react'
-
-// put this elsewhere
-let API_URL = 'http://127.0.0.1:5000'
-let headers = new Headers()
-headers.append('Content-Type', 'application/json')
-headers.append('Accept', 'application/json')
-headers.append('Origin', '0.0.0.0:3000')
+import fetcher from '../core/fetcher.js'
 
 function CreateMeetingRoomModal(props) {
     const [visible, setVisible] = useState(true)
@@ -16,9 +10,8 @@ function CreateMeetingRoomModal(props) {
     const [hostType, setHostType] = useState('')
 
     const handleOk = async () => {
-        fetch(`${API_URL}/api/rooms/register_room`, {
+        fetcher(accessT, '/api/rooms/register_room', {
             method: 'POST',
-            headers: headers,
             body: JSON.stringify({ room_id: roomId, host_type: hostType }),
         })
             .then(async (response) => {
