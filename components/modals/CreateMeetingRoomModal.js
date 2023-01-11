@@ -1,6 +1,6 @@
 import { Modal, Input, Button, Select, Row, Col, Space, notification, Divider } from 'antd'
 import { React, useState, useEffect } from 'react'
-import fetcher from '../core/fetcher.js'
+import fetcher from '../../core/fetcher.js'
 
 function CreateMeetingRoomModal(props) {
     const [visible, setVisible] = useState(true)
@@ -10,13 +10,12 @@ function CreateMeetingRoomModal(props) {
     const [hostType, setHostType] = useState('')
 
     const handleOk = async () => {
-        fetcher(accessT, '/api/rooms/register_room', {
+        fetcher(props.accessToken, '/api/rooms/register_room', {
             method: 'POST',
             body: JSON.stringify({ room_id: roomId, host_type: hostType }),
         })
-            .then(async (response) => {
-                const json = await response.json()
-                return resolve(json)
+            .then(async (res) => {
+                return res.data
             })
             .catch(() => {
                 setVisible(false)
@@ -33,31 +32,15 @@ function CreateMeetingRoomModal(props) {
     }
 
     // data: {room_id: val, invite_link: str}
-    const getRoomData = async () => {
-        const res = new Promise((resolve, reject) => {
-            fetch(`${API_URL}/api/rooms/create_room_id`, {
-                method: 'GET',
-                headers: headers,
+    const populateRoomData = async () => {
+        fetcher(props.accessToken, '/api/rooms/create_room_id', {
+            method: 'GET',
+        })
+            .then(async (res) => {
+                setRoomId(res?.data?.room_id)
+                setInviteLink(res?.data?.invite_link)
             })
-                .then(async (response) => {
-                    const json = await response.json()
-
-                    return resolve(json)
-                })
-                .catch((error) => {
-                    reject(error)
-                })
-        })
-
-        return res
-    }
-
-    const populateRoomData = () => {
-        getRoomData().then((response) => {
-            console.log(response.data)
-            setRoomId(response.data?.room_id)
-            setInviteLink(response.data?.invite_link)
-        })
+            .catch(() => {})
     }
 
     useEffect(() => {

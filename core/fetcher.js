@@ -1,15 +1,12 @@
-const API_URL = process.env.API_URL || 'http://127.0.0.1:5000'
-const CLIENT_URL = process.env.CLIENT_URL || '0.0.0.0:3000'
-
 export default function fetcher(token, url, options) {
     const headers = new Headers({
         Authorization: `Bearer ${token}`,
-        Origin: CLIENT_URL,
-        'Content-Type': 'application/json',
+        Origin: process.env.CLIENT_URL,
         Accept: 'application/json',
+        'Content-Type': 'application/json',
     })
 
-    url = `${API_URL}${url}`
+    url = `${process.env.API_URL}${url}`
 
     return new Promise((resolve, reject) => {
         fetch(url, {

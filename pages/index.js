@@ -55,6 +55,7 @@ export default function Home({ accessT, pc }) {
                     {isJoinMeetingRoomModalOpen && (
                         <JoinMeetingRoomModal
                             demo={placeholder}
+                            accessToken={accessToken}
                             hideJoinMeetingRoomModal={() => {
                                 setIsJoinMeetingRoomModalOpen(false)
                             }}
@@ -63,6 +64,7 @@ export default function Home({ accessT, pc }) {
                     {isCreateMeetingRoomModalOpen && (
                         <CreateMeetingRoomModal
                             demo={placeholder}
+                            accessToken={accessToken}
                             hideCreateMeetingRoomModal={() => {
                                 setIsCreateMeetingRoomModalOpen(false)
                             }}
