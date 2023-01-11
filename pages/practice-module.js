@@ -6,6 +6,8 @@ import { Row, Col, Button, ConfigProvider, Typography } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 import { theme } from '../core/theme'
 import ViewAnswerModal from '../components/modals/viewAnswerModal'
+import customFetch from '../helpers/fetcher'
+
 // In progress
 // page consists of a video div at the bottom, used just for testing will be removed
 
@@ -19,6 +21,7 @@ export default function PracticeModule(accessT) {
     const [isRecording, SetIsRecording] = useState(false)
     const [url, setUrl] = useState(null) // once user stops recording the data is stored in URL,
     // if the user retries the URL will be reset with the new video
+    const [blobContent, setBlobContent] = useState(null)
 
     const [isResultView, SetIsResultView] = useState(false)
     const [randomWord, setRandomWord] = useState(null)
@@ -50,8 +53,9 @@ export default function PracticeModule(accessT) {
                 // Initialize media recorder when recorder is stopped
                 recorder.onstop = (e) => {
                     // Once the recorder is stopped, use the video data array to create a video src url
-                    const blob = new Blob(videoData)
+                    const blob = new Blob(videoData, { type: 'video/mp4' })
                     const videoSrcUrl = URL.createObjectURL(blob)
+                    setBlobContent(blob)
                     // set the url
                     setUrl(videoSrcUrl)
                 }
@@ -84,6 +88,10 @@ export default function PracticeModule(accessT) {
         }
         SetIsRecording(false)
 
+        // convert blob to mp4
+        // const formD = new FormData()
+        // formD.append('video', blobContent, 'video.mp4')
+
         // this is where you send the video and get the response
         // fetch('http://localhost:3000/api/video', {
         //    method: 'POST',
@@ -91,7 +99,7 @@ export default function PracticeModule(accessT) {
         // })
         //    .then((response) => response.json())
         //    .then((data) => {
-        //        setTranslationResponse(data.result)
+        //         setTranslationResponse(data.result)
         //        if (data.result == 'bad') {
         //            setIsviewAnswerModalOpen(true)
         //        }
@@ -99,8 +107,10 @@ export default function PracticeModule(accessT) {
         //        setIsRetry(false)
         // change to result view only if response is received
         //        SetIsResultView(true)
-        //   })
+        //    })
+
         setUrl(null)
+        setBlobContent(null)
         setIsRetry(false)
         // change to result view only if response is received
         SetIsResultView(true)
@@ -119,14 +129,12 @@ export default function PracticeModule(accessT) {
 
     useEffect(() => {
         if (isretry) {
-            // to do: custom fetcher
-            fetch('http://127.0.0.1:5000/api/practice/get_word')
-                .then((response) => response.json())
-                .then((data) => {
-                    console.log(data.data.word, data.data.url)
-                    setRandomWord(data.data.word)
-                    setWordYoutubeUrl(data.data.url)
-                })
+            customFetch(accessToken, '/api/practice/get_word', {
+                method: 'GET',
+            }).then((response) => {
+                setRandomWord(response.data.word)
+                setWordYoutubeUrl(response.data.url)
+            })
         }
     }, [isResultView])
 
