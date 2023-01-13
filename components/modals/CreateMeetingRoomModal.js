@@ -12,7 +12,7 @@ function CreateMeetingRoomModal(props) {
     const handleOk = async () => {
         fetcher(props.accessToken, '/api/rooms/register_room', {
             method: 'POST',
-            body: JSON.stringify({ room_id: roomId, host_type: hostType }),
+            body: JSON.stringify({ room_id: roomId, host_type: props.user.nickname }),
         })
             .then(async (res) => {
                 return res.data
@@ -31,7 +31,6 @@ function CreateMeetingRoomModal(props) {
         props.hideCreateMeetingRoomModal()
     }
 
-    // data: {room_id: val, invite_link: str}
     const populateRoomData = async () => {
         fetcher(props.accessToken, '/api/rooms/create_room_id', {
             method: 'GET',

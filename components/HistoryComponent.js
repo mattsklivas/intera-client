@@ -1,7 +1,8 @@
 import { React, useState } from 'react'
 import styles from '../styles/History.module.css'
 import CallTranscriptModal from '../components/modals/CallTranscriptModal'
-import { Tabs } from 'antd'
+import { Tabs, Row, Divider } from 'antd'
+import { InboxOutlined } from '@ant-design/icons'
 
 export default function HistoryComponent(props) {
     const [isCallTranscriptModalOpen, setIsCallTranscriptModalOpen] = useState(false)
@@ -11,24 +12,43 @@ export default function HistoryComponent(props) {
         <>
             <div className={styles.historySidebar}>
                 <h2 className={styles.historyTitle}>Call History</h2>
-                {props.transcripts.map((transcript) => {
-                    return (
-                        <Tabs
-                            key={transcript.room_id}
-                            onClick={() => {
-                                setActiveTranscript(transcript)
-                                setIsCallTranscriptModalOpen(true)
-                            }}
-                        >
-                            <p>
-                                <span>{transcript.username || 'N/A'} </span>
-                                <span style={{ color: '#8c8c8c' }}>
-                                    (Date: {transcript.date || 'N/A'})
-                                </span>
-                            </p>
-                        </Tabs>
-                    )
-                })}
+                {props.transcripts.length > 0 ? (
+                    props.transcripts.map((transcript) => {
+                        return (
+                            <Tabs
+                                key={transcript.room_id}
+                                onClick={() => {
+                                    setActiveTranscript(transcript)
+                                    setIsCallTranscriptModalOpen(true)
+                                }}
+                            >
+                                <p>
+                                    <span>{transcript.username || 'N/A'} </span>
+                                    <span style={{ color: '#8c8c8c' }}>
+                                        (Date: {transcript.date || 'N/A'})
+                                    </span>
+                                </p>
+                            </Tabs>
+                        )
+                    })
+                ) : (
+                    <>
+                        <Divider />
+                        <Row type="flex" justify="center" align="middle" style={{ height: '50%' }}>
+                            <div>
+                                <InboxOutlined
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        fontSize: 30,
+                                        width: '100%',
+                                    }}
+                                />
+                                <div>No listings to show.</div>
+                            </div>
+                        </Row>
+                    </>
+                )}
             </div>
             {isCallTranscriptModalOpen && (
                 <CallTranscriptModal

@@ -2,7 +2,7 @@ import styles from '../styles/Home.module.css'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { useRouter } from 'next/router'
 import auth0 from '../auth/auth0'
-import { React, useState } from 'react'
+import { React, useState, useEffect } from 'react'
 import LoadingComponent from '../components/LoadingComponent'
 import Header from '../components/HeaderComponent'
 import { Button, ConfigProvider } from 'antd'
@@ -10,26 +10,38 @@ import JoinMeetingRoomModal from '../components/modals/JoinMeetingRoomModal'
 import CreateMeetingRoomModal from '../components/modals/CreateMeetingRoomModal'
 import HistoryComponent from '../components/HistoryComponent'
 import { MdCreate, MdSupervisorAccount } from 'react-icons/md'
+import useTranscriptHistory from '../hooks/useTranscriptHistory'
 import { theme } from '../core/theme'
 
-export default function Home({ accessT, pc }) {
+export default function Home({ accessToken }) {
     const router = useRouter()
     const [isJoinMeetingRoomModalOpen, setIsJoinMeetingRoomModalOpen] = useState(false)
     const [isCreateMeetingRoomModalOpen, setIsCreateMeetingRoomModalOpen] = useState(false)
 
     const { user, error, isLoading } = useUser()
 
-    const accessToken = accessT
-    const placeholder = pc
+    // Get the history of transcripts
+    const { data: transcriptHistory } = useTranscriptHistory(user ? user.nickname : '', accessToken)
+    console.log('transcripts', transcriptHistory)
 
-    if (user) {
+    // Flag to check if hooks have completed
+    const [initialized, setInitialized] = useState(false)
+
+    // Wait for state variable initialization to show the page content
+    useEffect(() => {
+        if (!initialized && typeof transcriptHistory !== 'undefined') {
+            setInitialized(true)
+        }
+    })
+
+    if (user && initialized && !isLoading) {
         return (
             <div styles={{ width: '100%' }}>
                 <ConfigProvider theme={theme}>
                     <main class={styles.main}>
                         <Header user={user} />
                         <div class={styles.row}>
-                            <HistoryComponent transcripts={placeholder} user={user} />
+                            <HistoryComponent transcripts={transcriptHistory} user={user} />
                             <div class={styles.rightColumn}>
                                 <Button
                                     className={styles.buttonCreateRoom}
@@ -54,8 +66,8 @@ export default function Home({ accessT, pc }) {
                     </main>
                     {isJoinMeetingRoomModalOpen && (
                         <JoinMeetingRoomModal
-                            demo={placeholder}
                             accessToken={accessToken}
+                            user={user}
                             hideJoinMeetingRoomModal={() => {
                                 setIsJoinMeetingRoomModalOpen(false)
                             }}
@@ -63,8 +75,8 @@ export default function Home({ accessT, pc }) {
                     )}
                     {isCreateMeetingRoomModalOpen && (
                         <CreateMeetingRoomModal
-                            demo={placeholder}
                             accessToken={accessToken}
+                            user={user}
                             hideCreateMeetingRoomModal={() => {
                                 setIsCreateMeetingRoomModalOpen(false)
                             }}
@@ -74,18 +86,16 @@ export default function Home({ accessT, pc }) {
             </div>
         )
     } else if (isLoading) {
-        return <LoadingComponent msg="User Loading" />
+        return <LoadingComponent msg="Loading..." />
     } else if (!user && !isLoading) {
         router.push('/api/auth/login')
     }
 }
 export const getServerSideProps = async (context) => {
-    let accessT = (await auth0.getSession(context.req, context.res)) || null
-    const response = await fetch('https://jsonplaceholder.typicode.com/users') // Dummy data
-    const data = await response.json()
-    if (accessT != null) {
-        accessT = accessT.idToken
+    let accessToken = (await auth0.getSession(context.req, context.res)) || null
+    if (accessToken != null) {
+        accessToken = accessToken.idToken
     }
     // Pass user data and dummy data
-    return { props: { accessToken: accessT, pc: data } }
+    return { props: { accessToken } }
 }

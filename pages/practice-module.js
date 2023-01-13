@@ -11,8 +11,7 @@ import fetcher from '../core/fetcher'
 // In progress
 // page consists of a video div at the bottom, used just for testing will be removed
 
-export default function PracticeModule(accessT) {
-    const accessToken = accessT
+export default function PracticeModule({ accessToken }) {
     const [isAnswerModalOpen, setIsAnswerModalOpen] = useState(false)
     const { user, error, isLoading } = useUser()
     const videoReference = useRef(null)
@@ -222,9 +221,9 @@ export default function PracticeModule(accessT) {
     )
 }
 export const getServerSideProps = async (context) => {
-    let accessT = (await auth0.getSession(context.req, context.res)) || null
-    if (accessT != null) {
-        accessT = accessT.idToken
+    let accessToken = (await auth0.getSession(context.req, context.res)) || null
+    if (accessToken != null) {
+        accessToken = accessToken.idToken
     }
-    return { props: { accessToken: accessT } }
+    return { props: { accessToken } }
 }
