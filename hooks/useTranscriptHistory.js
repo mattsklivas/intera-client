@@ -5,7 +5,7 @@ import hookFetcher from '../core/hookFetcher'
 function useTranscriptHistory(nickname, token) {
     return useSWR(() => {
         if (nickname && token) {
-            return [`/api/rooms/get_all_rooms_by_id?user_id=${nickname}`, token]
+            return [`/api/rooms/get_all_rooms_by_user?user_id=${nickname}`, token]
         }
         return undefined
     }, hookFetcher)

@@ -1,4 +1,4 @@
-export default function hookFetcher(props) {
+export default async function hookFetcher(props) {
     let url = props[0]
     const token = props[1]
 
@@ -11,7 +11,7 @@ export default function hookFetcher(props) {
 
     url = `${process.env.API_URL}${url}`
 
-    return fetch(url, headers)
+    return await fetch(url, { headers: headers })
         .then(async (res) => {
             return res.json()
         })
