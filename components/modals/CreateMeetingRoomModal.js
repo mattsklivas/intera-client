@@ -2,6 +2,16 @@ import { Modal, Input, Button, Select, Row, Col, Space, notification, Divider } 
 import { React, useState, useEffect } from 'react'
 import fetcher from '../../core/fetcher.js'
 
+import io from 'socket.io-client'
+
+const socket = io('http://127.0.0.1:5000')
+
+// const port = process.env.PORT || 5000;
+
+socket.on('connect', () => {
+    console.log(`connect ${socket.id}`)
+})
+
 function CreateMeetingRoomModal(props) {
     const [visible, setVisible] = useState(true)
     const [api, contextHolder] = notification.useNotification()
@@ -27,6 +37,10 @@ function CreateMeetingRoomModal(props) {
     }
 
     const handleCancel = () => {
+        socket.on('disconnect', () => {
+            console.log(`disconnect ${socket.id}`)
+        })
+
         setVisible(false)
         props.hideCreateMeetingRoomModal()
     }

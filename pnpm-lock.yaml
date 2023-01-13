@@ -17,6 +17,7 @@ specifiers:
     react: 18.2.0
     react-dom: 18.2.0
     react-icons: ^4.7.1
+    socket.io-client: ^4.5.4
     swr: ^2.0.0
     typescript: ^4.9.4
 
@@ -30,6 +31,7 @@ dependencies:
     react: 18.2.0
     react-dom: 18.2.0_react@18.2.0
     react-icons: 4.7.1_react@18.2.0
+    socket.io-client: 4.5.4
     swr: 2.0.0_react@18.2.0
     typescript: 4.9.4
 
@@ -548,6 +550,13 @@ packages:
         resolution:
             {
                 integrity: sha512-RNiOoTPkptFtSVzQevY/yWtZwf/RxyVnPy/OcA9HBM3MlGDnBEYL5B41H0MTn0Uec8Hi+2qUtTfG2WWZBmMejQ==,
+            }
+        dev: false
+
+    /@socket.io/component-emitter/3.1.0:
+        resolution:
+            {
+                integrity: sha512-+9jVqKhRSpsc591z5vX+X5Yyw+he/HCB4iQ/RYxw35CEPaY1gnsNE43nf9n9AaYjAQrTiI/mOwKUKdUs9vf7Xg==,
             }
         dev: false
 
@@ -1215,6 +1224,31 @@ packages:
         dependencies:
             once: 1.4.0
         dev: true
+
+    /engine.io-client/6.2.3:
+        resolution:
+            {
+                integrity: sha512-aXPtgF1JS3RuuKcpSrBtimSjYvrbhKW9froICH4s0F3XQWLxsKNxqzG39nnvQZQnva4CMvUK63T7shevxRyYHw==,
+            }
+        dependencies:
+            '@socket.io/component-emitter': 3.1.0
+            debug: 4.3.4
+            engine.io-parser: 5.0.5
+            ws: 8.2.3
+            xmlhttprequest-ssl: 2.0.0
+        transitivePeerDependencies:
+            - bufferutil
+            - supports-color
+            - utf-8-validate
+        dev: false
+
+    /engine.io-parser/5.0.5:
+        resolution:
+            {
+                integrity: sha512-mjEyaa4zhuuRhaSLOdjEb57X0XPP9JEsnXI4E+ivhwT0GgzUogARx4MqoY1jQyB+4Bkz3BUOmzL7t9RMKmlG3g==,
+            }
+        engines: { node: '>=10.0.0' }
+        dev: false
 
     /enhanced-resolve/5.12.0:
         resolution:
@@ -3953,6 +3987,36 @@ packages:
         engines: { node: '>=12' }
         dev: true
 
+    /socket.io-client/4.5.4:
+        resolution:
+            {
+                integrity: sha512-ZpKteoA06RzkD32IbqILZ+Cnst4xewU7ZYK12aS1mzHftFFjpoMz69IuhP/nL25pJfao/amoPI527KnuhFm01g==,
+            }
+        engines: { node: '>=10.0.0' }
+        dependencies:
+            '@socket.io/component-emitter': 3.1.0
+            debug: 4.3.4
+            engine.io-client: 6.2.3
+            socket.io-parser: 4.2.1
+        transitivePeerDependencies:
+            - bufferutil
+            - supports-color
+            - utf-8-validate
+        dev: false
+
+    /socket.io-parser/4.2.1:
+        resolution:
+            {
+                integrity: sha512-V4GrkLy+HeF1F/en3SpUaM+7XxYXpuMUWLGde1kSSh5nQMN4hLrbPIkD+otwh6q9R6NOQBN4AMaOZ2zVjui82g==,
+            }
+        engines: { node: '>=10.0.0' }
+        dependencies:
+            '@socket.io/component-emitter': 3.1.0
+            debug: 4.3.4
+        transitivePeerDependencies:
+            - supports-color
+        dev: false
+
     /source-map-js/1.0.2:
         resolution:
             {
@@ -4342,6 +4406,30 @@ packages:
                 integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==,
             }
         dev: true
+
+    /ws/8.2.3:
+        resolution:
+            {
+                integrity: sha512-wBuoj1BDpC6ZQ1B7DWQBYVLphPWkm8i9Y0/3YdHjHKHiohOJ1ws+3OccDWtH+PoC9DZD5WOTrJvNbWvjS6JWaA==,
+            }
+        engines: { node: '>=10.0.0' }
+        peerDependencies:
+            bufferutil: ^4.0.1
+            utf-8-validate: ^5.0.2
+        peerDependenciesMeta:
+            bufferutil:
+                optional: true
+            utf-8-validate:
+                optional: true
+        dev: false
+
+    /xmlhttprequest-ssl/2.0.0:
+        resolution:
+            {
+                integrity: sha512-QKxVRxiRACQcVuQEYFsI1hhkrMlrXHPegbbd1yn9UHOmRxY+si12nQYzri3vbzt8VdTTRviqcKxcyllFas5z2A==,
+            }
+        engines: { node: '>=0.4.0' }
+        dev: false
 
     /yallist/4.0.0:
         resolution:
