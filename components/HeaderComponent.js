@@ -19,9 +19,7 @@ function Header(props) {
             </Col>
 
             <Col flex={1} className={styles.headerCol2}>
-                {['practice-module', 'call'].includes(
-                    router.pathname.split('/')[1]
-                ) ? (
+                {['practice-module', 'call-page'].includes(router.pathname.split('/')[1]) ? (
                     <Button type="primary" onClick={() => router.push('/')}>
                         {router.pathname.split('/')[1] === 'practice-module'
                             ? 'Exit Practice Module'
@@ -30,12 +28,7 @@ function Header(props) {
                 ) : (
                     <div className={styles.headerLanding}>
                         <span className={styles.headerTitle}>Intera</span>
-                        <Image
-                            className={styles.headerLogo}
-                            src={logo}
-                            height={35}
-                            width={35}
-                        />
+                        <Image className={styles.headerLogo} src={logo} height={35} width={35} />
                     </div>
                 )}
             </Col>
@@ -50,9 +43,7 @@ function Header(props) {
                         </Button>
                     )}
 
-                    <Button onClick={() => router.push('/api/auth/logout')}>
-                        Logout
-                    </Button>
+                    <Button onClick={() => router.push('/api/auth/logout')}>Logout</Button>
                 </Space>
             </Col>
         </Row>
