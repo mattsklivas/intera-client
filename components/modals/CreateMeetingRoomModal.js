@@ -1,4 +1,5 @@
-import { Modal, Input, Button, Select, Row, Col, Space, notification, Divider } from 'antd'
+import { Modal, Input, Button, Select, Row, Col, Space, notification, Divider, Spin } from 'antd'
+import { LoadingOutlined } from '@ant-design/icons'
 import { React, useState, useEffect } from 'react'
 import fetcher from '../../core/fetcher.js'
 
@@ -15,19 +16,35 @@ socket.on('connect', () => {
 function CreateMeetingRoomModal(props) {
     const [visible, setVisible] = useState(true)
     const [api, contextHolder] = notification.useNotification()
-    const [roomId, setRoomId] = useState('')
+    const [roomID, setRoomId] = useState('')
     const [inviteLink, setInviteLink] = useState('')
     const [hostType, setHostType] = useState('')
+    const [initialized, setInitialized] = useState(false)
+    const [loading, setLoading] = useState(false)
 
     const handleOk = async () => {
+        setLoading(true)
         fetcher(props.accessToken, '/api/rooms/register_room', {
             method: 'POST',
-            body: JSON.stringify({ room_id: roomId, host_type: hostType }),
+            body: JSON.stringify({ room_id: roomID, host_type: hostType }),
         })
             .then(async (res) => {
-                return res.data
+                if (res.status == 200) {
+                    props.router.push(`/call-page/${roomID}`)
+                } else {
+                    api.error({
+                        message: `Error ${res.status}: ${res.message}`,
+                    })
+                    setLoading(false)
+                    setVisible(false)
+                    props.hideCreateMeetingRoomModal()
+                }
             })
-            .catch(() => {
+            .catch((res) => {
+                api.error({
+                    message: 'An unknown error has occurred',
+                })
+                console.log('Error', res)
                 setVisible(false)
                 props.hideCreateMeetingRoomModal()
             })
@@ -57,7 +74,10 @@ function CreateMeetingRoomModal(props) {
     }
 
     useEffect(() => {
-        populateRoomData()
+        if (!initialized && roomID === '') {
+            populateRoomData()
+            setInitialized(true)
+        }
     }, [])
 
     return (
@@ -67,7 +87,7 @@ function CreateMeetingRoomModal(props) {
                 open={visible}
                 onOk={handleOk}
                 onCancel={handleCancel}
-                okButtonProps={{ disabled: hostType === '' ? true : false }}
+                okButtonProps={{ disabled: hostType === '' || roomID === '', loading: loading }}
                 okText="Continue"
                 width={300}
                 bodyStyle={{ height: '46vh' }}
@@ -87,10 +107,29 @@ function CreateMeetingRoomModal(props) {
                                 }}
                             >
                                 <span style={{ paddingRight: 2 }}>Room ID: </span>
-                                <span style={{ paddingLeft: 2, fontWeight: 500, color: '#1677ff' }}>
-                                    {' '}
-                                    {roomId}
-                                </span>
+                                {roomID ? (
+                                    <span
+                                        style={{
+                                            paddingLeft: 2,
+                                            fontWeight: 500,
+                                            color: '#1677ff',
+                                        }}
+                                    >
+                                        {' ' + roomID}
+                                    </span>
+                                ) : (
+                                    <Spin
+                                        style={{ paddingLeft: 5 }}
+                                        indicator={
+                                            <LoadingOutlined
+                                                style={{
+                                                    fontSize: 16,
+                                                }}
+                                                spin
+                                            />
+                                        }
+                                    />
+                                )}
                             </div>
                             <Button
                                 block

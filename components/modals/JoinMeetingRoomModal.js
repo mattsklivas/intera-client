@@ -17,9 +17,8 @@ function JoinMeetingRoomModal(props) {
                 body: JSON.stringify({ room_id: roomID, user_id: props.user.nickname }),
             })
                 .then((res) => {
-                    console.log('OK', res)
                     if (res.status == 200) {
-                        router.push(`/meeting-room/${roomId}`)
+                        props.router.push(`/call-page/${roomId}`)
                     } else {
                         api.error({
                             message: `Error ${res.status}: ${res.message}`,
@@ -31,7 +30,6 @@ function JoinMeetingRoomModal(props) {
                     api.error({
                         message: 'An unknown error has occurred',
                     })
-                    console.log('Error', res)
                     setVisible(false)
                     props.hideJoinMeetingRoomModal()
                 })

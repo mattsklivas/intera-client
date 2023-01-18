@@ -66,6 +66,7 @@ export default function Home({ accessToken }) {
                     </main>
                     {isJoinMeetingRoomModalOpen && (
                         <JoinMeetingRoomModal
+                            router={router}
                             accessToken={accessToken}
                             user={user}
                             hideJoinMeetingRoomModal={() => {
@@ -75,6 +76,7 @@ export default function Home({ accessToken }) {
                     )}
                     {isCreateMeetingRoomModalOpen && (
                         <CreateMeetingRoomModal
+                            router={router}
                             accessToken={accessToken}
                             user={user}
                             hideCreateMeetingRoomModal={() => {
@@ -96,6 +98,5 @@ export const getServerSideProps = async (context) => {
     if (accessToken != null) {
         accessToken = accessToken.idToken
     }
-    // Pass user data and dummy data
     return { props: { accessToken } }
 }
