@@ -10,24 +10,27 @@ function ChatboxComponent(props) {
         <div className={styles.chatboxWrapper}>
             <div className={styles.chatboxOverflow}>
                 <ol className={styles.chatboxMsgList}>
-                    {transcript.map((msg, i) => {
+                    {transcript?.messages_info?.map((msg, i) => {
                         return (
                             <>
                                 <li
                                     key={i}
                                     className={cn(
                                         styles.chatboxMsgContentWrapper,
-                                        msg.user === user.nickname
+                                        msg.to === user.nickname
                                             ? styles.msgToContent
                                             : styles.msgFromContent
                                     )}
                                 >
-                                    <div>{msg.body}</div>
+                                    <div>{msg.text}</div>
                                     <div style={{ float: 'right', paddingTop: 5, fontSize: 13 }}>
-                                        {msg.created.toLocaleTimeString([], {
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                        })}
+                                        {new Date(msg.date_created['$date']).toLocaleTimeString(
+                                            [],
+                                            {
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                            }
+                                        )}
                                     </div>
                                 </li>
                             </>

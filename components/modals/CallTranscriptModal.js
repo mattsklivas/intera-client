@@ -15,9 +15,9 @@ function CallTranscriptModal(props) {
     return (
         <>
             <Modal
-                title={`Conversation with ${transcript.username} (Date: ${
-                    transcript.date || '2023/01/04'
-                })`}
+                title={`Conversation with ${transcript?.users.find(
+                    (user) => user !== props?.user?.nickname
+                )} (Date: ${transcript?.date_created['$date'].split('T')[0] || 'N/A'})`}
                 open={visible}
                 onOk={handleClose}
                 onCancel={handleClose}

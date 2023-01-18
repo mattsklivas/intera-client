@@ -13,19 +13,24 @@ export default function HistoryComponent(props) {
             <div className={styles.historySidebar}>
                 <h2 className={styles.historyTitle}>Call History</h2>
                 {props.transcripts.length > 0 ? (
-                    props.transcripts.map((transcript) => {
+                    props.transcripts.map((transcript, index) => {
                         return (
                             <Tabs
-                                key={transcript.room_id}
+                                key={index}
                                 onClick={() => {
                                     setActiveTranscript(transcript)
                                     setIsCallTranscriptModalOpen(true)
                                 }}
                             >
                                 <p>
-                                    <span>{transcript.username || 'N/A'} </span>
+                                    <span>
+                                        {transcript?.users.find(
+                                            (user) => user !== props?.user?.nickname
+                                        ) || 'N/A'}{' '}
+                                    </span>
                                     <span style={{ color: '#8c8c8c' }}>
-                                        (Date: {transcript.date || 'N/A'})
+                                        (Date:{' '}
+                                        {transcript?.date_created['$date'].split('T')[0] || 'N/A'})
                                     </span>
                                 </p>
                             </Tabs>
