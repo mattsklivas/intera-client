@@ -5,14 +5,6 @@ import fetcher from '../../core/fetcher.js'
 
 import io from 'socket.io-client'
 
-const socket = io('http://127.0.0.1:5000')
-
-// const port = process.env.PORT || 5000;
-
-socket.on('connect', () => {
-    console.log(`connect ${socket.id}`)
-})
-
 function CreateMeetingRoomModal(props) {
     const [visible, setVisible] = useState(true)
     const [api, contextHolder] = notification.useNotification()
@@ -22,6 +14,8 @@ function CreateMeetingRoomModal(props) {
     const [initialized, setInitialized] = useState(false)
     const [loading, setLoading] = useState(false)
 
+    // let socket = io.connect(null, {port: 8000, rememberTransport: false});
+    let socket = io('http://127.0.0.1:5000')
     const handleOk = async () => {
         setLoading(true)
         fetcher(props.accessToken, '/api/rooms/register_room', {
@@ -54,10 +48,6 @@ function CreateMeetingRoomModal(props) {
     }
 
     const handleCancel = () => {
-        socket.on('disconnect', () => {
-            console.log(`disconnect ${socket.id}`)
-        })
-
         setVisible(false)
         props.hideCreateMeetingRoomModal()
     }
@@ -73,11 +63,23 @@ function CreateMeetingRoomModal(props) {
             .catch(() => {})
     }
 
+    // socket.on('connect', () => {
+    //     console.log('Connected to the server!')
+    // })
+
+    // socket.on('disconnect', () => {
+    //     console.log('Disconnected from the server.')
+    // })
+
     useEffect(() => {
         if (!initialized && roomID === '') {
             populateRoomData()
             setInitialized(true)
         }
+    }, [])
+
+    useEffect(() => {
+        populateRoomData()
     }, [])
 
     return (
