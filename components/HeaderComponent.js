@@ -20,7 +20,11 @@ function Header(props) {
 
             <Col flex={1} className={styles.headerCol2}>
                 {['practice-module', 'call-page'].includes(router.pathname.split('/')[1]) ? (
-                    <Button type="primary" onClick={() => router.push('/')}>
+                    <Button
+                        className={styles.headerMiddleButton}
+                        type="primary"
+                        onClick={() => router.push('/')}
+                    >
                         {router.pathname.split('/')[1] === 'practice-module'
                             ? 'Exit Practice Module'
                             : 'Leave Meeting'}

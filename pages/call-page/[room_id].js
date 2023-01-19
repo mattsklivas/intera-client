@@ -8,6 +8,7 @@ import HeaderComponent from '../../components/HeaderComponent'
 import VideoFeedComponent from '../../components/VideoFeedComponent'
 import { theme } from '../../core/theme'
 import HistoryComponent from '../../components/HistoryComponent'
+import CallChatboxComponent from '../../components/CallChatboxComponent'
 import useTranscriptHistory from '../../hooks/useTranscriptHistory'
 import styles from '../../styles/CallPage.module.css'
 
@@ -22,24 +23,27 @@ export default function CallPage({ accessToken }) {
     const [initialized, setInitialized] = useState(false)
 
     useEffect(() => {
+        // TODO: Fetch messages of active call if rejoining
         if (!initialized && typeof transcriptHistory !== 'undefined') {
             setInitialized(true)
         }
     })
 
-    // TODO: Add the real time chat component
     if (user && initialized && !isLoading) {
         return (
             <ConfigProvider theme={theme}>
                 <HeaderComponent user={user} />
-                <div class={styles.row}>
-                    <div class={styles.columnHistory}>
+                <div className={styles.callWrapper}>
+                    <div style={{ width: '20%' }}>
                         <HistoryComponent transcripts={transcriptHistory} user={user} />
                     </div>
-                    <div class={styles.columnChat}>
-                        <HistoryComponent transcripts={transcriptHistory} user={user} />
+                    <div style={{ width: '50%' }}>
+                        <CallChatboxComponent
+                            transcript={transcriptHistory.length > 0 ? transcriptHistory[0] : []}
+                            user={user}
+                        />
                     </div>
-                    <div class={styles.columnVideo}>
+                    <div style={{ width: '30%' }}>
                         <VideoFeedComponent />
                     </div>
                 </div>

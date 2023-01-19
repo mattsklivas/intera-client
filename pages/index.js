@@ -38,13 +38,15 @@ export default function Home({ accessToken }) {
         return (
             <div styles={{ width: '100%' }}>
                 <ConfigProvider theme={theme}>
-                    <main class={styles.main}>
+                    <main className={styles.main}>
                         <Header user={user} />
-                        <div class={styles.row}>
-                            <HistoryComponent transcripts={transcriptHistory} user={user} />
-                            <div class={styles.rightColumn}>
+                        <div className={styles.row}>
+                            <div style={{ width: '30%' }}>
+                                <HistoryComponent transcripts={transcriptHistory} user={user} />
+                            </div>
+                            <div className={styles.rightColumn}>
                                 <Button
-                                    className={styles.buttonCreateRoom}
+                                    className={styles.roomButton}
                                     onClick={() => setIsCreateMeetingRoomModalOpen(true)}
                                 >
                                     <span style={{ display: 'inline-flex' }}>
@@ -53,7 +55,7 @@ export default function Home({ accessToken }) {
                                     </span>
                                 </Button>
                                 <Button
-                                    className={styles.buttonJoinRoom}
+                                    className={styles.roomButton}
                                     onClick={() => setIsJoinMeetingRoomModalOpen(true)}
                                 >
                                     <span style={{ display: 'inline-flex' }}>

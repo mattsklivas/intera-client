@@ -4,29 +4,17 @@
 }
 
 .rightColumn {
-    float: right;
-    width: 70%;
-    height: 100vh;
-    align-items: center;
+    display: flex;
     justify-content: center;
-    margin: 0 auto;
-    text-align: center;
+    align-items: center;
+    flex-direction: column;
+    height: 82%;
 }
 
-.buttonCreateRoom {
-    height: 40px;
-    position: absolute;
-    top: 40%;
-    display: inline-block;
+.roomButton {
     width: 190px;
-}
-
-.buttonJoinRoom {
     height: 40px;
-    position: absolute;
-    display: inline-block;
-    width: 190px;
-    top: 50%;
+    margin: 10px 1px;
 }
 
 .loadingRow {

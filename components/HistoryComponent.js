@@ -10,7 +10,8 @@ export default function HistoryComponent(props) {
 
     return (
         <>
-            <div className={styles.historySidebar}>
+            {/* <div className={styles.historySidebar} style={{ width: props.width || '30%' }}> */}
+            <div className={styles.historySidebar} style={{ width: '-webkit-fill-available' }}>
                 <h2 className={styles.historyTitle}>Call History</h2>
                 {props.transcripts.length > 0 ? (
                     props.transcripts.map((transcript, index) => {
@@ -22,13 +23,18 @@ export default function HistoryComponent(props) {
                                     setIsCallTranscriptModalOpen(true)
                                 }}
                             >
-                                <p>
-                                    <span>
+                                <p
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                    }}
+                                >
+                                    <span className={styles.tabText}>
                                         {transcript?.users.find(
                                             (user) => user !== props?.user?.nickname
-                                        ) || 'N/A'}{' '}
+                                        ) || 'N/A'}
                                     </span>
-                                    <span style={{ color: '#8c8c8c' }}>
+                                    <span className={styles.tabText} style={{ color: '#8c8c8c' }}>
                                         (Date:{' '}
                                         {transcript?.date_created['$date'].split('T')[0] || 'N/A'})
                                     </span>

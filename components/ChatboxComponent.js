@@ -15,6 +15,10 @@ function ChatboxComponent(props) {
                             <>
                                 <li
                                     key={i}
+                                    style={{
+                                        marginBottom:
+                                            i == transcript.messages_info.length - 1 ? 0 : 10,
+                                    }}
                                     className={cn(
                                         styles.chatboxMsgContentWrapper,
                                         msg.to === user.nickname

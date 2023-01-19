@@ -1,11 +1,16 @@
 .historySidebar {
     float: left;
-    width: 30%;
     overflow-y: hidden;
     height: 100vh;
     border-right: 4mm ridge rgba(201, 173, 167, 0.6);
 }
 
 .historyTitle {
+    display: flex;
+    justify-content: center;
     padding-top: 5%;
+}
+
+.tabText {
+    margin: 0 2px;
 }
