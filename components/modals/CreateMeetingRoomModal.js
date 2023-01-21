@@ -72,7 +72,7 @@ function CreateMeetingRoomModal(props) {
     }
 
     // create on connect event
-    // s_webrtc.connect();
+    s_webrtc.connect()
     s_webrtc.on('connect', () => {
         console.log('Connected to the server!')
     })
