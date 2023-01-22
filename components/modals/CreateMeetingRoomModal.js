@@ -67,7 +67,6 @@ function CreateMeetingRoomModal(props) {
             method: 'GET',
         })
             .then(async (res) => {
-                console.log(res)
                 setRoomId(res?.data?.room_id)
                 setInviteLink(res?.data?.invite_link)
             })
@@ -91,10 +90,6 @@ function CreateMeetingRoomModal(props) {
             populateRoomData()
             setInitialized(true)
         }
-    }, [])
-
-    useEffect(() => {
-        populateRoomData()
     }, [])
 
     return (
