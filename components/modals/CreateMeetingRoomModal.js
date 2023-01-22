@@ -31,6 +31,7 @@ function CreateMeetingRoomModal(props) {
             body: JSON.stringify({ room_id: roomID, host_type: hostType }),
         })
             .then(async (res) => {
+                console.log(res)
                 if (res.status == 200) {
                     props.router.push(`/call-page/${roomID}`)
                 } else {
@@ -43,6 +44,7 @@ function CreateMeetingRoomModal(props) {
                 }
             })
             .catch((res) => {
+                console.log(res)
                 api.error({
                     message: 'An unknown error has occurred',
                 })
@@ -65,10 +67,13 @@ function CreateMeetingRoomModal(props) {
             method: 'GET',
         })
             .then(async (res) => {
+                console.log(res)
                 setRoomId(res?.data?.room_id)
                 setInviteLink(res?.data?.invite_link)
             })
-            .catch(() => {})
+            .catch((err) => {
+                console.log(err)
+            })
     }
 
     // create on connect event

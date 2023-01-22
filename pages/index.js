@@ -21,14 +21,21 @@ export default function Home({ accessToken }) {
     const { user, error, isLoading } = useUser()
 
     // Get the history of transcripts
-    const { data: transcriptHistory } = useTranscriptHistory(user ? user.nickname : '', accessToken)
-    console.log('transcripts', transcriptHistory)
+    const { data: transcriptHistory, error: transcriptHistoryError } = useTranscriptHistory(
+        user ? user.nickname : '',
+        accessToken
+    )
 
     // Flag to check if hooks have completed
     const [initialized, setInitialized] = useState(false)
 
     // Wait for state variable initialization to show the page content
     useEffect(() => {
+        // If JWT is expired, force a logout
+        if (transcriptHistoryError?.status == 401) {
+            router.push('/api/auth/logout')
+        }
+
         if (!initialized && typeof transcriptHistory !== 'undefined') {
             setInitialized(true)
         }

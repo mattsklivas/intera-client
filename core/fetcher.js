@@ -13,12 +13,12 @@ export default function fetcher(token, url, options) {
             method: options.method,
             headers: headers,
         })
-            .then(async (response) => {
-                if (!response.ok || response.status == 401) {
-                    const res = await response.json()
+            .then(async (res) => {
+                if (!res.ok || res.status == 401) {
+                    const res = await res.json()
                     return reject(res)
                 } else {
-                    const res = await response.json()
+                    const res = await res.json()
                     return resolve(res)
                 }
             })

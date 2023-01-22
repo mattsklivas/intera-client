@@ -56,14 +56,14 @@
     word-wrap: break-word;
 }
 
-.msgFromContent {
+.msgToContent {
     align-self: flex-start;
     margin-left: 5px;
     color: #000;
     background: #dfdfe2;
 }
 
-.msgToContent {
+.msgFromContent {
     align-self: flex-end;
     margin-right: 2px;
     color: #fff;

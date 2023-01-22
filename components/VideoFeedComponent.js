@@ -1,4 +1,5 @@
 import React, { useRef } from 'react'
+import socketio from 'socket.io-client'
 // import styles from '../styles/VideoFeed.module.css'
 
 export default function VideoFeedComponent(props) {

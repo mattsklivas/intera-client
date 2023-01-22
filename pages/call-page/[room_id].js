@@ -15,7 +15,10 @@ import styles from '../../styles/CallPage.module.css'
 export default function CallPage({ accessToken }) {
     const router = useRouter()
     const { user, error, isLoading } = useUser()
-    const { data: transcriptHistory } = useTranscriptHistory(user ? user.nickname : '', accessToken)
+    const { data: transcriptHistory, error: transcriptHistoryError } = useTranscriptHistory(
+        user ? user.nickname : '',
+        accessToken
+    )
 
     const roomID =
         router.query['room_id'] || router.asPath.match(new RegExp(`[&?]${'room_id'}=(.*)(&|$)`))
@@ -23,8 +26,14 @@ export default function CallPage({ accessToken }) {
     const [initialized, setInitialized] = useState(false)
 
     useEffect(() => {
-        // TODO: Fetch messages of active call if rejoining
+        // If JWT is expired, force a logout
+        if (transcriptHistoryError?.status == 401) {
+            router.push('/api/auth/logout')
+        }
+
         if (!initialized && typeof transcriptHistory !== 'undefined') {
+            // TODO: Fetch messages of active call if rejoining
+            // Fetch room details (ie user type)
             setInitialized(true)
         }
     })
@@ -39,6 +48,7 @@ export default function CallPage({ accessToken }) {
                     </div>
                     <div style={{ width: '50%' }}>
                         <CallChatboxComponent
+                            roomID={roomID}
                             transcript={transcriptHistory.length > 0 ? transcriptHistory[0] : []}
                             user={user}
                         />
