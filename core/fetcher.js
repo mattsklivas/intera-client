@@ -15,11 +15,11 @@ export default function fetcher(token, url, options) {
         })
             .then(async (res) => {
                 if (!res.ok || res.status == 401) {
-                    const res = await res.json()
-                    return reject(res)
+                    const data = await res.json()
+                    return reject(data)
                 } else {
-                    const res = await res.json()
-                    return resolve(res)
+                    const data = await res.json()
+                    return resolve(data)
                 }
             })
             .catch((err) => {
