@@ -24,6 +24,7 @@ export default function CallPage({ accessToken }) {
     )
     const { data: roomInfo, error: roomInfoError } = useRoomInfo(roomID || '', accessToken)
     const [initialized, setInitialized] = useState(false)
+    console.log(transcriptHistory, roomInfo)
 
     useEffect(() => {
         // If JWT is expired, force a logout

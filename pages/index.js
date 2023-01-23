@@ -22,7 +22,6 @@ export default function Home({ accessToken }) {
     const invalidRoomID =
         router.query['invalid_room'] ||
         router.asPath.match(new RegExp(`[&?]${'invalid_room'}=(.*)(&|$)`))
-    console.log(invalidRoomID)
 
     const { user, error, isLoading } = useUser()
 

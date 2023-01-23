@@ -1,9 +1,10 @@
-import { React, useState } from 'react'
+import { React, useState, useEffect, useRef } from 'react'
 import { Input, Space, Button } from 'antd'
 import cn from 'classnames'
 import styles from '../styles/Chatbox.module.css'
 
 function ChatboxComponent(props) {
+    const chatRef = useRef(null)
     const user = props.user
     const transcript = props.transcript
     const context = props.context
@@ -21,6 +22,16 @@ function ChatboxComponent(props) {
         }
         return false
     })
+
+    useEffect(() => {
+        if (chatRef && chatRef.current) {
+            const elem = chatRef.current
+            elem.scroll({
+                top: elem.scrollHeight,
+                behavior: 'smooth',
+            })
+        }
+    }, [chatRef, messages])
 
     const invalidateMessage = (value) => {
         let messagesCopy = messages
@@ -42,6 +53,13 @@ function ChatboxComponent(props) {
 
         // Disable invalidation
         setCanInvalidate(false)
+
+        // Scroll to bottom
+        const elem = chatRef.current
+        elem.scroll({
+            top: elem.scrollHeight,
+            behavior: 'smooth',
+        })
     }
 
     const updateCanInvalidate = () => {
@@ -67,6 +85,7 @@ function ChatboxComponent(props) {
             }}
         >
             <div
+                ref={chatRef}
                 className={styles.chatboxWrapper}
                 style={{
                     height: '87vh',
