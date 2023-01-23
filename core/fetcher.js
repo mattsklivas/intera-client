@@ -15,7 +15,7 @@ export default function fetcher(token, url, options) {
             headers: headers,
         })
             .then(async (res) => {
-                if (!res.ok || res.status == 401) {
+                if (!res.ok || res.status != 200) {
                     const data = await res.json()
                     return reject(data)
                 } else {

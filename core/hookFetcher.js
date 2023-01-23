@@ -16,8 +16,8 @@ export default async function hookFetcher(props) {
             return res.json()
         })
         .then(async (res) => {
-            // If the user's token has expired, throw
-            if (res.status == 401) {
+            // If an error is received
+            if (res.status != 200) {
                 const error = new Error(res?.error || 'An unknown error has occured.')
                 error.status = res.status
                 throw error

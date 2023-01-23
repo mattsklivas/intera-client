@@ -1,5 +1,5 @@
 /* eslint-disable jsx-a11y/alt-text */
-import { React } from 'react'
+import { React, useState } from 'react'
 import { Row, Col, Space, Button } from 'antd'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
@@ -8,6 +8,9 @@ import styles from '../styles/Header.module.css'
 
 function Header(props) {
     const router = useRouter()
+    const [isLoadingExit, setIsLoadingExit] = useState(false)
+    const [isLoadingChange, setIsLoadingChange] = useState(false)
+    const [isLoadingLogout, setIsLoadingLogout] = useState(false)
 
     return (
         <Row className={styles.header}>
@@ -18,12 +21,22 @@ function Header(props) {
                 </div>
             </Col>
 
-            <Col flex={1} className={styles.headerCol2}>
+            <Col
+                flex={1}
+                className={
+                    router.pathname.split('/')[1] === 'practice-module'
+                        ? styles.headerCol2Practice
+                        : styles.headerCol2Call
+                }
+            >
                 {['practice-module', 'call-page'].includes(router.pathname.split('/')[1]) ? (
                     <Button
-                        className={styles.headerMiddleButton}
+                        loading={isLoadingExit}
                         type="primary"
-                        onClick={() => router.push('/')}
+                        onClick={() => {
+                            setIsLoadingExit(true)
+                            router.push('/')
+                        }}
                     >
                         {router.pathname.split('/')[1] === 'practice-module'
                             ? 'Exit Practice Module'
@@ -42,12 +55,26 @@ function Header(props) {
                     {router.pathname === '/practice-module' ? (
                         <></>
                     ) : (
-                        <Button onClick={() => router.push('/practice-module')}>
+                        <Button
+                            loading={isLoadingChange}
+                            onClick={() => {
+                                setIsLoadingChange(true)
+                                router.push('/practice-module')
+                            }}
+                        >
                             Practice Module
                         </Button>
                     )}
 
-                    <Button onClick={() => router.push('/api/auth/logout')}>Logout</Button>
+                    <Button
+                        loading={isLoadingLogout}
+                        onClick={() => {
+                            setIsLoadingLogout(true)
+                            router.push('/api/auth/logout')
+                        }}
+                    >
+                        Logout
+                    </Button>
                 </Space>
             </Col>
         </Row>

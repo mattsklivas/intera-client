@@ -5,7 +5,7 @@ import auth0 from '../auth/auth0'
 import { React, useState, useEffect } from 'react'
 import LoadingComponent from '../components/LoadingComponent'
 import Header from '../components/HeaderComponent'
-import { Button, ConfigProvider } from 'antd'
+import { Button, ConfigProvider, notification } from 'antd'
 import JoinMeetingRoomModal from '../components/modals/JoinMeetingRoomModal'
 import CreateMeetingRoomModal from '../components/modals/CreateMeetingRoomModal'
 import HistoryComponent from '../components/HistoryComponent'
@@ -15,8 +15,13 @@ import { theme } from '../core/theme'
 
 export default function Home({ accessToken }) {
     const router = useRouter()
+    const [api, contextHolder] = notification.useNotification()
     const [isJoinMeetingRoomModalOpen, setIsJoinMeetingRoomModalOpen] = useState(false)
     const [isCreateMeetingRoomModalOpen, setIsCreateMeetingRoomModalOpen] = useState(false)
+    const invalidRoomID =
+        router.query['invalid_room'] ||
+        router.asPath.match(new RegExp(`[&?]${'invalid_room'}=(.*)(&|$)`))
+    console.log(invalidRoomID)
 
     const { user, error, isLoading } = useUser()
 
@@ -36,6 +41,12 @@ export default function Home({ accessToken }) {
             router.push('/api/auth/logout')
         }
 
+        if (invalidRoomID) {
+            api.error({
+                message: `Error: Room ID '${invalidRoomID}' is deactivated or unrecognized.`,
+            })
+        }
+
         if (!initialized && typeof transcriptHistory !== 'undefined') {
             setInitialized(true)
         }
@@ -44,6 +55,7 @@ export default function Home({ accessToken }) {
     if (user && initialized && !isLoading) {
         return (
             <div styles={{ width: '100%' }}>
+                {contextHolder}
                 <ConfigProvider theme={theme}>
                     <main className={styles.main}>
                         <Header user={user} />

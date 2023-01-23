@@ -23,14 +23,15 @@ export default function CallPage({ accessToken }) {
         accessToken
     )
     const { data: roomInfo, error: roomInfoError } = useRoomInfo(roomID || '', accessToken)
-    console.log(roomInfo)
-
     const [initialized, setInitialized] = useState(false)
 
     useEffect(() => {
         // If JWT is expired, force a logout
         if (transcriptHistoryError?.status == 401) {
             router.push('/api/auth/logout')
+        } else if (roomInfoError?.status == 404) {
+            // If room ID is invalid, redirect to home page
+            router.push(`/?invalid_room=${roomID}`)
         }
 
         if (
@@ -41,6 +42,7 @@ export default function CallPage({ accessToken }) {
             // TODO: Fetch messages of active call if rejoining
             // TODO: Fetch state of room and confirm whether it exists/is active
             // TODO: Fetch role of user
+            // TODO: unregister room if host leaves
             // Fetch room details (ie user type)
             setInitialized(true)
         }
