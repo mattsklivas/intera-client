@@ -18,6 +18,7 @@ export default function Home({ accessToken }) {
     const [api, contextHolder] = notification.useNotification()
     const [isJoinMeetingRoomModalOpen, setIsJoinMeetingRoomModalOpen] = useState(false)
     const [isCreateMeetingRoomModalOpen, setIsCreateMeetingRoomModalOpen] = useState(false)
+    const [canDisplayError, setCanDisplayError] = useState(true)
     const invalidRoomID =
         router.query['invalid_room'] ||
         router.asPath.match(new RegExp(`[&?]${'invalid_room'}=(.*)(&|$)`))
@@ -41,10 +42,12 @@ export default function Home({ accessToken }) {
             router.push('/api/auth/logout')
         }
 
-        if (invalidRoomID) {
+        // If an invalid room ID is supplied for the call page, return error
+        if (invalidRoomID && canDisplayError) {
             api.error({
                 message: `Error: Room ID '${invalidRoomID}' is deactivated or unrecognized.`,
             })
+            setCanDisplayError(false)
         }
 
         if (!initialized && typeof transcriptHistory !== 'undefined') {
