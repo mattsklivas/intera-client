@@ -7,6 +7,7 @@ import LoadingComponent from '../../components/LoadingComponent'
 import HeaderComponent from '../../components/HeaderComponent'
 import VideoFeedComponent from '../../components/VideoFeedComponent'
 import { theme } from '../../core/theme'
+import { getQuery } from '../../core/utils'
 import HistoryComponent from '../../components/HistoryComponent'
 import ChatboxComponent from '../../components/ChatboxComponent'
 import useTranscriptHistory from '../../hooks/useTranscriptHistory'
@@ -15,8 +16,7 @@ import styles from '../../styles/CallPage.module.css'
 
 export default function CallPage({ accessToken }) {
     const router = useRouter()
-    const roomID =
-        router.query['room_id'] || router.asPath.match(new RegExp(`[&?]${'room_id'}=(.*)(&|$)`))
+    const roomID = getQuery(router, 'room_id')
     const { user, error, isLoading } = useUser()
     const { data: transcriptHistory, error: transcriptHistoryError } = useTranscriptHistory(
         user ? user.nickname : '',
@@ -24,7 +24,6 @@ export default function CallPage({ accessToken }) {
     )
     const { data: roomInfo, error: roomInfoError } = useRoomInfo(roomID || '', accessToken)
     const [initialized, setInitialized] = useState(false)
-    console.log(transcriptHistory, roomInfo)
 
     useEffect(() => {
         // If JWT is expired, force a logout
@@ -33,18 +32,20 @@ export default function CallPage({ accessToken }) {
         } else if (roomInfoError?.status == 404) {
             // If room ID is invalid, redirect to home page
             router.push(`/?invalid_room=${roomID}`)
+        } else if (typeof roomInfo !== 'undefined' && roomInfo?.active == false) {
+            // If room ID is expired, redirect to home page
+            router.push(`/?expired_room=${roomID}`)
         }
 
         if (
             !initialized &&
             typeof transcriptHistory !== 'undefined' &&
-            typeof roomInfo !== 'undefined'
+            typeof roomInfo !== 'undefined' &&
+            roomInfo?.active == true
         ) {
             // TODO: Fetch messages of active call if rejoining
             // TODO: Fetch state of room and confirm whether it exists/is active
-            // TODO: Fetch role of user
             // TODO: unregister room if host leaves
-            // Fetch room details (ie user type)
             setInitialized(true)
         }
     })
@@ -60,6 +61,7 @@ export default function CallPage({ accessToken }) {
                     <div style={{ width: '40%' }}>
                         <ChatboxComponent
                             context={'call'}
+                            roomInfo={roomInfo}
                             roomID={roomID}
                             transcript={transcriptHistory.length > 0 ? transcriptHistory[0] : []}
                             user={user}

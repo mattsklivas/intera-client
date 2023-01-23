@@ -12,6 +12,7 @@ import HistoryComponent from '../components/HistoryComponent'
 import { MdCreate, MdSupervisorAccount } from 'react-icons/md'
 import useTranscriptHistory from '../hooks/useTranscriptHistory'
 import { theme } from '../core/theme'
+import { getQuery } from '../core/utils'
 
 export default function Home({ accessToken }) {
     const router = useRouter()
@@ -19,9 +20,8 @@ export default function Home({ accessToken }) {
     const [isJoinMeetingRoomModalOpen, setIsJoinMeetingRoomModalOpen] = useState(false)
     const [isCreateMeetingRoomModalOpen, setIsCreateMeetingRoomModalOpen] = useState(false)
     const [canDisplayError, setCanDisplayError] = useState(true)
-    const invalidRoomID =
-        router.query['invalid_room'] ||
-        router.asPath.match(new RegExp(`[&?]${'invalid_room'}=(.*)(&|$)`))
+    const invalidRoomID = getQuery(router, 'invalid_room')
+    const expiredRoomID = getQuery(router, 'expired_room')
 
     const { user, error, isLoading } = useUser()
 
@@ -41,11 +41,20 @@ export default function Home({ accessToken }) {
             router.push('/api/auth/logout')
         }
 
-        // If an invalid room ID is supplied for the call page, return error
-        if (invalidRoomID && canDisplayError) {
-            api.error({
-                message: `Error: Room ID '${invalidRoomID}' is deactivated or unrecognized.`,
-            })
+        // Display error notification if redirected to index due to an error
+        if (canDisplayError) {
+            if (invalidRoomID) {
+                // If an invalid room ID is supplied for the call page, return error
+                api.error({
+                    message: `Error: Room ID '${invalidRoomID}' is invalid.`,
+                })
+            } else if (expiredRoomID) {
+                // If an expired room ID is supplied for the call page, return error
+                api.error({
+                    message: `Error: Room '${expiredRoomID}' has expired.`,
+                })
+            }
+
             setCanDisplayError(false)
         }
 

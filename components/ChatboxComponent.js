@@ -7,6 +7,7 @@ function ChatboxComponent(props) {
     const chatRef = useRef(null)
     const user = props.user
     const transcript = props.transcript
+    const roomInfo = props.roomInfo
     const context = props.context
     const [messages, setMessages] = useState(
         transcript?.messages_info ? [...transcript.messages_info] : []
