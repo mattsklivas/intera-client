@@ -11,6 +11,7 @@ export default function fetcher(token, url, options) {
     return new Promise((resolve, reject) => {
         fetch(url, {
             method: options.method,
+            body: options.body,
             headers: headers,
         })
             .then(async (res) => {

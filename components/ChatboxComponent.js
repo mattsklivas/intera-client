@@ -144,7 +144,7 @@ function ChatboxComponent(props) {
                             <Input
                                 disabled={!canInvalidate}
                                 status="error"
-                                style={{ width: '70vh' }}
+                                style={{ width: '30vw' }}
                                 value={inputText}
                                 onChange={(event) => setInputText(event.target.value)}
                                 onPressEnter={() => invalidateMessage(inputText)}

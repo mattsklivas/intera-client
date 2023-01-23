@@ -10,18 +10,20 @@ import { theme } from '../../core/theme'
 import HistoryComponent from '../../components/HistoryComponent'
 import ChatboxComponent from '../../components/ChatboxComponent'
 import useTranscriptHistory from '../../hooks/useTranscriptHistory'
+import useRoomInfo from '../../hooks/useRoomInfo'
 import styles from '../../styles/CallPage.module.css'
 
 export default function CallPage({ accessToken }) {
     const router = useRouter()
+    const roomID =
+        router.query['room_id'] || router.asPath.match(new RegExp(`[&?]${'room_id'}=(.*)(&|$)`))
     const { user, error, isLoading } = useUser()
     const { data: transcriptHistory, error: transcriptHistoryError } = useTranscriptHistory(
         user ? user.nickname : '',
         accessToken
     )
-
-    const roomID =
-        router.query['room_id'] || router.asPath.match(new RegExp(`[&?]${'room_id'}=(.*)(&|$)`))
+    const { data: roomInfo, error: roomInfoError } = useRoomInfo(roomID || '', accessToken)
+    console.log(roomInfo)
 
     const [initialized, setInitialized] = useState(false)
 
@@ -31,7 +33,11 @@ export default function CallPage({ accessToken }) {
             router.push('/api/auth/logout')
         }
 
-        if (!initialized && typeof transcriptHistory !== 'undefined') {
+        if (
+            !initialized &&
+            typeof transcriptHistory !== 'undefined' &&
+            typeof roomInfo !== 'undefined'
+        ) {
             // TODO: Fetch messages of active call if rejoining
             // TODO: Fetch state of room and confirm whether it exists/is active
             // TODO: Fetch role of user
@@ -48,7 +54,7 @@ export default function CallPage({ accessToken }) {
                     <div style={{ width: '20%' }}>
                         <HistoryComponent transcripts={transcriptHistory} user={user} />
                     </div>
-                    <div style={{ width: '50%' }}>
+                    <div style={{ width: '40%' }}>
                         <ChatboxComponent
                             context={'call'}
                             roomID={roomID}
@@ -56,7 +62,7 @@ export default function CallPage({ accessToken }) {
                             user={user}
                         />
                     </div>
-                    <div style={{ width: '30%' }}>
+                    <div style={{ width: '40%' }}>
                         <VideoFeedComponent />
                     </div>
                 </div>
