@@ -8,7 +8,7 @@ import HeaderComponent from '../../components/HeaderComponent'
 import VideoFeedComponent from '../../components/VideoFeedComponent'
 import { theme } from '../../core/theme'
 import HistoryComponent from '../../components/HistoryComponent'
-import CallChatboxComponent from '../../components/CallChatboxComponent'
+import ChatboxComponent from '../../components/ChatboxComponent'
 import useTranscriptHistory from '../../hooks/useTranscriptHistory'
 import styles from '../../styles/CallPage.module.css'
 
@@ -33,6 +33,8 @@ export default function CallPage({ accessToken }) {
 
         if (!initialized && typeof transcriptHistory !== 'undefined') {
             // TODO: Fetch messages of active call if rejoining
+            // TODO: Fetch state of room and confirm whether it exists/is active
+            // TODO: Fetch role of user
             // Fetch room details (ie user type)
             setInitialized(true)
         }
@@ -47,7 +49,8 @@ export default function CallPage({ accessToken }) {
                         <HistoryComponent transcripts={transcriptHistory} user={user} />
                     </div>
                     <div style={{ width: '50%' }}>
-                        <CallChatboxComponent
+                        <ChatboxComponent
+                            context={'call'}
                             roomID={roomID}
                             transcript={transcriptHistory.length > 0 ? transcriptHistory[0] : []}
                             user={user}
