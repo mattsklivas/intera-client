@@ -16,14 +16,31 @@ import { getQuery } from '../core/utils'
 
 export default function Home({ accessToken }) {
     const router = useRouter()
+    const { user, error, isLoading } = useUser()
     const [api, contextHolder] = notification.useNotification()
     const [isJoinMeetingRoomModalOpen, setIsJoinMeetingRoomModalOpen] = useState(false)
     const [isCreateMeetingRoomModalOpen, setIsCreateMeetingRoomModalOpen] = useState(false)
     const [canDisplayError, setCanDisplayError] = useState(true)
+
+    // Call page redirects resulting from fatal errors
     const invalidRoomID = getQuery(router, 'invalid_room')
     const expiredRoomID = getQuery(router, 'expired_room')
+    const fullRoomID = getQuery(router, 'full_room')
 
-    const { user, error, isLoading } = useUser()
+    // Get the error notification message
+    let errorMsg = ''
+    if (invalidRoomID) {
+        // If an invalid room ID is supplied for the call page
+        errorMsg = `Error: Room ID '${invalidRoomID}' is invalid.`
+    } else if (expiredRoomID) {
+        // If an expired room ID is supplied for the call page
+        errorMsg = `Error: Room '${expiredRoomID}' has expired.`
+    } else if (fullRoomID) {
+        // If a room is full
+        errorMsg = `Error: Room '${fullRoomID}' is full.`
+    } else {
+        errorMsg = 'An unknown error has occurred.'
+    }
 
     // Get the history of transcripts
     const { data: transcriptHistory, error: transcriptHistoryError } = useTranscriptHistory(
@@ -41,83 +58,80 @@ export default function Home({ accessToken }) {
             router.push('/api/auth/logout')
         }
 
-        // Display error notification if redirected to index due to an error
-        if (canDisplayError) {
-            if (invalidRoomID) {
-                // If an invalid room ID is supplied for the call page, return error
-                api.error({
-                    message: `Error: Room ID '${invalidRoomID}' is invalid.`,
-                })
-            } else if (expiredRoomID) {
-                // If an expired room ID is supplied for the call page, return error
-                api.error({
-                    message: `Error: Room '${expiredRoomID}' has expired.`,
-                })
-            }
-
-            setCanDisplayError(false)
-        }
-
         if (!initialized && typeof transcriptHistory !== 'undefined') {
             setInitialized(true)
         }
     })
 
+    // Display error notification if redirected to index page due to an error
+    useEffect(() => {
+        // Display the error notification
+        api.error({
+            message: errorMsg,
+            maxCount: 0,
+        })
+
+        // Only display error once
+        setCanDisplayError(false)
+    }, [canDisplayError && (invalidRoomID || expiredRoomID || fullRoomID)])
+
     if (user && initialized && !isLoading) {
         return (
-            <div styles={{ width: '100%' }}>
+            <>
                 {contextHolder}
-                <ConfigProvider theme={theme}>
-                    <main className={styles.main}>
-                        <Header user={user} />
-                        <div className={styles.row}>
-                            <div style={{ width: '30%' }}>
-                                <HistoryComponent transcripts={transcriptHistory} user={user} />
+                <div styles={{ width: '100%' }}>
+                    <ConfigProvider theme={theme}>
+                        <main className={styles.main}>
+                            <Header user={user} />
+                            <div className={styles.row}>
+                                <div style={{ width: '30%' }}>
+                                    <HistoryComponent transcripts={transcriptHistory} user={user} />
+                                </div>
+                                <div className={styles.rightColumn}>
+                                    <Button
+                                        className={styles.roomButton}
+                                        onClick={() => setIsCreateMeetingRoomModalOpen(true)}
+                                    >
+                                        <span style={{ display: 'inline-flex' }}>
+                                            Create Meeting Room&nbsp;
+                                            <MdCreate size={20} />
+                                        </span>
+                                    </Button>
+                                    <Button
+                                        className={styles.roomButton}
+                                        onClick={() => setIsJoinMeetingRoomModalOpen(true)}
+                                    >
+                                        <span style={{ display: 'inline-flex' }}>
+                                            Join Meeting Room&nbsp;&nbsp;&nbsp;
+                                            <MdSupervisorAccount size={20} />
+                                        </span>
+                                    </Button>
+                                </div>
                             </div>
-                            <div className={styles.rightColumn}>
-                                <Button
-                                    className={styles.roomButton}
-                                    onClick={() => setIsCreateMeetingRoomModalOpen(true)}
-                                >
-                                    <span style={{ display: 'inline-flex' }}>
-                                        Create Meeting Room&nbsp;
-                                        <MdCreate size={20} />
-                                    </span>
-                                </Button>
-                                <Button
-                                    className={styles.roomButton}
-                                    onClick={() => setIsJoinMeetingRoomModalOpen(true)}
-                                >
-                                    <span style={{ display: 'inline-flex' }}>
-                                        Join Meeting Room&nbsp;&nbsp;&nbsp;
-                                        <MdSupervisorAccount size={20} />
-                                    </span>
-                                </Button>
-                            </div>
-                        </div>
-                    </main>
-                    {isJoinMeetingRoomModalOpen && (
-                        <JoinMeetingRoomModal
-                            router={router}
-                            accessToken={accessToken}
-                            user={user}
-                            hideJoinMeetingRoomModal={() => {
-                                setIsJoinMeetingRoomModalOpen(false)
-                            }}
-                        />
-                    )}
-                    {isCreateMeetingRoomModalOpen && (
-                        <CreateMeetingRoomModal
-                            router={router}
-                            accessToken={accessToken}
-                            user={user}
-                            hideCreateMeetingRoomModal={() => {
-                                setIsCreateMeetingRoomModalOpen(false)
-                            }}
-                        />
-                    )}
-                </ConfigProvider>
-            </div>
+                        </main>
+                        {isJoinMeetingRoomModalOpen && (
+                            <JoinMeetingRoomModal
+                                router={router}
+                                accessToken={accessToken}
+                                user={user}
+                                hideJoinMeetingRoomModal={() => {
+                                    setIsJoinMeetingRoomModalOpen(false)
+                                }}
+                            />
+                        )}
+                        {isCreateMeetingRoomModalOpen && (
+                            <CreateMeetingRoomModal
+                                router={router}
+                                accessToken={accessToken}
+                                user={user}
+                                hideCreateMeetingRoomModal={() => {
+                                    setIsCreateMeetingRoomModalOpen(false)
+                                }}
+                            />
+                        )}
+                    </ConfigProvider>
+                </div>
+            </>
         )
     } else if (isLoading) {
         return <LoadingComponent msg="Loading..." />

@@ -35,6 +35,13 @@ export default function CallPage({ accessToken }) {
         } else if (typeof roomInfo !== 'undefined' && roomInfo?.active == false) {
             // If room ID is expired, redirect to home page
             router.push(`/?expired_room=${roomID}`)
+        } else if (
+            typeof roomInfo !== 'undefined' &&
+            roomInfo?.users.length == 2 &&
+            !roomInfo?.users.find((name) => name === user.nickname)
+        ) {
+            // If room if full, redirect to home page
+            router.push(`/?full_room=${roomID}`)
         }
 
         if (
