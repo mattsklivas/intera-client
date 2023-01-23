@@ -20,13 +20,13 @@ export default function VideoFeedComponent(props) {
                 <div style={{ textAlign: 'center' }}>
                     <h2>Host</h2>
                     <div>
-                        <video style={{ width: '98%', height: 'auto' }} controls src=""></video>
+                        <video style={{ width: '80%', height: 'auto' }} controls src=""></video>
                     </div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
                     <h2>Guest</h2>
                     <div>
-                        <video style={{ width: '98%', height: 'auto' }} controls src=""></video>
+                        <video style={{ width: '80%', height: 'auto' }} controls src=""></video>
                     </div>
                 </div>
             </div>
