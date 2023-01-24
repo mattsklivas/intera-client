@@ -11,7 +11,8 @@ function JoinMeetingRoomModal(props) {
     // TODO: Test this
     const handleOk = () => {
         setLoading(true)
-        if (RoomID.length == 8) {
+        console.log(roomID)
+        if (roomID.length == 8) {
             fetcher(props.accessToken, '/api/join_room', {
                 method: 'POST',
                 body: JSON.stringify({ room_id: roomID, user_id: props.user.nickname }),
@@ -70,7 +71,7 @@ function JoinMeetingRoomModal(props) {
                 <Space>
                     <Input
                         placeholder="Enter Meeting Room ID"
-                        onChange={(value) => setRoomID(value)}
+                        onChange={(event) => setRoomID(event.target.value)}
                     />
                 </Space>
             </Modal>
