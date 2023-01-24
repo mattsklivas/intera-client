@@ -24,8 +24,8 @@ function Header(props) {
             <Col
                 flex={1}
                 className={
-                    router.pathname.split('/')[1] === 'practice-module'
-                        ? styles.headerCol2Practice
+                    router.pathname.split('/')[1] !== 'call-page'
+                        ? styles.headerCol2
                         : styles.headerCol2Call
                 }
             >
