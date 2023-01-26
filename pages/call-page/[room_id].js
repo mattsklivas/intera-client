@@ -18,7 +18,7 @@ export default function CallPage({ accessToken }) {
     const [spaceBarPressed, setSpaceBarPressed] = useState(false)
     const [audioChunk, setAudioChunk] = useState(null)
     const audioRecording = useRef(null)
-
+    const [audioStream, setAudioStream] = useState(null)
     const router = useRouter()
     const roomID = getQuery(router, 'room_id')
     const { user, error, isLoading } = useUser()
@@ -34,6 +34,7 @@ export default function CallPage({ accessToken }) {
         navigator.mediaDevices
             .getUserMedia({ audio: true, video: false })
             .then((stream) => {
+                setAudioStream(stream)
                 audioRecording.current = new MediaRecorder(stream)
                 audioRecording.current.ondataavailable = (e) => {
                     setAudioChunk(e.data)
@@ -42,7 +43,17 @@ export default function CallPage({ accessToken }) {
             .catch((error) => {
                 console.error(error)
             })
+
+        return () => {
+            stopwebcam()
+        }
     }, [])
+
+    const stopwebcam = () => {
+        if (audioStream) {
+            audioStream.getTracks().forEach((track) => track.stop())
+        }
+    }
 
     useEffect(() => {
         // If JWT is expired, force a logout
