@@ -1,4 +1,4 @@
-import { React, useState, useEffect } from 'react'
+import { React, useState, useEffect, useRef } from 'react'
 import { ConfigProvider } from 'antd'
 import { useRouter } from 'next/router'
 import { useUser } from '@auth0/nextjs-auth0/client'
@@ -15,6 +15,10 @@ import useRoomInfo from '../../hooks/useRoomInfo'
 import styles from '../../styles/CallPage.module.css'
 
 export default function CallPage({ accessToken }) {
+    const [spaceBarPressed, setSpaceBarPressed] = useState(false)
+    const [audioChunk, setAudioChunk] = useState(null)
+    const audioRecording = useRef(null)
+
     const router = useRouter()
     const roomID = getQuery(router, 'room_id')
     const { user, error, isLoading } = useUser()
@@ -24,6 +28,21 @@ export default function CallPage({ accessToken }) {
     )
     const { data: roomInfo, error: roomInfoError } = useRoomInfo(roomID || '', accessToken)
     const [initialized, setInitialized] = useState(false)
+
+    // This useffect manages the user webcam to capture the audio
+    useEffect(() => {
+        navigator.mediaDevices
+            .getUserMedia({ audio: true, video: false })
+            .then((stream) => {
+                audioRecording.current = new MediaRecorder(stream)
+                audioRecording.current.ondataavailable = (e) => {
+                    setAudioChunk(e.data)
+                }
+            })
+            .catch((error) => {
+                console.error(error)
+            })
+    }, [])
 
     useEffect(() => {
         // If JWT is expired, force a logout
@@ -56,6 +75,53 @@ export default function CallPage({ accessToken }) {
             setInitialized(true)
         }
     })
+
+    // this useeffect takes care of user input for push to talk
+    useEffect(() => {
+        const handleKeyPress = (event) => {
+            if (event.keyCode === 32 && !spaceBarPressed) {
+                // console.log('pressed')
+                startRecording()
+                setSpaceBarPressed(true)
+            }
+        }
+        const handleKeyRelease = (event) => {
+            if (event.keyCode === 32 && spaceBarPressed) {
+                // console.log('released')
+                stopRecording()
+                setSpaceBarPressed(false)
+            }
+        }
+        document.addEventListener('keydown', handleKeyPress)
+        document.addEventListener('keyup', handleKeyRelease)
+        return () => {
+            document.removeEventListener('keydown', handleKeyPress)
+            document.removeEventListener('keyup', handleKeyRelease)
+        }
+    }, [spaceBarPressed])
+
+    // start the media recorder
+    const startRecording = async () => {
+        audioRecording.current.start()
+    }
+
+    // stop the media recorder
+    // and take the audio file (based on user input) and retieve the response from the server
+    // for transcription
+    const stopRecording = async () => {
+        audioRecording.current.stop()
+        if (audioChunk) {
+            const formData = new FormData()
+            formData.append('audio', audioChunk)
+            console.log(audioChunk)
+            const res = await fetch('http://localhost:8000/api/upload', {
+                method: 'POST',
+                body: formData,
+            })
+            // TODO: add constraints based on server response
+            // TODO: connect to ChatboxComponent
+        }
+    }
 
     if (user && initialized && !isLoading) {
         return (
