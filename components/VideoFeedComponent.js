@@ -26,6 +26,7 @@ export default function VideoFeedComponent(props) {
             })
             .catch(console.error)
 
+        // TODO: unmount properly
         return () => {
             stopwebcam()
         }

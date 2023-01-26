@@ -27,6 +27,7 @@ export default function PracticeModule({ accessToken }) {
     const [isretry, setIsRetry] = useState(true)
     const [wordYoutubeUrl, setWordYoutubeUrl] = useState(null)
     const [translationResponse, setTranslationResponse] = useState(null)
+    const [videoChunk, setVideoChunk] = useState(null)
 
     const startWebcam = () => {
         // Check to see if browser has camera support
@@ -35,7 +36,7 @@ export default function PracticeModule({ accessToken }) {
         }
 
         navigator.mediaDevices
-            .getUserMedia({ video: true, audio: false })
+            .getUserMedia({ video: true, audio: true })
             .then((s) => {
                 // video stream with the current webcam stream
                 videoStream.current = s
@@ -88,25 +89,25 @@ export default function PracticeModule({ accessToken }) {
         SetIsRecording(false)
 
         // convert blob to mp4
-        // const formD = new FormData()
-        // formD.append('video', blobContent, 'video.mp4')
+        const formD = new FormData()
+        formD.append('audio', blobContent)
 
         // this is where you send the video and get the response
-        // fetch('http://localhost:3000/api/video', {
-        //    method: 'POST',
-        //    body: url,
-        // })
-        //    .then((response) => response.json())
-        //    .then((data) => {
-        //         setTranslationResponse(data.result)
-        //        if (data.result == 'bad') {
-        //            setIsAnswerModalOpen(true)
-        //        }
-        //        setUrl(null)
-        //        setIsRetry(false)
-        // change to result view only if response is received
-        //        SetIsResultView(true)
-        //    })
+        fetch('http://localhost:8000/api/upload', {
+            method: 'POST',
+            body: formD,
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                setTranslationResponse(data.result)
+                if (data.result == 'bad') {
+                    setIsAnswerModalOpen(true)
+                }
+                setUrl(null)
+                setIsRetry(false)
+                // change to result view only if response is received
+                SetIsResultView(true)
+            })
 
         setUrl(null)
         setBlobContent(null)
