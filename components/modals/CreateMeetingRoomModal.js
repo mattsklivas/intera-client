@@ -35,7 +35,7 @@ function CreateMeetingRoomModal(props) {
                     props.router.push(`/call-page/${roomID}`)
                 } else {
                     api.error({
-                        message: `Error ${res.status}: ${res.message}`,
+                        message: `Error ${res.status}: ${res.error}`,
                     })
                     setLoading(false)
                     setVisible(false)

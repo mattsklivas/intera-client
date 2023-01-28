@@ -144,6 +144,7 @@ export default function CallPage({ accessToken }) {
                     </div>
                     <div style={{ width: '40%' }}>
                         <ChatboxComponent
+                            accessToken={accessToken}
                             context={'call'}
                             roomInfo={roomInfo}
                             roomID={roomID}

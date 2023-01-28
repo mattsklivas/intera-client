@@ -22,7 +22,7 @@ function JoinMeetingRoomModal(props) {
                         props.router.push(`/call-page/${roomId}`)
                     } else {
                         api.error({
-                            message: `Error ${res.status}: ${res.message}`,
+                            message: `Error ${res.status}: ${res.error}`,
                         })
                         setLoading(false)
                     }
