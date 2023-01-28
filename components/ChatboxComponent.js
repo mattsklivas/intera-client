@@ -1,10 +1,10 @@
-import { React, useState, useEffect, useRef } from 'react'
+import { React, forwardRef, useImperativeHandle, useState, useEffect, useRef } from 'react'
 import { Input, Space, Button, notification } from 'antd'
 import cn from 'classnames'
 import styles from '../styles/Chatbox.module.css'
 import fetcher from '../core/fetcher'
 
-function ChatboxComponent(props) {
+const ChatboxComponent = forwardRef((props, ref) => {
     const chatRef = useRef(null)
     const [api, contextHolder] = notification.useNotification()
     const [isInvalidateLoading, setIsInvalidateLoading] = useState(false)
@@ -26,6 +26,13 @@ function ChatboxComponent(props) {
         }
         return false
     })
+
+    // Append new messages from parent
+    useImperativeHandle(ref, () => ({
+        appendMessage(newMsg) {
+            setMessages([...messages].concat(newMsg))
+        },
+    }))
 
     useEffect(() => {
         if (chatRef && chatRef.current) {
@@ -140,61 +147,61 @@ function ChatboxComponent(props) {
                         <ol className={styles.chatboxMsgList}>
                             {messages.map((msg, i) => {
                                 return (
-                                    <>
-                                        <li
-                                            key={i}
+                                    <li
+                                        key={`chat-wrapper-${i}`}
+                                        style={{
+                                            background:
+                                                msg.from === user.nickname ? '#1b98e0' : '#dfdfe2',
+                                            marginBottom: i == messages.length - 1 ? 0 : 10,
+                                        }}
+                                        className={cn(
+                                            styles.chatboxMsgContentWrapper,
+                                            msg.from === user.nickname
+                                                ? styles.msgFromContent
+                                                : styles.msgToContent
+                                        )}
+                                    >
+                                        <div
+                                            key={`chat-msg-content-${i}`}
                                             style={{
-                                                background:
-                                                    msg.from === user.nickname
-                                                        ? '#1b98e0'
-                                                        : '#dfdfe2',
-                                                marginBottom: i == messages.length - 1 ? 0 : 10,
+                                                textDecoration: msg.edited
+                                                    ? 'line-through'
+                                                    : 'none',
                                             }}
-                                            className={cn(
-                                                styles.chatboxMsgContentWrapper,
-                                                msg.from === user.nickname
-                                                    ? styles.msgFromContent
-                                                    : styles.msgToContent
-                                            )}
                                         >
+                                            {msg.text}
+                                        </div>
+                                        {msg.edited && (
                                             <div
-                                                style={{
-                                                    textDecoration: msg.edited
-                                                        ? 'line-through'
-                                                        : 'none',
-                                                }}
+                                                key={`chat-msg-edited-${i}`}
+                                                style={{ paddingTop: 10 }}
                                             >
-                                                {msg.text}
+                                                {msg.corrected}
                                             </div>
+                                        )}
+                                        <div
+                                            key={`chat-msg-info-${i}`}
+                                            style={{
+                                                float: 'right',
+                                                paddingTop: 5,
+                                                fontSize: 13,
+                                            }}
+                                        >
                                             {msg.edited && (
-                                                <div style={{ paddingTop: 10 }}>
-                                                    {msg.corrected}
-                                                </div>
+                                                <>
+                                                    <span style={{ fontWeight: 500 }}>Edited</span>
+                                                    <span> - </span>
+                                                </>
                                             )}
-                                            <div
-                                                style={{
-                                                    float: 'right',
-                                                    paddingTop: 5,
-                                                    fontSize: 13,
-                                                }}
-                                            >
-                                                {msg.edited && (
-                                                    <>
-                                                        <span style={{ fontWeight: 500 }}>
-                                                            Edited
-                                                        </span>
-                                                        <span> - </span>
-                                                    </>
-                                                )}
-                                                {new Date(
-                                                    msg.date_created['$date']
-                                                ).toLocaleTimeString([], {
+                                            {new Date(msg.date_created['$date']).toLocaleTimeString(
+                                                [],
+                                                {
                                                     hour: '2-digit',
                                                     minute: '2-digit',
-                                                })}
-                                            </div>
-                                        </li>
-                                    </>
+                                                }
+                                            )}
+                                        </div>
+                                    </li>
                                 )
                             })}
                         </ol>
@@ -243,6 +250,8 @@ function ChatboxComponent(props) {
             </div>
         </>
     )
-}
+})
+
+ChatboxComponent.displayName = 'Chatbox'
 
 export default ChatboxComponent

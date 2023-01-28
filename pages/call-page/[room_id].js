@@ -15,6 +15,7 @@ import useRoomInfo from '../../hooks/useRoomInfo'
 import styles from '../../styles/CallPage.module.css'
 
 export default function CallPage({ accessToken }) {
+    const ref = useRef()
     const [spaceBarPressed, setSpaceBarPressed] = useState(false)
     const [audioChunk, setAudioChunk] = useState(null)
     const audioRecording = useRef(null)
@@ -134,6 +135,24 @@ export default function CallPage({ accessToken }) {
         }
     }
 
+    // Add a message from either the host or guest
+    const appendMessage = async (newMsg) => {
+        // CORRECT:
+        // ref.current.appendMessage(newMsg)
+
+        // EXAMPLE:
+        ref.current.appendMessage({
+            date_created: '2024-01-17T21:08:02.533+00:00',
+            room_id: '70f7c472',
+            to: 'Wilson',
+            from: user.nickname,
+            text: 'Ut enim ad minima veniam,',
+            edited: false,
+            message_type: 'STT',
+            corrected: null,
+        })
+    }
+
     if (user && initialized && !isLoading) {
         return (
             <ConfigProvider theme={theme}>
@@ -144,6 +163,7 @@ export default function CallPage({ accessToken }) {
                     </div>
                     <div style={{ width: '40%' }}>
                         <ChatboxComponent
+                            ref={ref}
                             accessToken={accessToken}
                             context={'call'}
                             roomInfo={roomInfo}
