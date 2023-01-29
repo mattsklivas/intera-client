@@ -46,32 +46,7 @@ export default function CallPage({ accessToken }) {
         transports: ['websocket'],
     })
 
-    // Manage the user webcam to capture the audio
-    useEffect(() => {
-        navigator.mediaDevices
-            .getUserMedia({ audio: true, video: false })
-            .then((stream) => {
-                setAudioStream(stream)
-                audioRecording.current = new MediaRecorder(stream)
-                audioRecording.current.ondataavailable = (e) => {
-                    setAudioChunk(e.data)
-                }
-            })
-            .catch((error) => {
-                console.error(error)
-            })
-
-        return () => {
-            stopwebcam()
-        }
-    }, [])
-
-    const stopwebcam = () => {
-        if (audioStream) {
-            audioStream.getTracks().forEach((track) => track.stop())
-        }
-    }
-
+    // Room initialization
     useEffect(() => {
         // If JWT is expired, force a logout
         if (transcriptHistoryError?.status == 401) {
@@ -106,7 +81,49 @@ export default function CallPage({ accessToken }) {
         }
     })
 
-    // this useeffect takes care of user input for push to talk
+    // Websocket listeners
+    useEffect(() => {
+        socket.on('connect', (data) => {
+            console.log('connected', data)
+        })
+
+        socket.on('disconnect', (data) => {
+            console.log('disconnected', data)
+        })
+
+        socket.on('message', (data) => {
+            console.log('message', data || 'none')
+        })
+
+        // Refresh chatbox
+        socket.on('mutate', (data) => {
+            if (data?.roomID == roomID) {
+                roomInfoMutate()
+            }
+        })
+    }, [socket])
+
+    // Manage the user webcam to capture the audio
+    useEffect(() => {
+        navigator.mediaDevices
+            .getUserMedia({ audio: true, video: false })
+            .then((stream) => {
+                setAudioStream(stream)
+                audioRecording.current = new MediaRecorder(stream)
+                audioRecording.current.ondataavailable = (e) => {
+                    setAudioChunk(e.data)
+                }
+            })
+            .catch((error) => {
+                console.error(error)
+            })
+
+        return () => {
+            stopwebcam()
+        }
+    }, [])
+
+    // User input for push to talk
     useEffect(() => {
         const handleKeyPress = (event) => {
             if (event.keyCode === 32 && !spaceBarPressed) {
@@ -131,6 +148,12 @@ export default function CallPage({ accessToken }) {
     // start the media recorder
     const startRecording = async () => {
         audioRecording.current.start()
+    }
+
+    const stopwebcam = () => {
+        if (audioStream) {
+            audioStream.getTracks().forEach((track) => track.stop())
+        }
     }
 
     // stop the media recorder
@@ -200,27 +223,6 @@ export default function CallPage({ accessToken }) {
         roomInfoMutate()
         socket.emit('mutate', { roomID: roomID })
     }
-
-    // *** Websocket stuff ***
-
-    socket.on('connect', (data) => {
-        console.log('connected', data)
-    })
-
-    socket.on('disconnect', (data) => {
-        console.log('disconnected', data)
-    })
-
-    socket.on('message', (data) => {
-        console.log('message', data || 'none')
-    })
-
-    // Refresh chatbox
-    socket.on('mutate', (data) => {
-        if (data?.roomID == roomID) {
-            roomInfoMutate()
-        }
-    })
 
     // ************************
 
