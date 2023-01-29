@@ -27,7 +27,7 @@ function CallTranscriptModal(props) {
                 width={650}
                 bodyStyle={{ height: 400, overflowY: 'hidden' }}
             >
-                <ChatboxComponent user={user} transcript={transcript} />
+                <ChatboxComponent context={'history'} user={user} transcript={transcript} />
             </Modal>
         </>
     )

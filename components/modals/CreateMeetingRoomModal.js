@@ -3,7 +3,7 @@ import { LoadingOutlined } from '@ant-design/icons'
 import { React, useState, useEffect } from 'react'
 import fetcher from '../../core/fetcher.js'
 
-import io from 'socket.io-client'
+import socketio from 'socket.io-client'
 
 function CreateMeetingRoomModal(props) {
     const [visible, setVisible] = useState(true)
@@ -15,7 +15,15 @@ function CreateMeetingRoomModal(props) {
     const [loading, setLoading] = useState(false)
 
     // let socket = io.connect(null, {port: 8000, rememberTransport: false});
-    let socket = io('http://127.0.0.1:5000')
+
+    const s_webrtc = socketio('http://localhost:5000', {
+        cors: {
+            origin: 'http://localhost:3000',
+            credentials: true,
+        },
+        transports: ['websocket'],
+    })
+
     const handleOk = async () => {
         setLoading(true)
         fetcher(props.accessToken, '/api/rooms/register_room', {
@@ -27,7 +35,7 @@ function CreateMeetingRoomModal(props) {
                     props.router.push(`/call-page/${roomID}`)
                 } else {
                     api.error({
-                        message: `Error ${res.status}: ${res.message}`,
+                        message: `Error ${res.status}: ${res.error}`,
                     })
                     setLoading(false)
                     setVisible(false)
@@ -60,26 +68,26 @@ function CreateMeetingRoomModal(props) {
                 setRoomId(res?.data?.room_id)
                 setInviteLink(res?.data?.invite_link)
             })
-            .catch(() => {})
+            .catch((err) => {
+                console.log(err)
+            })
     }
 
-    // socket.on('connect', () => {
-    //     console.log('Connected to the server!')
-    // })
+    // create on connect event
+    s_webrtc.connect()
+    s_webrtc.on('connect', () => {
+        console.log('Connected to the server!')
+    })
 
-    // socket.on('disconnect', () => {
-    //     console.log('Disconnected from the server.')
-    // })
+    s_webrtc.on('disconnect', () => {
+        console.log('Disconnected from the server.')
+    })
 
     useEffect(() => {
         if (!initialized && roomID === '') {
             populateRoomData()
             setInitialized(true)
         }
-    }, [])
-
-    useEffect(() => {
-        populateRoomData()
     }, [])
 
     return (

@@ -27,10 +27,6 @@
     filter: sepia(100%) hue-rotate(90deg) saturate(1000%) grayscale(1) brightness(100);
 }
 
-.headerMiddleButton {
-    /* margin-left: 5%; */
-}
-
 .headerCol1 {
     display: flex;
     color: #ffffff;
@@ -40,6 +36,12 @@
 .headerCol2 {
     display: flex;
     justify-content: center;
+    align-items: center;
+}
+
+.headerCol2Call {
+    display: flex;
+    margin-left: 9vw;
     align-items: center;
 }
 

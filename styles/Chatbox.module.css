@@ -1,9 +1,9 @@
 .chatboxWrapper {
-    height: 55vh;
+    display: relative;
     background: #fff;
     overflow-y: scroll;
-    border: 2px solid #f0f0f0;
-    border-radius: 3px;
+    border-right: 2px solid #f0f0f0;
+    border-bottom: 2px solid #f0f0f0;
 }
 
 .chatboxWrapper::-webkit-scrollbar {
@@ -34,7 +34,7 @@
 }
 
 .chatboxOverflow {
-    min-height: 100vh;
+    /* min-height: 100vh; */
     overflow: hidden;
 }
 
@@ -55,14 +55,14 @@
     word-wrap: break-word;
 }
 
-.msgFromContent {
+.msgToContent {
     align-self: flex-start;
     margin-left: 5px;
     color: #000;
     background: #dfdfe2;
 }
 
-.msgToContent {
+.msgFromContent {
     align-self: flex-end;
     margin-right: 2px;
     color: #fff;

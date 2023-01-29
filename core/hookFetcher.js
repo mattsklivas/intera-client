@@ -16,6 +16,16 @@ export default async function hookFetcher(props) {
             return res.json()
         })
         .then(async (res) => {
+            // If an error is received
+            if (res.status != 200) {
+                const error = new Error(res?.error || 'An unknown error has occured.')
+                error.status = res.status
+                throw error
+            }
+
             return res.data
+        })
+        .catch(async (err) => {
+            throw err
         })
 }
