@@ -34,7 +34,6 @@ function CreateMeetingRoomModal(props) {
                 api.error({
                     message: 'An unknown error has occurred',
                 })
-                console.log('Error', res)
                 setVisible(false)
                 props.hideCreateMeetingRoomModal()
             })

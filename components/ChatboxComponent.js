@@ -18,14 +18,11 @@ const ChatboxComponent = (props) => {
             if (messages[i].from === user.nickname && messages[i].edited) {
                 return false
             } else if (messages[i].from === user.nickname && !messages[i].edited) {
-                console.log('ok')
                 return true
             }
         }
         return false
     })
-
-    console.log(messages)
 
     useEffect(() => {
         if (chatRef && chatRef.current) {

@@ -110,14 +110,12 @@ export default function CallPage({ accessToken }) {
     useEffect(() => {
         const handleKeyPress = (event) => {
             if (event.keyCode === 32 && !spaceBarPressed) {
-                // console.log('pressed')
                 startRecording()
                 setSpaceBarPressed(true)
             }
         }
         const handleKeyRelease = (event) => {
             if (event.keyCode === 32 && spaceBarPressed) {
-                // console.log('released')
                 stopRecording()
                 setSpaceBarPressed(false)
             }
