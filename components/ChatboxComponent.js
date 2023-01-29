@@ -1,10 +1,10 @@
-import { React, forwardRef, useImperativeHandle, useState, useEffect, useRef } from 'react'
+import { React, useState, useEffect, useRef } from 'react'
 import { Input, Space, Button, notification } from 'antd'
 import cn from 'classnames'
 import styles from '../styles/Chatbox.module.css'
 import fetcher from '../core/fetcher'
 
-const ChatboxComponent = forwardRef((props, ref) => {
+const ChatboxComponent = (props) => {
     const chatRef = useRef(null)
     const [api, contextHolder] = notification.useNotification()
     const [isInvalidateLoading, setIsInvalidateLoading] = useState(false)
@@ -18,18 +18,14 @@ const ChatboxComponent = forwardRef((props, ref) => {
             if (messages[i].from === user.nickname && messages[i].edited) {
                 return false
             } else if (messages[i].from === user.nickname && !messages[i].edited) {
+                console.log('ok')
                 return true
             }
         }
         return false
     })
 
-    // Append new messages from parent
-    useImperativeHandle(ref, () => ({
-        appendMessage(newMsg) {
-            setMessages([...messages].concat(newMsg))
-        },
-    }))
+    console.log(messages)
 
     useEffect(() => {
         if (chatRef && chatRef.current) {
@@ -39,7 +35,24 @@ const ChatboxComponent = forwardRef((props, ref) => {
                 behavior: 'smooth',
             })
         }
+
+        // Update invalidation state
+        updateCanInvalidate()
     }, [chatRef, messages])
+
+    const updateCanInvalidate = async () => {
+        let flag = false
+        for (let i = messages.length - 1; i >= 0; i--) {
+            if (messages[i].from === user.nickname && messages[i].edited) {
+                break
+            } else if (messages[i].from === user.nickname && !messages[i].edited) {
+                flag = true
+            }
+        }
+        setCanInvalidate(flag)
+    }
+
+    console.log(canInvalidate)
 
     const invalidateMessage = (value) => {
         let messagesCopy = messages
@@ -100,19 +113,6 @@ const ChatboxComponent = forwardRef((props, ref) => {
             })
             setIsInvalidateLoading(false)
         }
-    }
-
-    const updateCanInvalidate = () => {
-        let flag = false
-        for (let i = messages.length - 1; i >= 0; i--) {
-            if (messages[i].from === user.nickname && messages[i].edited) {
-                break
-            } else if (messages[i].from === user.nickname && !messages[i].edited) {
-                flag = true
-                break
-            }
-        }
-        setCanInvalidate(flag)
     }
 
     return (
@@ -242,8 +242,6 @@ const ChatboxComponent = forwardRef((props, ref) => {
             </div>
         </>
     )
-})
-
-ChatboxComponent.displayName = 'Chatbox'
+}
 
 export default ChatboxComponent

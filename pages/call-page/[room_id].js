@@ -17,7 +17,6 @@ import fetcher from '../../core/fetcher'
 import socketio from 'socket.io-client'
 
 export default function CallPage({ accessToken }) {
-    const ref = useRef()
     const [spaceBarPressed, setSpaceBarPressed] = useState(false)
     const [audioChunk, setAudioChunk] = useState(null)
     const audioRecording = useRef(null)
@@ -86,7 +85,8 @@ export default function CallPage({ accessToken }) {
         } else if (
             typeof roomInfo !== 'undefined' &&
             roomInfo?.users.length == 2 &&
-            !roomInfo?.users.find((name) => name === user.nickname)
+            user?.nickname &&
+            !roomInfo?.users.find((name) => name === user?.nickname)
         ) {
             // If room if full, redirect to home page
             router.push(`/?full_room=${roomID}`)
@@ -247,7 +247,6 @@ export default function CallPage({ accessToken }) {
                     </div>
                     <div style={{ width: '40%' }}>
                         <ChatboxComponent
-                            ref={ref}
                             accessToken={accessToken}
                             context={'call'}
                             roomInfo={roomInfo}
