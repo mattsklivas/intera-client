@@ -52,8 +52,6 @@ const ChatboxComponent = (props) => {
         setCanInvalidate(flag)
     }
 
-    console.log(canInvalidate)
-
     const invalidateMessage = (value) => {
         let messagesCopy = messages
         let messageID = null
