@@ -1,5 +1,5 @@
 import { React, useState, useEffect, useRef } from 'react'
-import { ConfigProvider } from 'antd'
+import { ConfigProvider, Button } from 'antd'
 import { useRouter } from 'next/router'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import auth0 from '../../auth/auth0'
@@ -13,6 +13,7 @@ import ChatboxComponent from '../../components/ChatboxComponent'
 import useTranscriptHistory from '../../hooks/useTranscriptHistory'
 import useRoomInfo from '../../hooks/useRoomInfo'
 import styles from '../../styles/CallPage.module.css'
+import fetcher from '../../core/fetcher'
 
 export default function CallPage({ accessToken }) {
     const ref = useRef()
@@ -27,7 +28,11 @@ export default function CallPage({ accessToken }) {
         user ? user.nickname : '',
         accessToken
     )
-    const { data: roomInfo, error: roomInfoError } = useRoomInfo(roomID || '', accessToken)
+    const {
+        data: roomInfo,
+        error: roomInfoError,
+        mutate: roomInfoMutate,
+    } = useRoomInfo(roomID || '', accessToken)
     const [initialized, setInitialized] = useState(false)
 
     // This useffect manages the user webcam to capture the audio
@@ -135,22 +140,34 @@ export default function CallPage({ accessToken }) {
         }
     }
 
-    // Add a message from either the host or guest
-    const appendMessage = async (newMsg) => {
-        // CORRECT:
-        // ref.current.appendMessage(newMsg)
-
-        // EXAMPLE:
-        ref.current.appendMessage({
-            date_created: '2024-01-17T21:08:02.533+00:00',
-            room_id: '70f7c472',
-            to: 'Wilson',
-            from: user.nickname,
-            text: 'Ut enim ad minima veniam,',
-            edited: false,
-            message_type: 'STT',
-            corrected: null,
+    // Add a STT message
+    const appendMessage = async (message) => {
+        fetcher(accessToken, '/api/transcripts/create_message', {
+            method: 'POST',
+            body: JSON.stringify({
+                room_id: roomInfo.room_id,
+                to_user: roomInfo.users.find((username) => username !== user.nickname) || 'N/A',
+                message: message,
+                type: 'STT',
+            }),
         })
+            .then((res) => {
+                if (res.status == 200) {
+                    // Update chatbox
+                    roomInfoMutate()
+                } else {
+                    api.error({
+                        message: `Error ${res.status}: ${res.error}`,
+                    })
+                }
+            })
+            .catch((res) => {
+                api.error({
+                    message: 'An unknown error has occurred',
+                })
+            })
+
+        // TODO: Add websocket event to have the user call for a mutate on their end as well
     }
 
     if (user && initialized && !isLoading) {
@@ -159,6 +176,9 @@ export default function CallPage({ accessToken }) {
                 <HeaderComponent user={user} />
                 <div className={styles.callWrapper}>
                     <div style={{ width: '20%' }}>
+                        <Button type="primary" onClick={() => appendMessage('Example message')}>
+                            ADD TEST MSG (temp)
+                        </Button>
                         <HistoryComponent transcripts={transcriptHistory} user={user} />
                     </div>
                     <div style={{ width: '40%' }}>
@@ -168,7 +188,10 @@ export default function CallPage({ accessToken }) {
                             context={'call'}
                             roomInfo={roomInfo}
                             roomID={roomID}
-                            transcript={transcriptHistory.length > 0 ? transcriptHistory[0] : []}
+                            roomInfoMutate={roomInfoMutate}
+                            transcript={
+                                roomInfo.messages_info.length > 0 ? roomInfo.messages_info : []
+                            }
                             user={user}
                         />
                     </div>

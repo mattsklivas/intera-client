@@ -9,12 +9,9 @@ const ChatboxComponent = forwardRef((props, ref) => {
     const [api, contextHolder] = notification.useNotification()
     const [isInvalidateLoading, setIsInvalidateLoading] = useState(false)
     const user = props.user
-    const transcript = props.transcript
+    const messages = props.transcript
     const roomInfo = props.roomInfo
     const context = props.context
-    const [messages, setMessages] = useState(
-        transcript?.messages_info ? [...transcript.messages_info] : []
-    )
     const [inputText, setInputText] = useState('')
     const [canInvalidate, setCanInvalidate] = useState(() => {
         for (let i = messages.length - 1; i >= 0; i--) {
@@ -69,10 +66,8 @@ const ChatboxComponent = forwardRef((props, ref) => {
             })
                 .then((res) => {
                     if (res.status == 200) {
-                        // Apply changes to messages
-                        messagesCopy[index].corrected = value
-                        messagesCopy[index].edited = true
-                        setMessages(messagesCopy)
+                        // Update chatbox
+                        props.roomInfoMutate()
 
                         // Clear invalidation input
                         setInputText('')
