@@ -11,15 +11,14 @@ function JoinMeetingRoomModal(props) {
     // TODO: Test this
     const handleOk = () => {
         setLoading(true)
-        console.log(roomID)
         if (roomID.length == 8) {
-            fetcher(props.accessToken, '/api/join_room', {
-                method: 'POST',
+            fetcher(props.accessToken, '/api/rooms/join_room', {
+                method: 'PUT',
                 body: JSON.stringify({ room_id: roomID, user_id: props.user.nickname }),
             })
                 .then((res) => {
                     if (res.status == 200) {
-                        props.router.push(`/call-page/${roomId}`)
+                        props.router.push(`/call-page/${roomID}`)
                     } else {
                         api.error({
                             message: `Error ${res.status}: ${res.error}`,

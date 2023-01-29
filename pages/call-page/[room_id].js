@@ -14,6 +14,7 @@ import useTranscriptHistory from '../../hooks/useTranscriptHistory'
 import useRoomInfo from '../../hooks/useRoomInfo'
 import styles from '../../styles/CallPage.module.css'
 import fetcher from '../../core/fetcher'
+import socketio from 'socket.io-client'
 
 export default function CallPage({ accessToken }) {
     const ref = useRef()
@@ -23,7 +24,10 @@ export default function CallPage({ accessToken }) {
     const [audioStream, setAudioStream] = useState(null)
     const router = useRouter()
     const roomID = getQuery(router, 'room_id')
+    const [initialized, setInitialized] = useState(false)
     const { user, error, isLoading } = useUser()
+
+    // SWR hooks
     const { data: transcriptHistory, error: transcriptHistoryError } = useTranscriptHistory(
         user ? user.nickname : '',
         accessToken
@@ -33,9 +37,17 @@ export default function CallPage({ accessToken }) {
         error: roomInfoError,
         mutate: roomInfoMutate,
     } = useRoomInfo(roomID || '', accessToken)
-    const [initialized, setInitialized] = useState(false)
 
-    // This useffect manages the user webcam to capture the audio
+    // Websocket connection
+    const socket = socketio(process.env.API_URL || 'http://localhost:5000', {
+        cors: {
+            origin: process.env.CLIENT_URL || 'http://localhost:3000',
+            credentials: true,
+        },
+        transports: ['websocket'],
+    })
+
+    // Manage the user webcam to capture the audio
     useEffect(() => {
         navigator.mediaDevices
             .getUserMedia({ audio: true, video: false })
@@ -86,9 +98,10 @@ export default function CallPage({ accessToken }) {
             typeof roomInfo !== 'undefined' &&
             roomInfo?.active == true
         ) {
-            // TODO: Fetch messages of active call if rejoining
-            // TODO: Fetch state of room and confirm whether it exists/is active
-            // TODO: unregister room if host leaves
+            // Establish websocket connection
+            socket.connect()
+
+            // Render page
             setInitialized(true)
         }
     })
@@ -148,13 +161,16 @@ export default function CallPage({ accessToken }) {
                 room_id: roomInfo.room_id,
                 to_user: roomInfo.users.find((username) => username !== user.nickname) || 'N/A',
                 message: message,
-                type: 'STT',
+                type: getType(),
             }),
         })
             .then((res) => {
                 if (res.status == 200) {
                     // Update chatbox
                     roomInfoMutate()
+
+                    // Emit mutate message over websocket to other user
+                    socket.emit('mutate', { roomID: roomID })
                 } else {
                     api.error({
                         message: `Error ${res.status}: ${res.error}`,
@@ -166,9 +182,49 @@ export default function CallPage({ accessToken }) {
                     message: 'An unknown error has occurred',
                 })
             })
-
-        // TODO: Add websocket event to have the user call for a mutate on their end as well
     }
+
+    // Get the communication type of the user
+    const getType = () => {
+        if (roomInfo.users[0] === user.nickname) {
+            return roomInfo.host_type
+        } else {
+            if (roomInfo.host_type === 'STT') {
+                return 'ASL'
+            } else {
+                return 'STT'
+            }
+        }
+    }
+
+    // Refresh chatbox for both users upon invalidation
+    const invalidateRefresh = async () => {
+        roomInfoMutate()
+        socket.emit('mutate', { roomID: roomID })
+    }
+
+    // *** Websocket stuff ***
+
+    socket.on('connect', (data) => {
+        console.log('connected', data)
+    })
+
+    socket.on('disconnect', (data) => {
+        console.log('disconnected', data)
+    })
+
+    socket.on('message', (data) => {
+        console.log('message', data || 'none')
+    })
+
+    // Refresh chatbox
+    socket.on('mutate', (data) => {
+        if (data?.roomID == roomID) {
+            roomInfoMutate()
+        }
+    })
+
+    // ************************
 
     if (user && initialized && !isLoading) {
         return (
@@ -179,6 +235,14 @@ export default function CallPage({ accessToken }) {
                         <Button type="primary" onClick={() => appendMessage('Example message')}>
                             ADD TEST MSG (temp)
                         </Button>
+                        <Button
+                            type="primary"
+                            onClick={() => {
+                                socket.emit('message', { a: 'b', c: [] })
+                            }}
+                        >
+                            SOCKETIO PING
+                        </Button>
                         <HistoryComponent transcripts={transcriptHistory} user={user} />
                     </div>
                     <div style={{ width: '40%' }}>
@@ -188,7 +252,7 @@ export default function CallPage({ accessToken }) {
                             context={'call'}
                             roomInfo={roomInfo}
                             roomID={roomID}
-                            roomInfoMutate={roomInfoMutate}
+                            invalidateRefresh={invalidateRefresh}
                             transcript={
                                 roomInfo.messages_info.length > 0 ? roomInfo.messages_info : []
                             }

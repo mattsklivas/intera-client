@@ -3,8 +3,6 @@ import { LoadingOutlined } from '@ant-design/icons'
 import { React, useState, useEffect } from 'react'
 import fetcher from '../../core/fetcher.js'
 
-import socketio from 'socket.io-client'
-
 function CreateMeetingRoomModal(props) {
     const [visible, setVisible] = useState(true)
     const [api, contextHolder] = notification.useNotification()
@@ -13,16 +11,6 @@ function CreateMeetingRoomModal(props) {
     const [hostType, setHostType] = useState('')
     const [initialized, setInitialized] = useState(false)
     const [loading, setLoading] = useState(false)
-
-    // let socket = io.connect(null, {port: 8000, rememberTransport: false});
-
-    const s_webrtc = socketio('http://localhost:5000', {
-        cors: {
-            origin: 'http://localhost:3000',
-            credentials: true,
-        },
-        transports: ['websocket'],
-    })
 
     const handleOk = async () => {
         setLoading(true)
@@ -72,16 +60,6 @@ function CreateMeetingRoomModal(props) {
                 console.log(err)
             })
     }
-
-    // create on connect event
-    s_webrtc.connect()
-    s_webrtc.on('connect', () => {
-        console.log('Connected to the server!')
-    })
-
-    s_webrtc.on('disconnect', () => {
-        console.log('Disconnected from the server.')
-    })
 
     useEffect(() => {
         if (!initialized && roomID === '') {

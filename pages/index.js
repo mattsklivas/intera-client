@@ -66,14 +66,16 @@ export default function Home({ accessToken }) {
     // Display error notification if redirected to index page due to an error
     useEffect(() => {
         // Display the error notification
-        api.error({
-            message: errorMsg,
-            maxCount: 0,
-        })
+        if (invalidRoomID != null || expiredRoomID != null || fullRoomID != null) {
+            api.error({
+                message: errorMsg,
+                maxCount: 0,
+            })
+        }
 
         // Only display error once
         setCanDisplayError(false)
-    }, [canDisplayError && (invalidRoomID || expiredRoomID || fullRoomID)])
+    }, [canDisplayError])
 
     if (user && initialized && !isLoading) {
         return (

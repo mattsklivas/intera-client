@@ -67,7 +67,7 @@ const ChatboxComponent = forwardRef((props, ref) => {
                 .then((res) => {
                     if (res.status == 200) {
                         // Update chatbox
-                        props.roomInfoMutate()
+                        props.invalidateRefresh()
 
                         // Clear invalidation input
                         setInputText('')
@@ -81,9 +81,6 @@ const ChatboxComponent = forwardRef((props, ref) => {
                             top: elem.scrollHeight,
                             behavior: 'smooth',
                         })
-
-                        // TODO: Add some kind of websocket call to refresh the chatbox for the other user and display
-                        // the invalidation (call to mutate in parent component)
                     } else {
                         api.error({
                             message: `Error ${res.status}: ${res.error}`,

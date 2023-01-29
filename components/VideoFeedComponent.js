@@ -1,5 +1,4 @@
 import React, { useRef, useEffect, useState } from 'react'
-import socketio from 'socket.io-client'
 // import styles from '../styles/VideoFeed.module.css'
 
 // in progress
@@ -8,13 +7,6 @@ export default function VideoFeedComponent(props) {
     const userVideo = useRef(null)
     const guestVideo = useRef(null)
     const [stream, setStream] = useState(null)
-    const s_webrtc = socketio('http://localhost:5000', {
-        cors: {
-            origin: 'http://localhost:3000',
-            credentials: true,
-        },
-        transports: ['websocket'],
-    })
 
     useEffect(() => {
         navigator.mediaDevices
