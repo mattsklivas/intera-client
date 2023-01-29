@@ -34,6 +34,12 @@ function Header(props) {
                         loading={isLoadingExit}
                         type="primary"
                         onClick={() => {
+                            if (props?.socket) {
+                                props.socket.disconnect({
+                                    roomID: props?.roomID,
+                                    user: props.user.nickname,
+                                })
+                            }
                             setIsLoadingExit(true)
                             router.push('/')
                         }}

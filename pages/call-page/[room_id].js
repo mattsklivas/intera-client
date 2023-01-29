@@ -25,6 +25,13 @@ export default function CallPage({ accessToken }) {
     const roomID = getQuery(router, 'room_id')
     const [initialized, setInitialized] = useState(false)
     const { user, error, isLoading } = useUser()
+    const socket = socketio(process.env.API_URL || 'http://localhost:5000', {
+        cors: {
+            origin: process.env.CLIENT_URL || 'http://localhost:3000',
+            credentials: true,
+        },
+        transports: ['websocket'],
+    })
 
     // SWR hooks
     const { data: transcriptHistory, error: transcriptHistoryError } = useTranscriptHistory(
@@ -36,15 +43,6 @@ export default function CallPage({ accessToken }) {
         error: roomInfoError,
         mutate: roomInfoMutate,
     } = useRoomInfo(roomID || '', accessToken)
-
-    // Websocket connection
-    const socket = socketio(process.env.API_URL || 'http://localhost:5000', {
-        cors: {
-            origin: process.env.CLIENT_URL || 'http://localhost:3000',
-            credentials: true,
-        },
-        transports: ['websocket'],
-    })
 
     // Room initialization
     useEffect(() => {
@@ -89,6 +87,11 @@ export default function CallPage({ accessToken }) {
 
         socket.on('disconnect', (data) => {
             console.log('disconnected', data)
+            socket.removeAllListeners('message')
+            socket.removeAllListeners('connect')
+            socket.removeAllListeners('mutate')
+            socket.removeAllListeners('disconnect')
+            socketio.removeAllListeners('connection')
         })
 
         socket.on('message', (data) => {
@@ -224,12 +227,10 @@ export default function CallPage({ accessToken }) {
         socket.emit('mutate', { roomID: roomID })
     }
 
-    // ************************
-
     if (user && initialized && !isLoading) {
         return (
             <ConfigProvider theme={theme}>
-                <HeaderComponent user={user} />
+                <HeaderComponent user={user} roomID={roomID} socket={socket} />
                 <div className={styles.callWrapper}>
                     <div style={{ width: '20%' }}>
                         <Button type="primary" onClick={() => appendMessage('Example message')}>
