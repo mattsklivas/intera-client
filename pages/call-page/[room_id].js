@@ -25,12 +25,15 @@ export default function CallPage({ accessToken }) {
     const roomID = getQuery(router, 'room_id')
     const [initialized, setInitialized] = useState(false)
     const { user, error, isLoading } = useUser()
+    const [roomUsers, setRoomUsers] = useState(new Set())
+
     const socket = socketio(process.env.API_URL || 'http://localhost:5000', {
         cors: {
             origin: process.env.CLIENT_URL || 'http://localhost:3000',
             credentials: true,
         },
         transports: ['websocket'],
+        upgrade: false,
     })
 
     // SWR hooks
@@ -64,7 +67,9 @@ export default function CallPage({ accessToken }) {
             // If room if full, redirect to home page
             router.push(`/?full_room=${roomID}`)
         }
+    }, [])
 
+    useEffect(() => {
         if (
             !initialized &&
             typeof transcriptHistory !== 'undefined' &&
@@ -77,30 +82,35 @@ export default function CallPage({ accessToken }) {
             // Render page
             setInitialized(true)
         }
-    })
+    }, [transcriptHistory, roomInfo])
 
     // Websocket listeners
     useEffect(() => {
         socket.on('connect', (data) => {
-            console.log('connected', data)
+            socket.emit('join', { room_id: roomID, username: user?.nickname })
         })
 
         socket.on('disconnect', (data) => {
-            console.log('disconnected', data)
-            socket.removeAllListeners('message')
-            socket.removeAllListeners('connect')
-            socket.removeAllListeners('mutate')
-            socket.removeAllListeners('disconnect')
-            socketio.removeAllListeners('connection')
+            console.log('disconnect', data)
+        })
+
+        socket.on('join', (data) => {
+            let users = roomUsers
+            users.add(data.user_sid)
+            setRoomUsers(users)
         })
 
         socket.on('message', (data) => {
             console.log('message', data || 'none')
         })
 
+        socket.on('close_room', (data) => {
+            socket.close()
+        })
+
         // Refresh chatbox
         socket.on('mutate', (data) => {
-            if (data?.roomID == roomID) {
+            if (data?.room_id == roomID) {
                 roomInfoMutate()
             }
         })
@@ -221,6 +231,11 @@ export default function CallPage({ accessToken }) {
         }
     }
 
+    const handleLeave = async () => {
+        socket.emit('leave', { room_id: roomID, username: user?.nickname })
+        router.push('/')
+    }
+
     // Refresh chatbox for both users upon invalidation
     const invalidateRefresh = async () => {
         roomInfoMutate()
@@ -230,7 +245,7 @@ export default function CallPage({ accessToken }) {
     if (user && initialized && !isLoading) {
         return (
             <ConfigProvider theme={theme}>
-                <HeaderComponent user={user} roomID={roomID} socket={socket} />
+                <HeaderComponent user={user} roomID={roomID} handleLeave={handleLeave} />
                 <div className={styles.callWrapper}>
                     <div style={{ width: '20%' }}>
                         <Button type="primary" onClick={() => appendMessage('Example message')}>
@@ -239,7 +254,7 @@ export default function CallPage({ accessToken }) {
                         <Button
                             type="primary"
                             onClick={() => {
-                                socket.emit('message', { a: 'b', c: [] })
+                                socket.emit('message', { room_id: roomID, message: 'ping' })
                             }}
                         >
                             SOCKETIO PING
@@ -254,7 +269,7 @@ export default function CallPage({ accessToken }) {
                             roomID={roomID}
                             invalidateRefresh={invalidateRefresh}
                             transcript={
-                                roomInfo.messages_info.length > 0 ? roomInfo.messages_info : []
+                                roomInfo?.messages_info.length > 0 ? roomInfo?.messages_info : []
                             }
                             user={user}
                         />

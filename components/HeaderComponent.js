@@ -6,7 +6,7 @@ import Image from 'next/image'
 import logo from '../public/logo.svg'
 import styles from '../styles/Header.module.css'
 
-function Header(props) {
+function Header({ user, roomID, handleLeave }) {
     const router = useRouter()
     const [isLoadingExit, setIsLoadingExit] = useState(false)
     const [isLoadingChange, setIsLoadingChange] = useState(false)
@@ -17,7 +17,7 @@ function Header(props) {
             <Col flex={1} className={styles.headerCol1}>
                 <div className={styles.headerUser}>
                     <span>User: </span>
-                    <span>{props?.user?.nickname || 'N/A'}</span>
+                    <span>{user?.nickname || 'N/A'}</span>
                 </div>
             </Col>
 
@@ -30,20 +30,7 @@ function Header(props) {
                 }
             >
                 {['practice-module', 'call-page'].includes(router.pathname.split('/')[1]) ? (
-                    <Button
-                        loading={isLoadingExit}
-                        type="primary"
-                        onClick={() => {
-                            if (props?.socket) {
-                                props.socket.disconnect({
-                                    roomID: props?.roomID,
-                                    user: props.user.nickname,
-                                })
-                            }
-                            setIsLoadingExit(true)
-                            router.push('/')
-                        }}
-                    >
+                    <Button loading={isLoadingExit} type="primary" onClick={() => handleLeave()}>
                         {router.pathname.split('/')[1] === 'practice-module'
                             ? 'Exit Practice Module'
                             : 'Leave Meeting'}
