@@ -1,4 +1,5 @@
-import { React, useState, useEffect, useRef } from 'react'
+import '@babel/polyfill'
+import { React, useState, useEffect } from 'react'
 import { ConfigProvider, Button } from 'antd'
 import { useRouter } from 'next/router'
 import { useUser } from '@auth0/nextjs-auth0/client'
@@ -15,17 +16,23 @@ import useRoomInfo from '../../hooks/useRoomInfo'
 import styles from '../../styles/CallPage.module.css'
 import fetcher from '../../core/fetcher'
 import socketio from 'socket.io-client'
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
 
 export default function CallPage({ accessToken }) {
+    const { transcript, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition()
     const [spaceBarPressed, setSpaceBarPressed] = useState(false)
-    const [audioChunk, setAudioChunk] = useState(null)
-    const audioRecording = useRef(null)
-    const [audioStream, setAudioStream] = useState(null)
     const router = useRouter()
     const roomID = getQuery(router, 'room_id')
     const [initialized, setInitialized] = useState(false)
     const { user, error, isLoading } = useUser()
     const [roomUsers, setRoomUsers] = useState(new Set())
+    const [spaceCheck, setSpaceBoolCheck] = useState(false)
+    const [latestTranscript, setLatestTranscript] = useState('')
+    const [lastTranscript, setLastTranscript] = useState('')
+
+    if (!browserSupportsSpeechRecognition) {
+        console.log('Browser does not support speech to text')
+    }
 
     const socket = socketio(process.env.API_URL || 'http://localhost:5000', {
         cors: {
@@ -116,38 +123,25 @@ export default function CallPage({ accessToken }) {
         })
     }, [socket])
 
-    // Manage the user webcam to capture the audio
-    useEffect(() => {
-        navigator.mediaDevices
-            .getUserMedia({ audio: true, video: false })
-            .then((stream) => {
-                setAudioStream(stream)
-                audioRecording.current = new MediaRecorder(stream)
-                audioRecording.current.ondataavailable = (e) => {
-                    setAudioChunk(e.data)
-                }
-            })
-            .catch((error) => {
-                console.error(error)
-            })
-
-        return () => {
-            stopwebcam()
-        }
-    }, [])
-
     // User input for push to talk
     useEffect(() => {
         const handleKeyPress = (event) => {
             if (event.keyCode === 32 && !spaceBarPressed) {
-                startRecording()
+                // console.log('space bar pressed')
+                setSpaceBoolCheck(false)
+                SpeechRecognition.startListening({ continuous: true })
                 setSpaceBarPressed(true)
             }
         }
         const handleKeyRelease = (event) => {
             if (event.keyCode === 32 && spaceBarPressed) {
-                stopRecording()
+                // console.log('space bar released')
+                SpeechRecognition.stopListening()
                 setSpaceBarPressed(false)
+                setTimeout(() => {
+                    resetTranscript()
+                    setSpaceBoolCheck(true)
+                }, 500)
             }
         }
         document.addEventListener('keydown', handleKeyPress)
@@ -158,34 +152,21 @@ export default function CallPage({ accessToken }) {
         }
     }, [spaceBarPressed])
 
-    // start the media recorder
-    const startRecording = async () => {
-        audioRecording.current.start()
-    }
+    useEffect(() => {
+        setLatestTranscript(transcript)
+    }, [spaceCheck, transcript])
 
-    const stopwebcam = () => {
-        if (audioStream) {
-            audioStream.getTracks().forEach((track) => track.stop())
+    useEffect(() => {
+        if (spaceCheck) {
+            if (latestTranscript !== lastTranscript) {
+                // console.log(latestTranscript)
+                if (latestTranscript != '') {
+                    appendMessage(latestTranscript)
+                }
+                setLastTranscript(latestTranscript)
+            }
         }
-    }
-
-    // stop the media recorder
-    // and take the audio file (based on user input) and retieve the response from the server
-    // for transcription
-    const stopRecording = async () => {
-        audioRecording.current.stop()
-        if (audioChunk) {
-            const formData = new FormData()
-            formData.append('audio', audioChunk)
-            console.log(audioChunk)
-            const res = await fetch('http://localhost:8000/api/upload', {
-                method: 'POST',
-                body: formData,
-            })
-            // TODO: add constraints based on server response
-            // TODO: connect to ChatboxComponent
-        }
-    }
+    }, [spaceCheck, latestTranscript, lastTranscript])
 
     // Add a STT message
     const appendMessage = async (message) => {
