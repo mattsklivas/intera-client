@@ -19,7 +19,6 @@ import socketio from 'socket.io-client'
 export default function CallPage({ accessToken }) {
     const userVideo = useRef(null)
     const remoteVideo = useRef(null)
-    const [mediaStream, setMediaStream] = useState(null)
     const [spaceBarPressed, setSpaceBarPressed] = useState(false)
     const [audioChunk, setAudioChunk] = useState(null)
     const audioRecording = useRef(null)
@@ -266,12 +265,11 @@ export default function CallPage({ accessToken }) {
                     width: 350,
                 },
             })
-            setMediaStream(stream)
             if (userVideo.current) {
                 userVideo.current.srcObject = stream
 
                 socket.connect()
-                socket.emit('join', { username: user.nickname, room: roomID })
+                socket.emit('join', { username: user?.nickname, room: roomID })
             }
         }
         getDeviceMedia()
@@ -415,15 +413,13 @@ export default function CallPage({ accessToken }) {
                                 <div style={{ textAlign: 'center' }}>
                                     <h2>Host</h2>
                                     <div>
-                                        {mediaStream && (
-                                            <video
-                                                autoPlay
-                                                muted
-                                                playsInline
-                                                ref={userVideo}
-                                                style={{ width: '60%', height: 'auto' }}
-                                            ></video>
-                                        )}
+                                        <video
+                                            autoPlay
+                                            muted
+                                            playsInline
+                                            ref={userVideo}
+                                            style={{ width: '60%', height: 'auto' }}
+                                        ></video>
                                     </div>
                                 </div>
                                 <div style={{ textAlign: 'center' }}>
