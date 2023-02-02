@@ -261,8 +261,8 @@ export default function CallPage({ accessToken }) {
         const getDeviceMedia = async () => {
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: {
-                    height: 350,
-                    width: 350,
+                    height: 360,
+                    width: 480,
                 },
             })
             if (userVideo.current) {
@@ -411,23 +411,23 @@ export default function CallPage({ accessToken }) {
                         <div style={{ width: '-webkit-fill-available' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <div style={{ textAlign: 'center' }}>
-                                    <h2>Host</h2>
+                                    <h2 style={{ marginBottom: 10 }}>Host</h2>
                                     <div>
                                         <video
                                             autoPlay
                                             muted
                                             playsInline
                                             ref={userVideo}
-                                            style={{ width: '60%', height: 'auto' }}
+                                            style={{ width: '55%', height: 'auto' }}
                                         ></video>
                                     </div>
                                 </div>
                                 <div style={{ textAlign: 'center' }}>
-                                    <h2>Guest</h2>
+                                    <h2 style={{ marginBottom: 10 }}>Guest</h2>
                                     <div>
                                         <video
                                             autoPlay
-                                            style={{ width: '60%', height: 'auto' }}
+                                            style={{ width: '55%', height: 'auto' }}
                                             ref={remoteVideo}
                                         ></video>
                                     </div>
