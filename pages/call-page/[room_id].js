@@ -81,6 +81,9 @@ export default function CallPage({ accessToken }) {
             user.nickname !== undefined &&
             roomInfo?.active == true
         ) {
+            socket.connect()
+            socket.emit('join', { user: user?.nickname, room_id: roomID })
+
             // Render page
             setInitialized(true)
         }
@@ -89,7 +92,22 @@ export default function CallPage({ accessToken }) {
     // Websocket listeners
     useEffect(() => {
         socket.on('connect', (data) => {
-            // socket.emit('join', { room_id: roomID, user: user?.nickname })
+            const getDeviceMedia = async () => {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        height: 360,
+                        width: 480,
+                    },
+                })
+                if (userVideo.current) {
+                    userVideo.current.srcObject = stream
+                }
+            }
+            getDeviceMedia()
+            return function cleanup() {
+                stopwebcam()
+                peerConnection?.close()
+            }
         })
 
         socket.on('disconnect', (data) => {
@@ -97,9 +115,10 @@ export default function CallPage({ accessToken }) {
         })
 
         socket.on('join', (data) => {
-            let users = roomUsers
-            users.add(data.user_sid)
-            setRoomUsers(users)
+            console.log('joined')
+            // let users = roomUsers
+            // users.add(data.user_sid)
+            // setRoomUsers(users)
         })
 
         socket.on('message', (data) => {
@@ -285,32 +304,32 @@ export default function CallPage({ accessToken }) {
         socket.emit('data_transfer', {
             user: user.nickname,
             room_id: roomID,
-            data: data,
+            body: data,
         })
     }
 
-    // Setup user camera and establish ws connection
-    useEffect(() => {
-        const getDeviceMedia = async () => {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    height: 360,
-                    width: 480,
-                },
-            })
-            if (userVideo.current) {
-                userVideo.current.srcObject = stream
+    // // Setup user camera and establish ws connection
+    // useEffect(() => {
+    //     const getDeviceMedia = async () => {
+    //         const stream = await navigator.mediaDevices.getUserMedia({
+    //             video: {
+    //                 height: 360,
+    //                 width: 480,
+    //             },
+    //         })
+    //         if (userVideo.current) {
+    //             userVideo.current.srcObject = stream
 
-                socket.connect()
-                socket.emit('join', { user: user?.nickname, room_id: roomID })
-            }
-        }
-        getDeviceMedia()
-        return function cleanup() {
-            stopwebcam()
-            peerConnection?.close()
-        }
-    }, [])
+    //             socket.connect()
+    //             socket.emit('join', { user: user?.nickname, room_id: roomID })
+    //         }
+    //     }
+    //     getDeviceMedia()
+    //     return function cleanup() {
+    //         stopwebcam()
+    //         peerConnection?.close()
+    //     }
+    // }, [])
 
     const onIceCandidate = (event) => {
         if (event.candidate) {
