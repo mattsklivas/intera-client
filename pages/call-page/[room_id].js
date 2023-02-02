@@ -259,7 +259,13 @@ export default function CallPage({ accessToken }) {
     // Setup user camera and establish ws connection
     useEffect(() => {
         navigator.mediaDevices
-            .getUserMedia({ audio: false, video: true })
+            .getUserMedia({
+                audio: false,
+                video: {
+                    height: 350,
+                    width: 350,
+                },
+            })
             .then((stream) => {
                 console.log('Connecting')
                 setStream(stream)
