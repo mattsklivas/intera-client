@@ -28,6 +28,7 @@ export default function CallPage({ accessToken }) {
     const [initialized, setInitialized] = useState(false)
     const { user, error, isLoading } = useUser()
     const [roomUsers, setRoomUsers] = useState(new Set())
+    let peerConnection
 
     const socket = socketio(process.env.API_URL || 'http://localhost:5000', {
         cors: {
@@ -80,9 +81,6 @@ export default function CallPage({ accessToken }) {
             user.nickname !== undefined &&
             roomInfo?.active == true
         ) {
-            socket.connect()
-            socket.emit('join', { username: user.nickname, room: roomID })
-
             // Render page
             setInitialized(true)
         }
@@ -91,18 +89,18 @@ export default function CallPage({ accessToken }) {
     // Websocket listeners
     useEffect(() => {
         socket.on('connect', (data) => {
-            // socket.emit('join', { room_id: roomID, username: user?.nickname })
+            // socket.emit('join', { room_id: roomID, user: user?.nickname })
         })
 
         socket.on('disconnect', (data) => {
             console.log('disconnect', data)
         })
 
-        // socket.on('join', (data) => {
-        //     let users = roomUsers
-        //     users.add(data.user_sid)
-        //     setRoomUsers(users)
-        // })
+        socket.on('join', (data) => {
+            let users = roomUsers
+            users.add(data.user_sid)
+            setRoomUsers(users)
+        })
 
         socket.on('message', (data) => {
             console.log('message', data || 'none')
@@ -117,6 +115,16 @@ export default function CallPage({ accessToken }) {
             if (data?.room_id == roomID) {
                 roomInfoMutate()
             }
+        })
+
+        socket.on('ready', () => {
+            console.log('ok')
+            createPeerConnection()
+            sendOffer()
+        })
+
+        socket.on('data_transfer', (data) => {
+            signalingDataHandler(data)
         })
     }, [socket])
 
@@ -236,8 +244,35 @@ export default function CallPage({ accessToken }) {
     }
 
     const handleLeave = async () => {
-        socket.emit('leave', { room_id: roomID, username: user?.nickname })
+        socket.emit('leave', { room_id: roomID, user: user?.nickname })
         router.push('/')
+        // fetcher(accessToken, '/api/transcripts/create_message', {
+        //     method: 'POST',
+        //     body: JSON.stringify({
+        //         room_id: roomInfo.room_id,
+        //         to_user: roomInfo.users.find((username) => username !== user.nickname) || 'N/A',
+        //         message: message,
+        //         type: getType(),
+        //     }),
+        // })
+        //     .then((res) => {
+        //         if (res.status == 200) {
+        //             // Update chatbox
+        //             roomInfoMutate()
+
+        //             // Emit mutate message over websocket to other user
+        //             socket.emit('mutate', { roomID: roomID })
+        //         } else {
+        //             api.error({
+        //                 message: `Error ${res.status}: ${res.error}`,
+        //             })
+        //         }
+        //     })
+        //     .catch((res) => {
+        //         api.error({
+        //             message: 'An unknown error has occurred',
+        //         })
+        //     })
     }
 
     // Refresh chatbox for both users upon invalidation
@@ -246,12 +281,10 @@ export default function CallPage({ accessToken }) {
         socket.emit('mutate', { roomID: roomID })
     }
 
-    let pc // For RTCPeerConnection Object
-
-    const sendData = (data) => {
-        socket.emit('data', {
-            username: user.nickname,
-            room: roomID,
+    const dataTransfer = (data) => {
+        socket.emit('data_transfer', {
+            user: user.nickname,
+            room_id: roomID,
             data: data,
         })
     }
@@ -269,20 +302,20 @@ export default function CallPage({ accessToken }) {
                 userVideo.current.srcObject = stream
 
                 socket.connect()
-                socket.emit('join', { username: user?.nickname, room: roomID })
+                socket.emit('join', { user: user?.nickname, room_id: roomID })
             }
         }
         getDeviceMedia()
         return function cleanup() {
             stopwebcam()
-            pc?.close()
+            peerConnection?.close()
         }
     }, [])
 
     const onIceCandidate = (event) => {
         if (event.candidate) {
             console.log('Sending ICE candidate')
-            sendData({
+            dataTransfer({
                 type: 'candidate',
                 candidate: event.candidate,
             })
@@ -290,13 +323,12 @@ export default function CallPage({ accessToken }) {
     }
 
     const onTrack = (event) => {
-        console.log('Adding remote track')
         remoteVideo.current.srcObject = event.streams[0]
     }
 
     const createPeerConnection = () => {
         try {
-            pc = new RTCPeerConnection({
+            peerConnection = new RTCPeerConnection({
                 iceServers: [
                     {
                         urls: 'stun:openrelay.metered.ca:80',
@@ -318,11 +350,11 @@ export default function CallPage({ accessToken }) {
                     },
                 ],
             })
-            pc.onicecandidate = onIceCandidate
-            pc.ontrack = onTrack
-            const localStream = userVideo.current.srcObject
-            for (const track of localStream.getTracks()) {
-                pc.addTrack(track, localStream)
+            peerConnection.onicecandidate = onIceCandidate
+            peerConnection.ontrack = onTrack
+            const userStream = userVideo.current.srcObject
+            for (const track of userStream.getTracks()) {
+                peerConnection.addTrack(track, userStream)
             }
             console.log('PeerConnection created')
         } catch (error) {
@@ -331,49 +363,35 @@ export default function CallPage({ accessToken }) {
     }
 
     const setAndSendLocalDescription = (sessionDescription) => {
-        pc.setLocalDescription(sessionDescription)
-        console.log('Local description set')
-        sendData(sessionDescription)
+        peerConnection.setLocalDescription(sessionDescription)
+        dataTransfer(sessionDescription)
     }
 
     const sendOffer = () => {
-        console.log('Sending offer')
-        pc.createOffer().then(setAndSendLocalDescription, (error) => {
-            console.error('Send offer failed: ', error)
+        peerConnection.createOffer().then(setAndSendLocalDescription, (error) => {
+            console.error('Unable to send offer: ', error)
         })
     }
 
     const sendAnswer = () => {
-        console.log('Sending answer')
-        pc.createAnswer().then(setAndSendLocalDescription, (error) => {
-            console.error('Send answer failed: ', error)
+        peerConnection.createAnswer().then(setAndSendLocalDescription, (error) => {
+            console.error('Unable to send answer: ', error)
         })
     }
 
     const signalingDataHandler = (data) => {
         if (data.type === 'offer') {
             createPeerConnection()
-            pc.setRemoteDescription(new RTCSessionDescription(data))
+            peerConnection.setRemoteDescription(new RTCSessionDescription(data))
             sendAnswer()
         } else if (data.type === 'answer') {
-            pc.setRemoteDescription(new RTCSessionDescription(data))
+            peerConnection.setRemoteDescription(new RTCSessionDescription(data))
         } else if (data.type === 'candidate') {
-            pc.addIceCandidate(new RTCIceCandidate(data.candidate))
+            peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate))
         } else {
             console.log('Unknown Data')
         }
     }
-
-    socket.on('ready', () => {
-        console.log('Ready to Connect!')
-        createPeerConnection()
-        sendOffer()
-    })
-
-    socket.on('data', (data) => {
-        console.log('Data received: ', data)
-        signalingDataHandler(data)
-    })
 
     if (user && initialized && !isLoading) {
         return (
