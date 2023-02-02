@@ -8,9 +8,21 @@ export default function HistoryComponent(props) {
     const [isCallTranscriptModalOpen, setIsCallTranscriptModalOpen] = useState(false)
     const [activeTranscript, setActiveTranscript] = useState(null)
 
+    const getUser = (transcript) => {
+        const otherUser = transcript?.users.find((user) => user !== props?.user?.nickname)
+        if (otherUser) {
+            return <span className={styles.tabText}>{otherUser}</span>
+        } else {
+            return (
+                <span className={styles.tabText} style={{ fontStyle: 'italic' }}>
+                    Unattended
+                </span>
+            )
+        }
+    }
+
     return (
         <>
-            {/* <div className={styles.historySidebar} style={{ width: props.width || '30%' }}> */}
             <div className={styles.historySidebar} style={{ width: '-webkit-fill-available' }}>
                 <h2 className={styles.historyTitle}>Call History</h2>
                 {props.transcripts.length > 0 ? (
@@ -29,11 +41,7 @@ export default function HistoryComponent(props) {
                                         justifyContent: 'center',
                                     }}
                                 >
-                                    <span className={styles.tabText}>
-                                        {transcript?.users.find(
-                                            (user) => user !== props?.user?.nickname
-                                        ) || 'N/A'}
-                                    </span>
+                                    <span className={styles.tabText}>{getUser(transcript)}</span>
                                     <span className={styles.tabText} style={{ color: '#8c8c8c' }}>
                                         (Date:{' '}
                                         {transcript?.date_created['$date'].split('T')[0] || 'N/A'})
