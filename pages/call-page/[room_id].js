@@ -19,7 +19,7 @@ import socketio from 'socket.io-client'
 export default function CallPage({ accessToken }) {
     const userVideo = useRef(null)
     const remoteVideo = useRef(null)
-    const [stream, setStream] = useState(null)
+    const [mediaStream, setMediaStream] = useState(null)
     const [spaceBarPressed, setSpaceBarPressed] = useState(false)
     const [audioChunk, setAudioChunk] = useState(null)
     const audioRecording = useRef(null)
@@ -258,21 +258,19 @@ export default function CallPage({ accessToken }) {
 
     // Setup user camera and establish ws connection
     useEffect(() => {
-        navigator.mediaDevices
-            .getUserMedia({
-                audio: false,
+        const getDeviceMedia = async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     height: 350,
                     width: 350,
                 },
             })
-            .then((stream) => {
-                console.log('Connecting')
-                setStream(stream)
+            setMediaStream(stream)
+            if (userVideo.current) {
                 userVideo.current.srcObject = stream
-                userVideo.current.play()
-            })
-            .catch(console.error)
+            }
+        }
+        getDeviceMedia()
         return function cleanup() {
             stopwebcam()
             pc?.close()
@@ -413,7 +411,7 @@ export default function CallPage({ accessToken }) {
                                 <div style={{ textAlign: 'center' }}>
                                     <h2>Host</h2>
                                     <div>
-                                        {stream && (
+                                        {mediaStream && (
                                             <video
                                                 autoPlay
                                                 muted
