@@ -37,6 +37,7 @@ export default function CallPage({ accessToken }) {
         },
         transports: ['websocket'],
         upgrade: false,
+        autoConnect: false,
     })
 
     // SWR hooks
@@ -268,6 +269,9 @@ export default function CallPage({ accessToken }) {
             setMediaStream(stream)
             if (userVideo.current) {
                 userVideo.current.srcObject = stream
+
+                socket.connect()
+                socket.emit('join', { username: user.nickname, room: roomID })
             }
         }
         getDeviceMedia()
@@ -426,10 +430,9 @@ export default function CallPage({ accessToken }) {
                                     <h2>Guest</h2>
                                     <div>
                                         <video
+                                            autoPlay
                                             style={{ width: '60%', height: 'auto' }}
                                             ref={remoteVideo}
-                                            controls
-                                            src=""
                                         ></video>
                                     </div>
                                 </div>
