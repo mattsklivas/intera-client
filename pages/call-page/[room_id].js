@@ -5,7 +5,7 @@ import { useUser } from '@auth0/nextjs-auth0/client'
 import auth0 from '../../auth/auth0'
 import LoadingComponent from '../../components/LoadingComponent'
 import HeaderComponent from '../../components/HeaderComponent'
-import VideoFeedComponent from '../../components/VideoFeedComponent'
+// import VideoFeedComponent from '../../components/VideoFeedComponent'
 import { theme } from '../../core/theme'
 import { getQuery } from '../../core/utils'
 import HistoryComponent from '../../components/HistoryComponent'
@@ -17,6 +17,8 @@ import fetcher from '../../core/fetcher'
 import socketio from 'socket.io-client'
 
 export default function CallPage({ accessToken }) {
+    const userVideo = useRef(null)
+    const remoteVideo = useRef(null)
     const [spaceBarPressed, setSpaceBarPressed] = useState(false)
     const [audioChunk, setAudioChunk] = useState(null)
     const audioRecording = useRef(null)
@@ -34,6 +36,7 @@ export default function CallPage({ accessToken }) {
         },
         transports: ['websocket'],
         upgrade: false,
+        autoConnect: false,
     })
 
     // SWR hooks
@@ -74,10 +77,11 @@ export default function CallPage({ accessToken }) {
             !initialized &&
             typeof transcriptHistory !== 'undefined' &&
             typeof roomInfo !== 'undefined' &&
+            user.nickname !== undefined &&
             roomInfo?.active == true
         ) {
-            // Establish websocket connection
             socket.connect()
+            socket.emit('join', { username: user.nickname, room: roomID })
 
             // Render page
             setInitialized(true)
@@ -87,18 +91,18 @@ export default function CallPage({ accessToken }) {
     // Websocket listeners
     useEffect(() => {
         socket.on('connect', (data) => {
-            socket.emit('join', { room_id: roomID, username: user?.nickname })
+            // socket.emit('join', { room_id: roomID, username: user?.nickname })
         })
 
         socket.on('disconnect', (data) => {
             console.log('disconnect', data)
         })
 
-        socket.on('join', (data) => {
-            let users = roomUsers
-            users.add(data.user_sid)
-            setRoomUsers(users)
-        })
+        // socket.on('join', (data) => {
+        //     let users = roomUsers
+        //     users.add(data.user_sid)
+        //     setRoomUsers(users)
+        // })
 
         socket.on('message', (data) => {
             console.log('message', data || 'none')
@@ -242,6 +246,135 @@ export default function CallPage({ accessToken }) {
         socket.emit('mutate', { roomID: roomID })
     }
 
+    let pc // For RTCPeerConnection Object
+
+    const sendData = (data) => {
+        socket.emit('data', {
+            username: user.nickname,
+            room: roomID,
+            data: data,
+        })
+    }
+
+    // Setup user camera and establish ws connection
+    useEffect(() => {
+        const getDeviceMedia = async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    height: 360,
+                    width: 480,
+                },
+            })
+            if (userVideo.current) {
+                userVideo.current.srcObject = stream
+
+                socket.connect()
+                socket.emit('join', { username: user?.nickname, room: roomID })
+            }
+        }
+        getDeviceMedia()
+        return function cleanup() {
+            stopwebcam()
+            pc?.close()
+        }
+    }, [])
+
+    const onIceCandidate = (event) => {
+        if (event.candidate) {
+            console.log('Sending ICE candidate')
+            sendData({
+                type: 'candidate',
+                candidate: event.candidate,
+            })
+        }
+    }
+
+    const onTrack = (event) => {
+        console.log('Adding remote track')
+        remoteVideo.current.srcObject = event.streams[0]
+    }
+
+    const createPeerConnection = () => {
+        try {
+            pc = new RTCPeerConnection({
+                iceServers: [
+                    {
+                        urls: 'stun:openrelay.metered.ca:80',
+                    },
+                    {
+                        urls: 'turn:openrelay.metered.ca:80',
+                        username: 'openrelayproject',
+                        credential: 'openrelayproject',
+                    },
+                    {
+                        urls: 'turn:openrelay.metered.ca:443',
+                        username: 'openrelayproject',
+                        credential: 'openrelayproject',
+                    },
+                    {
+                        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                        username: 'openrelayproject',
+                        credential: 'openrelayproject',
+                    },
+                ],
+            })
+            pc.onicecandidate = onIceCandidate
+            pc.ontrack = onTrack
+            const localStream = userVideo.current.srcObject
+            for (const track of localStream.getTracks()) {
+                pc.addTrack(track, localStream)
+            }
+            console.log('PeerConnection created')
+        } catch (error) {
+            console.error('PeerConnection failed: ', error)
+        }
+    }
+
+    const setAndSendLocalDescription = (sessionDescription) => {
+        pc.setLocalDescription(sessionDescription)
+        console.log('Local description set')
+        sendData(sessionDescription)
+    }
+
+    const sendOffer = () => {
+        console.log('Sending offer')
+        pc.createOffer().then(setAndSendLocalDescription, (error) => {
+            console.error('Send offer failed: ', error)
+        })
+    }
+
+    const sendAnswer = () => {
+        console.log('Sending answer')
+        pc.createAnswer().then(setAndSendLocalDescription, (error) => {
+            console.error('Send answer failed: ', error)
+        })
+    }
+
+    const signalingDataHandler = (data) => {
+        if (data.type === 'offer') {
+            createPeerConnection()
+            pc.setRemoteDescription(new RTCSessionDescription(data))
+            sendAnswer()
+        } else if (data.type === 'answer') {
+            pc.setRemoteDescription(new RTCSessionDescription(data))
+        } else if (data.type === 'candidate') {
+            pc.addIceCandidate(new RTCIceCandidate(data.candidate))
+        } else {
+            console.log('Unknown Data')
+        }
+    }
+
+    socket.on('ready', () => {
+        console.log('Ready to Connect!')
+        createPeerConnection()
+        sendOffer()
+    })
+
+    socket.on('data', (data) => {
+        console.log('Data received: ', data)
+        signalingDataHandler(data)
+    })
+
     if (user && initialized && !isLoading) {
         return (
             <ConfigProvider theme={theme}>
@@ -275,7 +408,32 @@ export default function CallPage({ accessToken }) {
                         />
                     </div>
                     <div style={{ width: '40%' }}>
-                        <VideoFeedComponent />
+                        <div style={{ width: '-webkit-fill-available' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <h2 style={{ marginBottom: 10 }}>Host</h2>
+                                    <div>
+                                        <video
+                                            autoPlay
+                                            muted
+                                            playsInline
+                                            ref={userVideo}
+                                            style={{ width: '55%', height: 'auto' }}
+                                        ></video>
+                                    </div>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                    <h2 style={{ marginBottom: 10 }}>Guest</h2>
+                                    <div>
+                                        <video
+                                            autoPlay
+                                            style={{ width: '55%', height: 'auto' }}
+                                            ref={remoteVideo}
+                                        ></video>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </ConfigProvider>
