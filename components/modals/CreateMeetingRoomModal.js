@@ -12,6 +12,7 @@ function CreateMeetingRoomModal(props) {
     const [initialized, setInitialized] = useState(false)
     const [loading, setLoading] = useState(false)
     const [loadingMail, setLoadingMail] = useState(false)
+    const [email, setEmail] = useState('')
 
     const handleOk = async () => {
         setLoading(true)
@@ -139,7 +140,13 @@ function CreateMeetingRoomModal(props) {
                     </Divider>
                     <Row type="flex" align="middle">
                         <Col span={24} style={{ paddingBottom: 15 }}>
-                            <Input block="true" placeholder="Enter Email of Guest to Invite" />
+                            <Input
+                                block="true"
+                                placeholder="Enter Email of Guest to Invite"
+                                onChange={(e) => {
+                                    setEmail(e.target.value)
+                                }}
+                            />
                         </Col>
                         <Col span={24}>
                             <Button
