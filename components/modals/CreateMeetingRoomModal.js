@@ -11,6 +11,7 @@ function CreateMeetingRoomModal(props) {
     const [hostType, setHostType] = useState('')
     const [initialized, setInitialized] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [loadingMail, setLoadingMail] = useState(false)
 
     const handleOk = async () => {
         setLoading(true)
@@ -141,7 +142,37 @@ function CreateMeetingRoomModal(props) {
                             <Input block="true" placeholder="Enter Email of Guest to Invite" />
                         </Col>
                         <Col span={24}>
-                            <Button block="true" type="primary">
+                            <Button
+                                block="true"
+                                type="primary"
+                                loading={loadingMail}
+                                onClick={() => {
+                                    setLoadingMail(true)
+                                    fetcher(props.accessToken, '/api/rooms/email_invite', {
+                                        name: 'POST',
+                                        body: JSON.stringify({ room_id: roomID, email: email }),
+                                    })
+                                        .then(async (res) => {
+                                            if (res.status == 200) {
+                                                api.success({
+                                                    message: 'Email sent successfully',
+                                                })
+                                                setLoadingMail(false)
+                                            } else {
+                                                api.error({
+                                                    message: `Error ${res.status}: ${res.error}`,
+                                                })
+                                                setLoadingMail(false)
+                                            }
+                                        })
+                                        .catch(() => {
+                                            api.error({
+                                                message: 'An unknown error has occurred',
+                                            })
+                                            setLoadingMail(false)
+                                        })
+                                }}
+                            >
                                 Send Invite
                             </Button>
                         </Col>
