@@ -1,6 +1,7 @@
 import HeaderComponent from '../components/HeaderComponent'
 import styles from '../styles/Practice.module.css'
 import { useUser } from '@auth0/nextjs-auth0/client'
+import { useRouter } from 'next/router'
 import auth0 from '../auth/auth0'
 import { Row, Col, Button, ConfigProvider, Typography } from 'antd'
 import { useEffect, useRef, useState } from 'react'
@@ -14,6 +15,7 @@ import fetcher from '../core/fetcher'
 export default function PracticeModule({ accessToken }) {
     const [isAnswerModalOpen, setIsAnswerModalOpen] = useState(false)
     const { user, error, isLoading } = useUser()
+    const router = useRouter()
     const videoReference = useRef(null)
     const videoStream = useRef(null)
     const [recorder, setRecorder] = useState(null)
@@ -138,10 +140,14 @@ export default function PracticeModule({ accessToken }) {
         }
     }, [isResultView])
 
+    const handleLeave = async () => {
+        router.push('/')
+    }
+
     // To do : change result text color based on server response
     return (
         <ConfigProvider theme={theme}>
-            <HeaderComponent user={user} />
+            <HeaderComponent user={user} handleLeave={handleLeave} />
             <div className={styles.main}>
                 <Row className={styles.row1}>
                     <Col>
