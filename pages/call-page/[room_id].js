@@ -255,6 +255,15 @@ export default function CallPage({ accessToken }) {
 
     const handleLeave = async () => {
         socket.emit('leave', { room_id: roomID, user: user?.nickname })
+
+        // Close the room
+        fetcher(accessToken, '/api/rooms/close_room', {
+            method: 'PUT',
+            body: JSON.stringify({
+                room_id: roomID,
+            }),
+        })
+
         router.push('/')
     }
 
