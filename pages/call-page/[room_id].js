@@ -263,6 +263,10 @@ export default function CallPage({ accessToken }) {
             }),
         })
 
+        if (userVideo?.current?.srcObject) {
+            userVideo.current.srcObject.getTracks().forEach((track) => track.stop())
+        }
+
         router.push('/')
     }
 
@@ -293,6 +297,7 @@ export default function CallPage({ accessToken }) {
                 .then(() => {
                     setIsLocalVideoEnabled(true)
                 })
+
             if (userVideo.current) {
                 userVideo.current.srcObject = stream
 
@@ -443,8 +448,6 @@ export default function CallPage({ accessToken }) {
             </span>
         )
     }
-
-    console.log(userVideo?.current?.srcObject)
 
     if (user && initialized && !isLoading) {
         return (
