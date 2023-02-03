@@ -20,7 +20,7 @@ import socketio from 'socket.io-client'
 export default function CallPage({ accessToken }) {
     const userVideo = useRef(null)
     const remoteVideo = useRef(null)
-    const [isUserVideoEnabled, setIsUserVideoEnabled] = useState(false)
+    const [isLocalVideoEnabled, setIsLocalVideoEnabled] = useState(false)
     const [isRemoteVideoEnabled, setIsRemoteVideoEnabled] = useState(false)
     const [userRole, setUserRole] = useState(null)
     const [spaceBarPressed, setSpaceBarPressed] = useState(false)
@@ -105,7 +105,6 @@ export default function CallPage({ accessToken }) {
 
         socket.on('join', (data) => {
             console.log('joined')
-            setIsRemoteVideoEnabled(true)
             // let users = roomUsers
             // users.add(data.user_sid)
             // setRoomUsers(users)
@@ -284,18 +283,21 @@ export default function CallPage({ accessToken }) {
     // Setup user camera and establish ws connection
     useEffect(() => {
         const getDeviceMedia = async () => {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    height: 360,
-                    width: 480,
-                },
-            })
+            const stream = await navigator.mediaDevices
+                .getUserMedia({
+                    video: {
+                        height: 360,
+                        width: 480,
+                    },
+                })
+                .then(() => {
+                    setIsLocalVideoEnabled(true)
+                })
             if (userVideo.current) {
                 userVideo.current.srcObject = stream
 
                 socket.connect()
                 socket.emit('join', { user: user?.nickname, room_id: roomID })
-                setIsUserVideoEnabled(true)
             }
         }
         getDeviceMedia()
@@ -305,6 +307,8 @@ export default function CallPage({ accessToken }) {
         }
     }, [])
 
+    // RTC Connection Reference: https://www.100ms.live/blog/webrtc-python-react
+    // *************************************************************************
     const onIceCandidate = (event) => {
         if (event.candidate) {
             console.log('Sending ICE candidate')
@@ -316,6 +320,8 @@ export default function CallPage({ accessToken }) {
     }
 
     const onTrack = (event) => {
+        console.log('Received track from other user.')
+        setIsRemoteVideoEnabled(true)
         remoteVideo.current.srcObject = event.streams[0]
     }
 
@@ -356,11 +362,13 @@ export default function CallPage({ accessToken }) {
     }
 
     const setAndSendLocalDescription = (sessionDescription) => {
+        console.log('Broadcasting local description.')
         peerConnection.setLocalDescription(sessionDescription)
         dataTransfer(sessionDescription)
     }
 
     const sendOffer = () => {
+        console.log('Sending an offer to other peer')
         peerConnection.createOffer().then(setAndSendLocalDescription, (error) => {
             console.error('Unable to send offer: ', error)
         })
@@ -385,6 +393,7 @@ export default function CallPage({ accessToken }) {
             console.log('Unrecognized data received...')
         }
     }
+    // *************************************************************************
 
     const getVideoPlaceholder = () => {
         return (
@@ -402,18 +411,36 @@ export default function CallPage({ accessToken }) {
                         border: '2px solid #f0f0f0',
                     }}
                 >
-                    <Spin
-                        indicator={
-                            <LoadingOutlined
-                                style={{
-                                    fontSize: 40,
-                                }}
-                                spin
-                            />
-                        }
-                    />
+                    <div style={{ position: 'relative', top: '40%' }}>
+                        <Spin
+                            indicator={
+                                <LoadingOutlined
+                                    style={{
+                                        fontSize: 40,
+                                    }}
+                                    spin
+                                />
+                            }
+                        />
+                    </div>
                 </div>
             </div>
+        )
+    }
+
+    const getRemoteUserName = () => {
+        const remoteUser = roomInfo.users.find((username) => username !== user.nickname)
+        return remoteUser ? (
+            <span>
+                <span>{remoteUser}</span>
+                <span>{` (${userRole === 'ASL' ? 'Speaker' : 'ASL Signer'})`}</span>
+            </span>
+        ) : (
+            <span className={styles.remoteUserLoading}>
+                Awaiting user connection<span>.</span>
+                <span>.</span>
+                <span>.</span>
+            </span>
         )
     }
 
@@ -453,16 +480,16 @@ export default function CallPage({ accessToken }) {
                         <div style={{ width: '-webkit-fill-available' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <div style={{ textAlign: 'center' }}>
-                                    <h2 style={{ marginBottom: 10 }}>Guest</h2>
+                                    <h2 style={{ marginBottom: 10 }}>{getRemoteUserName()}</h2>
                                     <div>
-                                        {true ? (
+                                        {isRemoteVideoEnabled ? (
                                             <video
                                                 autoPlay
-                                                style={{ width: '50%', height: '50%' }}
+                                                style={{ width: '55%', height: '55%' }}
                                                 ref={remoteVideo}
                                             ></video>
                                         ) : (
-                                            getVideoPlaceholder('guest')
+                                            getVideoPlaceholder()
                                         )}
                                     </div>
                                 </div>
@@ -477,10 +504,10 @@ export default function CallPage({ accessToken }) {
                                                 muted
                                                 playsInline
                                                 ref={userVideo}
-                                                style={{ width: '50%', height: '50%' }}
+                                                style={{ width: '55%', height: '55%' }}
                                             ></video>
                                         ) : (
-                                            getVideoPlaceholder('host')
+                                            getVideoPlaceholder()
                                         )}
                                     </div>
                                 </div>
