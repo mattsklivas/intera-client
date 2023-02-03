@@ -155,8 +155,9 @@ function CreateMeetingRoomModal(props) {
                                 loading={loadingMail}
                                 onClick={() => {
                                     setLoadingMail(true)
+                                    console.log(roomID, email)
                                     fetcher(props.accessToken, '/api/rooms/email_invite', {
-                                        name: 'POST',
+                                        method: 'POST',
                                         body: JSON.stringify({ room_id: roomID, email: email }),
                                     })
                                         .then(async (res) => {
@@ -172,9 +173,9 @@ function CreateMeetingRoomModal(props) {
                                                 setLoadingMail(false)
                                             }
                                         })
-                                        .catch(() => {
+                                        .catch((e) => {
                                             api.error({
-                                                message: 'An unknown error has occurred',
+                                                message: 'An unknown error has occurred' + e,
                                             })
                                             setLoadingMail(false)
                                         })
