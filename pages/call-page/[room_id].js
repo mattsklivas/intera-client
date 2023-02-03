@@ -444,6 +444,8 @@ export default function CallPage({ accessToken }) {
         )
     }
 
+    console.log(userVideo?.current?.srcObject)
+
     if (user && initialized && !isLoading) {
         return (
             <ConfigProvider theme={theme}>
@@ -485,6 +487,8 @@ export default function CallPage({ accessToken }) {
                                         {isRemoteVideoEnabled ? (
                                             <video
                                                 autoPlay
+                                                muted
+                                                playsInline
                                                 style={{ width: '55%', height: '55%' }}
                                                 ref={remoteVideo}
                                             ></video>
@@ -498,7 +502,7 @@ export default function CallPage({ accessToken }) {
                                         userRole === 'ASL' ? 'ASL Signer' : 'Speaker'
                                     })`}</h2>
                                     <div>
-                                        {true ? (
+                                        {isLocalVideoEnabled ? (
                                             <video
                                                 autoPlay
                                                 muted
