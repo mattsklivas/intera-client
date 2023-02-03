@@ -1,14 +1,23 @@
 .historySidebar {
     float: left;
-    overflow-y: hidden;
-    height: 100vh;
     border-right: 4mm ridge rgba(201, 173, 167, 0.6);
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.historySidebar ::-webkit-scrollbar {
+    display: none;
 }
 
 .historyTitle {
     display: flex;
     justify-content: center;
-    padding-top: 5%;
+    font-size: 1.5em;
+    padding-top: 0.83em;
+    margin-top: 0.83em;
+    font-weight: bold;
+    padding-bottom: 1.4em;
+    border-bottom: 1px solid #f0f0f0;
 }
 
 .tabText {
