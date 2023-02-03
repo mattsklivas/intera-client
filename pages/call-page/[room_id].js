@@ -1,5 +1,6 @@
 import { React, useState, useEffect, useRef } from 'react'
-import { ConfigProvider, Button } from 'antd'
+import { ConfigProvider, Button, Spin } from 'antd'
+import { LoadingOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/router'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import auth0 from '../../auth/auth0'
@@ -19,6 +20,9 @@ import socketio from 'socket.io-client'
 export default function CallPage({ accessToken }) {
     const userVideo = useRef(null)
     const remoteVideo = useRef(null)
+    const [isUserVideoEnabled, setIsUserVideoEnabled] = useState(false)
+    const [isRemoteVideoEnabled, setIsRemoteVideoEnabled] = useState(false)
+    const [userRole, setUserRole] = useState(null)
     const [spaceBarPressed, setSpaceBarPressed] = useState(false)
     const [audioChunk, setAudioChunk] = useState(null)
     const audioRecording = useRef(null)
@@ -84,6 +88,8 @@ export default function CallPage({ accessToken }) {
             socket.connect()
             socket.emit('join', { user: user?.nickname, room_id: roomID })
 
+            setUserRole(getType())
+
             // Render page
             setInitialized(true)
         }
@@ -91,24 +97,7 @@ export default function CallPage({ accessToken }) {
 
     // Websocket listeners
     useEffect(() => {
-        socket.on('connect', (data) => {
-            const getDeviceMedia = async () => {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        height: 360,
-                        width: 480,
-                    },
-                })
-                if (userVideo.current) {
-                    userVideo.current.srcObject = stream
-                }
-            }
-            getDeviceMedia()
-            return function cleanup() {
-                stopwebcam()
-                peerConnection?.close()
-            }
-        })
+        socket.on('connect', (data) => {})
 
         socket.on('disconnect', (data) => {
             console.log('disconnect', data)
@@ -116,6 +105,7 @@ export default function CallPage({ accessToken }) {
 
         socket.on('join', (data) => {
             console.log('joined')
+            setIsRemoteVideoEnabled(true)
             // let users = roomUsers
             // users.add(data.user_sid)
             // setRoomUsers(users)
@@ -136,8 +126,9 @@ export default function CallPage({ accessToken }) {
             }
         })
 
+        // Following a succesful join, establish a peer connection
+        // and send an offer to the other user
         socket.on('ready', () => {
-            console.log('ok')
             createPeerConnection()
             sendOffer()
         })
@@ -265,33 +256,6 @@ export default function CallPage({ accessToken }) {
     const handleLeave = async () => {
         socket.emit('leave', { room_id: roomID, user: user?.nickname })
         router.push('/')
-        // fetcher(accessToken, '/api/transcripts/create_message', {
-        //     method: 'POST',
-        //     body: JSON.stringify({
-        //         room_id: roomInfo.room_id,
-        //         to_user: roomInfo.users.find((username) => username !== user.nickname) || 'N/A',
-        //         message: message,
-        //         type: getType(),
-        //     }),
-        // })
-        //     .then((res) => {
-        //         if (res.status == 200) {
-        //             // Update chatbox
-        //             roomInfoMutate()
-
-        //             // Emit mutate message over websocket to other user
-        //             socket.emit('mutate', { roomID: roomID })
-        //         } else {
-        //             api.error({
-        //                 message: `Error ${res.status}: ${res.error}`,
-        //             })
-        //         }
-        //     })
-        //     .catch((res) => {
-        //         api.error({
-        //             message: 'An unknown error has occurred',
-        //         })
-        //     })
     }
 
     // Refresh chatbox for both users upon invalidation
@@ -308,28 +272,29 @@ export default function CallPage({ accessToken }) {
         })
     }
 
-    // // Setup user camera and establish ws connection
-    // useEffect(() => {
-    //     const getDeviceMedia = async () => {
-    //         const stream = await navigator.mediaDevices.getUserMedia({
-    //             video: {
-    //                 height: 360,
-    //                 width: 480,
-    //             },
-    //         })
-    //         if (userVideo.current) {
-    //             userVideo.current.srcObject = stream
+    // Setup user camera and establish ws connection
+    useEffect(() => {
+        const getDeviceMedia = async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    height: 360,
+                    width: 480,
+                },
+            })
+            if (userVideo.current) {
+                userVideo.current.srcObject = stream
 
-    //             socket.connect()
-    //             socket.emit('join', { user: user?.nickname, room_id: roomID })
-    //         }
-    //     }
-    //     getDeviceMedia()
-    //     return function cleanup() {
-    //         stopwebcam()
-    //         peerConnection?.close()
-    //     }
-    // }, [])
+                socket.connect()
+                socket.emit('join', { user: user?.nickname, room_id: roomID })
+                setIsUserVideoEnabled(true)
+            }
+        }
+        getDeviceMedia()
+        return function cleanup() {
+            stopwebcam()
+            peerConnection?.close()
+        }
+    }, [])
 
     const onIceCandidate = (event) => {
         if (event.candidate) {
@@ -375,9 +340,9 @@ export default function CallPage({ accessToken }) {
             for (const track of userStream.getTracks()) {
                 peerConnection.addTrack(track, userStream)
             }
-            console.log('PeerConnection created')
+            console.log('Peer connection established')
         } catch (error) {
-            console.error('PeerConnection failed: ', error)
+            console.error('Failed to establish connection: ', error)
         }
     }
 
@@ -408,8 +373,39 @@ export default function CallPage({ accessToken }) {
         } else if (data.type === 'candidate') {
             peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate))
         } else {
-            console.log('Unknown Data')
+            console.log('Unrecognized data received...')
         }
+    }
+
+    const getVideoPlaceholder = () => {
+        return (
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
+            >
+                <div
+                    style={{
+                        width: '55%',
+                        aspectRatio: 'auto 4 / 3',
+                        border: '2px solid #f0f0f0',
+                    }}
+                >
+                    <Spin
+                        indicator={
+                            <LoadingOutlined
+                                style={{
+                                    fontSize: 40,
+                                }}
+                                spin
+                            />
+                        }
+                    />
+                </div>
+            </div>
+        )
     }
 
     if (user && initialized && !isLoading) {
@@ -448,25 +444,35 @@ export default function CallPage({ accessToken }) {
                         <div style={{ width: '-webkit-fill-available' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <div style={{ textAlign: 'center' }}>
-                                    <h2 style={{ marginBottom: 10 }}>Host</h2>
+                                    <h2 style={{ marginBottom: 10 }}>Guest</h2>
                                     <div>
-                                        <video
-                                            autoPlay
-                                            muted
-                                            playsInline
-                                            ref={userVideo}
-                                            style={{ width: '55%', height: 'auto' }}
-                                        ></video>
+                                        {true ? (
+                                            <video
+                                                autoPlay
+                                                style={{ width: '50%', height: '50%' }}
+                                                ref={remoteVideo}
+                                            ></video>
+                                        ) : (
+                                            getVideoPlaceholder('guest')
+                                        )}
                                     </div>
                                 </div>
                                 <div style={{ textAlign: 'center' }}>
-                                    <h2 style={{ marginBottom: 10 }}>Guest</h2>
+                                    <h2 style={{ marginBottom: 10 }}>{`${user?.nickname} (${
+                                        userRole === 'ASL' ? 'ASL Signer' : 'Speaker'
+                                    })`}</h2>
                                     <div>
-                                        <video
-                                            autoPlay
-                                            style={{ width: '55%', height: 'auto' }}
-                                            ref={remoteVideo}
-                                        ></video>
+                                        {true ? (
+                                            <video
+                                                autoPlay
+                                                muted
+                                                playsInline
+                                                ref={userVideo}
+                                                style={{ width: '50%', height: '50%' }}
+                                            ></video>
+                                        ) : (
+                                            getVideoPlaceholder('host')
+                                        )}
                                     </div>
                                 </div>
                             </div>
