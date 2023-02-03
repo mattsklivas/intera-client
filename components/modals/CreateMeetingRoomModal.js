@@ -119,7 +119,7 @@ function CreateMeetingRoomModal(props) {
                                 )}
                             </div>
                             <Button
-                                block
+                                block="true"
                                 type="primary"
                                 onClick={() => {
                                     navigator.clipboard.writeText(inviteLink)
@@ -138,10 +138,10 @@ function CreateMeetingRoomModal(props) {
                     </Divider>
                     <Row type="flex" align="middle">
                         <Col span={24} style={{ paddingBottom: 15 }}>
-                            <Input block placeholder="Enter Email of Guest to Invite" />
+                            <Input block="true" placeholder="Enter Email of Guest to Invite" />
                         </Col>
                         <Col span={24}>
-                            <Button block type="primary">
+                            <Button block="true" type="primary">
                                 Send Invite
                             </Button>
                         </Col>
