@@ -1,5 +1,6 @@
 import { React, useState, useEffect, useRef } from 'react'
-import { ConfigProvider, Button } from 'antd'
+import { ConfigProvider, Button, Spin } from 'antd'
+import { LoadingOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/router'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import auth0 from '../../auth/auth0'
@@ -19,6 +20,9 @@ import socketio from 'socket.io-client'
 export default function CallPage({ accessToken }) {
     const userVideo = useRef(null)
     const remoteVideo = useRef(null)
+    const [isUserVideoEnabled, setIsUserVideoEnabled] = useState(false)
+    const [isRemoteVideoEnabled, setIsRemoteVideoEnabled] = useState(false)
+    const [userRole, setUserRole] = useState(null)
     const [spaceBarPressed, setSpaceBarPressed] = useState(false)
     const [audioChunk, setAudioChunk] = useState(null)
     const audioRecording = useRef(null)
@@ -28,6 +32,7 @@ export default function CallPage({ accessToken }) {
     const [initialized, setInitialized] = useState(false)
     const { user, error, isLoading } = useUser()
     const [roomUsers, setRoomUsers] = useState(new Set())
+    let peerConnection
 
     const socket = socketio(process.env.API_URL || 'http://localhost:5000', {
         cors: {
@@ -81,7 +86,9 @@ export default function CallPage({ accessToken }) {
             roomInfo?.active == true
         ) {
             socket.connect()
-            socket.emit('join', { username: user.nickname, room: roomID })
+            socket.emit('join', { user: user?.nickname, room_id: roomID })
+
+            setUserRole(getType())
 
             // Render page
             setInitialized(true)
@@ -90,19 +97,19 @@ export default function CallPage({ accessToken }) {
 
     // Websocket listeners
     useEffect(() => {
-        socket.on('connect', (data) => {
-            // socket.emit('join', { room_id: roomID, username: user?.nickname })
-        })
+        socket.on('connect', (data) => {})
 
         socket.on('disconnect', (data) => {
             console.log('disconnect', data)
         })
 
-        // socket.on('join', (data) => {
-        //     let users = roomUsers
-        //     users.add(data.user_sid)
-        //     setRoomUsers(users)
-        // })
+        socket.on('join', (data) => {
+            console.log('joined')
+            setIsRemoteVideoEnabled(true)
+            // let users = roomUsers
+            // users.add(data.user_sid)
+            // setRoomUsers(users)
+        })
 
         socket.on('message', (data) => {
             console.log('message', data || 'none')
@@ -117,6 +124,17 @@ export default function CallPage({ accessToken }) {
             if (data?.room_id == roomID) {
                 roomInfoMutate()
             }
+        })
+
+        // Following a succesful join, establish a peer connection
+        // and send an offer to the other user
+        socket.on('ready', () => {
+            createPeerConnection()
+            sendOffer()
+        })
+
+        socket.on('data_transfer', (data) => {
+            signalingDataHandler(data)
         })
     }, [socket])
 
@@ -236,7 +254,7 @@ export default function CallPage({ accessToken }) {
     }
 
     const handleLeave = async () => {
-        socket.emit('leave', { room_id: roomID, username: user?.nickname })
+        socket.emit('leave', { room_id: roomID, user: user?.nickname })
         router.push('/')
     }
 
@@ -246,13 +264,11 @@ export default function CallPage({ accessToken }) {
         socket.emit('mutate', { roomID: roomID })
     }
 
-    let pc // For RTCPeerConnection Object
-
-    const sendData = (data) => {
-        socket.emit('data', {
-            username: user.nickname,
-            room: roomID,
-            data: data,
+    const dataTransfer = (data) => {
+        socket.emit('data_transfer', {
+            user: user.nickname,
+            room_id: roomID,
+            body: data,
         })
     }
 
@@ -269,20 +285,21 @@ export default function CallPage({ accessToken }) {
                 userVideo.current.srcObject = stream
 
                 socket.connect()
-                socket.emit('join', { username: user?.nickname, room: roomID })
+                socket.emit('join', { user: user?.nickname, room_id: roomID })
+                setIsUserVideoEnabled(true)
             }
         }
         getDeviceMedia()
         return function cleanup() {
             stopwebcam()
-            pc?.close()
+            peerConnection?.close()
         }
     }, [])
 
     const onIceCandidate = (event) => {
         if (event.candidate) {
             console.log('Sending ICE candidate')
-            sendData({
+            dataTransfer({
                 type: 'candidate',
                 candidate: event.candidate,
             })
@@ -290,13 +307,12 @@ export default function CallPage({ accessToken }) {
     }
 
     const onTrack = (event) => {
-        console.log('Adding remote track')
         remoteVideo.current.srcObject = event.streams[0]
     }
 
     const createPeerConnection = () => {
         try {
-            pc = new RTCPeerConnection({
+            peerConnection = new RTCPeerConnection({
                 iceServers: [
                     {
                         urls: 'stun:openrelay.metered.ca:80',
@@ -318,62 +334,79 @@ export default function CallPage({ accessToken }) {
                     },
                 ],
             })
-            pc.onicecandidate = onIceCandidate
-            pc.ontrack = onTrack
-            const localStream = userVideo.current.srcObject
-            for (const track of localStream.getTracks()) {
-                pc.addTrack(track, localStream)
+            peerConnection.onicecandidate = onIceCandidate
+            peerConnection.ontrack = onTrack
+            const userStream = userVideo.current.srcObject
+            for (const track of userStream.getTracks()) {
+                peerConnection.addTrack(track, userStream)
             }
-            console.log('PeerConnection created')
+            console.log('Peer connection established')
         } catch (error) {
-            console.error('PeerConnection failed: ', error)
+            console.error('Failed to establish connection: ', error)
         }
     }
 
     const setAndSendLocalDescription = (sessionDescription) => {
-        pc.setLocalDescription(sessionDescription)
-        console.log('Local description set')
-        sendData(sessionDescription)
+        peerConnection.setLocalDescription(sessionDescription)
+        dataTransfer(sessionDescription)
     }
 
     const sendOffer = () => {
-        console.log('Sending offer')
-        pc.createOffer().then(setAndSendLocalDescription, (error) => {
-            console.error('Send offer failed: ', error)
+        peerConnection.createOffer().then(setAndSendLocalDescription, (error) => {
+            console.error('Unable to send offer: ', error)
         })
     }
 
     const sendAnswer = () => {
-        console.log('Sending answer')
-        pc.createAnswer().then(setAndSendLocalDescription, (error) => {
-            console.error('Send answer failed: ', error)
+        peerConnection.createAnswer().then(setAndSendLocalDescription, (error) => {
+            console.error('Unable to send answer: ', error)
         })
     }
 
     const signalingDataHandler = (data) => {
         if (data.type === 'offer') {
             createPeerConnection()
-            pc.setRemoteDescription(new RTCSessionDescription(data))
+            peerConnection.setRemoteDescription(new RTCSessionDescription(data))
             sendAnswer()
         } else if (data.type === 'answer') {
-            pc.setRemoteDescription(new RTCSessionDescription(data))
+            peerConnection.setRemoteDescription(new RTCSessionDescription(data))
         } else if (data.type === 'candidate') {
-            pc.addIceCandidate(new RTCIceCandidate(data.candidate))
+            peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate))
         } else {
-            console.log('Unknown Data')
+            console.log('Unrecognized data received...')
         }
     }
 
-    socket.on('ready', () => {
-        console.log('Ready to Connect!')
-        createPeerConnection()
-        sendOffer()
-    })
-
-    socket.on('data', (data) => {
-        console.log('Data received: ', data)
-        signalingDataHandler(data)
-    })
+    const getVideoPlaceholder = () => {
+        return (
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
+            >
+                <div
+                    style={{
+                        width: '55%',
+                        aspectRatio: 'auto 4 / 3',
+                        border: '2px solid #f0f0f0',
+                    }}
+                >
+                    <Spin
+                        indicator={
+                            <LoadingOutlined
+                                style={{
+                                    fontSize: 40,
+                                }}
+                                spin
+                            />
+                        }
+                    />
+                </div>
+            </div>
+        )
+    }
 
     if (user && initialized && !isLoading) {
         return (
@@ -411,25 +444,35 @@ export default function CallPage({ accessToken }) {
                         <div style={{ width: '-webkit-fill-available' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <div style={{ textAlign: 'center' }}>
-                                    <h2 style={{ marginBottom: 10 }}>Host</h2>
+                                    <h2 style={{ marginBottom: 10 }}>Guest</h2>
                                     <div>
-                                        <video
-                                            autoPlay
-                                            muted
-                                            playsInline
-                                            ref={userVideo}
-                                            style={{ width: '55%', height: 'auto' }}
-                                        ></video>
+                                        {true ? (
+                                            <video
+                                                autoPlay
+                                                style={{ width: '50%', height: '50%' }}
+                                                ref={remoteVideo}
+                                            ></video>
+                                        ) : (
+                                            getVideoPlaceholder('guest')
+                                        )}
                                     </div>
                                 </div>
                                 <div style={{ textAlign: 'center' }}>
-                                    <h2 style={{ marginBottom: 10 }}>Guest</h2>
+                                    <h2 style={{ marginBottom: 10 }}>{`${user?.nickname} (${
+                                        userRole === 'ASL' ? 'ASL Signer' : 'Speaker'
+                                    })`}</h2>
                                     <div>
-                                        <video
-                                            autoPlay
-                                            style={{ width: '55%', height: 'auto' }}
-                                            ref={remoteVideo}
-                                        ></video>
+                                        {true ? (
+                                            <video
+                                                autoPlay
+                                                muted
+                                                playsInline
+                                                ref={userVideo}
+                                                style={{ width: '50%', height: '50%' }}
+                                            ></video>
+                                        ) : (
+                                            getVideoPlaceholder('host')
+                                        )}
                                     </div>
                                 </div>
                             </div>
