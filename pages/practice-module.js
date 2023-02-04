@@ -9,113 +9,92 @@ import { theme } from '../core/theme'
 import AnswerModal from '../components/modals/AnswerModal'
 import fetcher from '../core/fetcher'
 
-// In progress
-// page consists of a video div at the bottom, used just for testing will be removed
-
 export default function PracticeModule({ accessToken }) {
     const [isAnswerModalOpen, setIsAnswerModalOpen] = useState(false)
     const { user, error, isLoading } = useUser()
     const router = useRouter()
     const videoReference = useRef(null)
     const videoStream = useRef(null)
-    const [recorder, setRecorder] = useState(null)
     const [isRecording, SetIsRecording] = useState(false)
-    const [url, setUrl] = useState(null) // once user stops recording the data is stored in URL,
-    // if the user retries the URL will be reset with the new video
-    const [blobContent, setBlobContent] = useState(null)
-
     const [isResultView, SetIsResultView] = useState(false)
     const [randomWord, setRandomWord] = useState(null)
     const [isretry, setIsRetry] = useState(true)
     const [wordYoutubeUrl, setWordYoutubeUrl] = useState(null)
     const [translationResponse, setTranslationResponse] = useState(null)
-    const [videoChunk, setVideoChunk] = useState(null)
+    const [video, setVideo] = useState(null)
 
-    const startWebcam = () => {
+    const startWebcam = async () => {
         // Check to see if browser has camera support
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             console.error('Browser Does not suppor current webcam library')
         }
 
-        navigator.mediaDevices
-            .getUserMedia({ video: true, audio: true })
-            .then((s) => {
-                // video stream with the current webcam stream
-                videoStream.current = s
-                // video reference need for video playback, for testing
-                videoReference.current.srcObject = s
-                // create media recorder with video stream
-                const recorder = new MediaRecorder(videoStream.current)
-                // array to store the video data from media recorder
-                const videoData = []
-                // Initialize media recorder when data is available
-                recorder.ondataavailable = (e) => {
-                    videoData.push(e.data)
-                }
-                // Initialize media recorder when recorder is stopped
-                recorder.onstop = (e) => {
-                    // Once the recorder is stopped, use the video data array to create a video src url
-                    const blob = new Blob(videoData, { type: 'video/mp4' })
-                    const videoSrcUrl = URL.createObjectURL(blob)
-                    setBlobContent(blob)
-                    // set the url
-                    setUrl(videoSrcUrl)
-                }
-                setRecorder(recorder)
-                recorder.start()
-                SetIsRecording(true)
-                if (isRecording) {
-                    setTimeout(() => {
-                        StopWebcam(), recorder.stop()
-                    }, 10000) // stop after 10 secs, max limit
-                }
-            })
-            .catch((error) => {
-                console.error(error)
-            })
+        // get webcam stream
+        const webcamStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+        // create useref to show the video on display
+        videoReference.current.srcObject = webcamStream
+
+        setVideo(webcamStream)
+
+        // create media recorder, and set the stream to it
+        const mediaRecorderObject = new MediaRecorder(webcamStream, { mimeType: 'video/webm' })
+        // set the use ref to the media recorder
+        videoStream.current = mediaRecorderObject
+        mediaRecorderObject.start()
+
+        const blobsArray = []
+        // send data to array
+        mediaRecorderObject.ondataavailable = (e) => {
+            blobsArray.push(e.data)
+        }
+
+        // on stop create blob object, and covert to formdata to send to server
+        mediaRecorderObject.onstop = (e) => {
+            const recordedChunk = new Blob(blobsArray, { type: 'video/webm' })
+            const formD = new FormData()
+            formD.append('video', recordedChunk)
+
+            // to check the video data
+            // console.log(recordedChunk)
+
+            // this is where you send the video and get the response, usesState values have been set
+            // fetch('http://localhost:8000/api/upload', {
+            //     method: 'POST',
+            //     body: formD,
+            // })
+            //     .then((response) => response.json())
+            //    .then((data) => {
+            //        setTranslationResponse(data.result)
+            //        if (data.result == 'bad') {
+            //            setIsAnswerModalOpen(true)
+            //        }
+            //        setIsRetry(false)
+            // change to result view only if response is received
+            //        SetIsResultView(true)
+            //    })
+
+            setIsRetry(false)
+            // change to result view only if response is received
+            SetIsResultView(true)
+        }
+        SetIsRecording(true)
+
+        if (isRecording) {
+            setTimeout(() => {
+                stopRecording()
+            }, 10000)
+        }
     }
 
     const StopWebcam = () => {
-        if (isRecording) {
-            // Stop the media Recorder
-            recorder.stop()
-        }
-        if (isRecording) {
-            // Stop webcam
-            videoStream.current.getTracks().forEach((track) => track.stop())
-        }
-        if (isRecording) {
-            // set the video reference to null
+        if (videoStream.current && isRecording) {
+            videoStream.current.stop()
             videoReference.current.srcObject = null
         }
+        if (video) {
+            video.getTracks().forEach((track) => track.stop())
+        }
         SetIsRecording(false)
-
-        // convert blob to mp4
-        const formD = new FormData()
-        formD.append('audio', blobContent)
-
-        // this is where you send the video and get the response
-        fetch('http://localhost:8000/api/upload', {
-            method: 'POST',
-            body: formD,
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                setTranslationResponse(data.result)
-                if (data.result == 'bad') {
-                    setIsAnswerModalOpen(true)
-                }
-                setUrl(null)
-                setIsRetry(false)
-                // change to result view only if response is received
-                SetIsResultView(true)
-            })
-
-        setUrl(null)
-        setBlobContent(null)
-        setIsRetry(false)
-        // change to result view only if response is received
-        SetIsResultView(true)
     }
 
     const retry = () => {
