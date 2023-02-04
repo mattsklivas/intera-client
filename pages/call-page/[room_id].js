@@ -1,4 +1,3 @@
-
 import { React, useState, useEffect, useRef } from 'react'
 import { ConfigProvider, Button, Spin } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
@@ -101,6 +100,10 @@ export default function CallPage({ accessToken }) {
 
             // Render page
             setInitialized(true)
+        }
+
+        if (roomInfo?.active == false) {
+            handleLeave()
         }
     }, [transcriptHistory, roomInfo])
 
@@ -239,12 +242,14 @@ export default function CallPage({ accessToken }) {
         socket.emit('leave', { room_id: roomID, user: user?.nickname })
 
         // Close the room
-        fetcher(accessToken, '/api/rooms/close_room', {
-            method: 'PUT',
-            body: JSON.stringify({
-                room_id: roomID,
-            }),
-        })
+        if (roomInfo.users[0] == user?.nickname) {
+            fetcher(accessToken, '/api/rooms/close_room', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    room_id: roomID,
+                }),
+            })
+        }
 
         if (userVideo?.current?.srcObject) {
             userVideo.current.srcObject.getTracks().forEach((track) => track.stop())
@@ -290,7 +295,9 @@ export default function CallPage({ accessToken }) {
         }
         getDeviceMedia()
         return function cleanup() {
-            stopwebcam()
+            if (userVideo?.current?.srcObject) {
+                userVideo.current.srcObject.getTracks().forEach((track) => track.stop())
+            }
             peerConnection?.close()
         }
     }, [])
