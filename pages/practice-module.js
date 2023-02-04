@@ -113,7 +113,7 @@ export default function PracticeModule({ accessToken }) {
             fetcher(accessToken, '/api/practice/get_word', {
                 method: 'GET',
             }).then((response) => {
-                setRandomWord(response.data.word)
+                setRandomWord(response.data.word.toUpperCase())
                 setWordYoutubeUrl(response.data.url)
             })
         }
@@ -142,7 +142,7 @@ export default function PracticeModule({ accessToken }) {
                 ) : (
                     <Row className={styles.row2}>
                         <Typography className={styles.typo}>
-                            <strong>Sign the word : {randomWord}</strong>
+                            <strong>Sign the word: {randomWord}</strong>
                         </Typography>
                     </Row>
                 )}
