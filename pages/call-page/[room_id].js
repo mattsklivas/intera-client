@@ -272,35 +272,34 @@ export default function CallPage({ accessToken }) {
         })
     }
 
-    // Setup user camera and establish ws connection
-    useEffect(() => {
-        const getDeviceMedia = async () => {
-            const stream = await navigator.mediaDevices
-                .getUserMedia({
-                    video: {
-                        height: 360,
-                        width: 480,
-                    },
-                })
-                .then(() => {
-                    setIsLocalVideoEnabled(true)
-                })
-
-            if (userVideo.current) {
+    const intializeLocalVideo = async () => {
+        const stream = await navigator.mediaDevices
+            .getUserMedia({
+                audio: false,
+                video: {
+                    height: 360,
+                    width: 480,
+                },
+            })
+            .then((stream) => {
                 userVideo.current.srcObject = stream
+                setIsLocalVideoEnabled(true)
 
+                // Establish websocket connection after successful local video setup
                 socket.connect()
-                socket.emit('join', { user: user?.nickname, room_id: roomID })
-            }
-        }
-        getDeviceMedia()
+                socket.emit('join', { user: user.nickname, room_id: roomID })
+            })
+            .catch((error) => {
+                console.error('Stream not found: ', error)
+            })
+    }
+
+    useEffect(() => {
+        intializeLocalVideo()
         return function cleanup() {
-            if (userVideo?.current?.srcObject) {
-                userVideo.current.srcObject.getTracks().forEach((track) => track.stop())
-            }
             peerConnection?.close()
         }
-    }, [])
+    }, [user && initialized && !isLoading])
 
     // RTC Connection Reference: https://www.100ms.live/blog/webrtc-python-react
     // *************************************************************************
@@ -376,6 +375,7 @@ export default function CallPage({ accessToken }) {
     }
 
     const signalingDataHandler = (data) => {
+        console.log('HANDLER', data.type)
         if (data.type === 'offer') {
             createPeerConnection()
             peerConnection.setRemoteDescription(new RTCSessionDescription(data))
@@ -477,17 +477,18 @@ export default function CallPage({ accessToken }) {
                                 <div style={{ textAlign: 'center' }}>
                                     <h2 style={{ marginBottom: 10 }}>{getRemoteUserName()}</h2>
                                     <div>
-                                        {isRemoteVideoEnabled ? (
-                                            <video
-                                                autoPlay
-                                                muted
-                                                playsInline
-                                                style={{ width: '55%', height: '55%' }}
-                                                ref={remoteVideo}
-                                            ></video>
-                                        ) : (
-                                            getVideoPlaceholder()
-                                        )}
+                                        <video
+                                            autoPlay
+                                            muted
+                                            playsInline
+                                            ref={remoteVideo}
+                                            style={{
+                                                display: isRemoteVideoEnabled ? 'inline' : 'none',
+                                                width: '55%',
+                                                height: isRemoteVideoEnabled ? '55%' : 0,
+                                            }}
+                                        ></video>
+                                        {!isRemoteVideoEnabled && getVideoPlaceholder()}
                                     </div>
                                 </div>
                                 <div style={{ textAlign: 'center' }}>
@@ -495,17 +496,18 @@ export default function CallPage({ accessToken }) {
                                         userRole === 'ASL' ? 'ASL Signer' : 'Speaker'
                                     })`}</h2>
                                     <div>
-                                        {isLocalVideoEnabled ? (
-                                            <video
-                                                autoPlay
-                                                muted
-                                                playsInline
-                                                ref={userVideo}
-                                                style={{ width: '55%', height: '55%' }}
-                                            ></video>
-                                        ) : (
-                                            getVideoPlaceholder()
-                                        )}
+                                        <video
+                                            autoPlay
+                                            muted
+                                            playsInline
+                                            ref={userVideo}
+                                            style={{
+                                                display: isLocalVideoEnabled ? 'inline' : 'none',
+                                                width: '55%',
+                                                height: isLocalVideoEnabled ? '55%' : 0,
+                                            }}
+                                        ></video>
+                                        {!isLocalVideoEnabled && getVideoPlaceholder()}
                                     </div>
                                 </div>
                             </div>
