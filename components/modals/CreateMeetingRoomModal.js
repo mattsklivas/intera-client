@@ -11,6 +11,8 @@ function CreateMeetingRoomModal(props) {
     const [hostType, setHostType] = useState('')
     const [initialized, setInitialized] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [loadingMail, setLoadingMail] = useState(false)
+    const [email, setEmail] = useState('')
 
     const handleOk = async () => {
         setLoading(true)
@@ -119,7 +121,7 @@ function CreateMeetingRoomModal(props) {
                                 )}
                             </div>
                             <Button
-                                block
+                                block="true"
                                 type="primary"
                                 onClick={() => {
                                     navigator.clipboard.writeText(inviteLink)
@@ -138,10 +140,47 @@ function CreateMeetingRoomModal(props) {
                     </Divider>
                     <Row type="flex" align="middle">
                         <Col span={24} style={{ paddingBottom: 15 }}>
-                            <Input block placeholder="Enter Email of Guest to Invite" />
+                            <Input
+                                block="true"
+                                placeholder="Enter Email of Guest to Invite"
+                                onChange={(e) => {
+                                    setEmail(e.target.value)
+                                }}
+                            />
                         </Col>
                         <Col span={24}>
-                            <Button block type="primary">
+                            <Button
+                                block="true"
+                                type="primary"
+                                loading={loadingMail}
+                                onClick={() => {
+                                    setLoadingMail(true)
+                                    console.log(roomID, email)
+                                    fetcher(props.accessToken, '/api/rooms/email_invite', {
+                                        method: 'POST',
+                                        body: JSON.stringify({ room_id: roomID, email: email }),
+                                    })
+                                        .then(async (res) => {
+                                            if (res.status == 200) {
+                                                api.success({
+                                                    message: 'Email sent successfully',
+                                                })
+                                                setLoadingMail(false)
+                                            } else {
+                                                api.error({
+                                                    message: `Error ${res.status}: ${res.error}`,
+                                                })
+                                                setLoadingMail(false)
+                                            }
+                                        })
+                                        .catch((e) => {
+                                            api.error({
+                                                message: 'An unknown error has occurred' + e,
+                                            })
+                                            setLoadingMail(false)
+                                        })
+                                }}
+                            >
                                 Send Invite
                             </Button>
                         </Col>

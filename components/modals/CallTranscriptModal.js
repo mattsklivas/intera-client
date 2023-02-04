@@ -12,12 +12,41 @@ function CallTranscriptModal(props) {
         props.hideCallTranscriptModal()
     }
 
+    // Get the communication type of the user
+    const getType = () => {
+        let role = ''
+        if (transcript.users[0] === user.nickname) {
+            role = transcript.host_type
+        } else {
+            if (transcript.host_type === 'STT') {
+                role = 'ASL'
+            } else {
+                role = 'STT'
+            }
+        }
+        return role === 'ASL' ? 'ASL Signer' : 'Speaker'
+    }
+
     return (
         <>
             <Modal
-                title={`Conversation with ${transcript?.users.find(
-                    (user) => user !== props?.user?.nickname
-                )} (Date: ${transcript?.date_created['$date'].split('T')[0] || 'N/A'})`}
+                title={
+                    <>
+                        {transcript?.users.find((user) => user !== props?.user?.nickname) ? (
+                            <p style={{ margin: 0 }}>{`Conversation with: ${transcript?.users.find(
+                                (user) => user !== props?.user?.nickname
+                            )}`}</p>
+                        ) : (
+                            <p style={{ margin: 0, fontStyle: 'italic' }}>
+                                Unattended Conversation
+                            </p>
+                        )}
+                        <p style={{ margin: 0 }}>{`Your communication role: ${getType()}`}</p>
+                        <p style={{ margin: 0 }}>{`Date: ${
+                            transcript?.date_created['$date'].split('T')[0] || 'N/A'
+                        }`}</p>
+                    </>
+                }
                 open={visible}
                 onOk={handleClose}
                 onCancel={handleClose}

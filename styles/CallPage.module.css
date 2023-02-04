@@ -2,3 +2,32 @@
     display: flex;
     flex-wrap: nowrap;
 }
+
+.remoteUserLoading span {
+    animation-name: transition;
+    animation-duration: 1.5s;
+    animation-fill-mode: both;
+    animation-iteration-count: infinite;
+}
+
+.remoteUserLoading span:nth-child(2) {
+    animation-delay: 0.3s;
+}
+
+.remoteUserLoading span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes transition {
+    0% {
+        opacity: 0.3;
+    }
+
+    30% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.3;
+    }
+}

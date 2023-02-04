@@ -1,12 +1,14 @@
+
+import { React, useState, useEffect, useRef } from 'react'
+import { ConfigProvider, Button, Spin } from 'antd'
+import { LoadingOutlined } from '@ant-design/icons'
 import '@babel/polyfill'
-import { React, useState, useEffect } from 'react'
-import { ConfigProvider, Button } from 'antd'
 import { useRouter } from 'next/router'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import auth0 from '../../auth/auth0'
 import LoadingComponent from '../../components/LoadingComponent'
 import HeaderComponent from '../../components/HeaderComponent'
-import VideoFeedComponent from '../../components/VideoFeedComponent'
+// import VideoFeedComponent from '../../components/VideoFeedComponent'
 import { theme } from '../../core/theme'
 import { getQuery } from '../../core/utils'
 import HistoryComponent from '../../components/HistoryComponent'
@@ -19,6 +21,11 @@ import socketio from 'socket.io-client'
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
 
 export default function CallPage({ accessToken }) {
+    const userVideo = useRef(null)
+    const remoteVideo = useRef(null)
+    const [isLocalVideoEnabled, setIsLocalVideoEnabled] = useState(false)
+    const [isRemoteVideoEnabled, setIsRemoteVideoEnabled] = useState(false)
+    const [userRole, setUserRole] = useState(null)
     const { transcript, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition()
     const [spaceBarPressed, setSpaceBarPressed] = useState(false)
     const router = useRouter()
@@ -26,6 +33,8 @@ export default function CallPage({ accessToken }) {
     const [initialized, setInitialized] = useState(false)
     const { user, error, isLoading } = useUser()
     const [roomUsers, setRoomUsers] = useState(new Set())
+    let peerConnection
+
     const [spaceCheck, setSpaceBoolCheck] = useState(false)
     const [latestTranscript, setLatestTranscript] = useState('')
     const [lastTranscript, setLastTranscript] = useState('')
@@ -41,6 +50,7 @@ export default function CallPage({ accessToken }) {
         },
         transports: ['websocket'],
         upgrade: false,
+        autoConnect: false,
     })
 
     // SWR hooks
@@ -81,10 +91,13 @@ export default function CallPage({ accessToken }) {
             !initialized &&
             typeof transcriptHistory !== 'undefined' &&
             typeof roomInfo !== 'undefined' &&
+            user.nickname !== undefined &&
             roomInfo?.active == true
         ) {
-            // Establish websocket connection
             socket.connect()
+            socket.emit('join', { user: user?.nickname, room_id: roomID })
+
+            setUserRole(getType())
 
             // Render page
             setInitialized(true)
@@ -93,18 +106,17 @@ export default function CallPage({ accessToken }) {
 
     // Websocket listeners
     useEffect(() => {
-        socket.on('connect', (data) => {
-            socket.emit('join', { room_id: roomID, username: user?.nickname })
-        })
+        socket.on('connect', (data) => {})
 
         socket.on('disconnect', (data) => {
             console.log('disconnect', data)
         })
 
         socket.on('join', (data) => {
-            let users = roomUsers
-            users.add(data.user_sid)
-            setRoomUsers(users)
+            console.log('joined')
+            // let users = roomUsers
+            // users.add(data.user_sid)
+            // setRoomUsers(users)
         })
 
         socket.on('message', (data) => {
@@ -120,6 +132,17 @@ export default function CallPage({ accessToken }) {
             if (data?.room_id == roomID) {
                 roomInfoMutate()
             }
+        })
+
+        // Following a succesful join, establish a peer connection
+        // and send an offer to the other user
+        socket.on('ready', () => {
+            createPeerConnection()
+            sendOffer()
+        })
+
+        socket.on('data_transfer', (data) => {
+            signalingDataHandler(data)
         })
     }, [socket])
 
@@ -213,7 +236,20 @@ export default function CallPage({ accessToken }) {
     }
 
     const handleLeave = async () => {
-        socket.emit('leave', { room_id: roomID, username: user?.nickname })
+        socket.emit('leave', { room_id: roomID, user: user?.nickname })
+
+        // Close the room
+        fetcher(accessToken, '/api/rooms/close_room', {
+            method: 'PUT',
+            body: JSON.stringify({
+                room_id: roomID,
+            }),
+        })
+
+        if (userVideo?.current?.srcObject) {
+            userVideo.current.srcObject.getTracks().forEach((track) => track.stop())
+        }
+
         router.push('/')
     }
 
@@ -221,6 +257,179 @@ export default function CallPage({ accessToken }) {
     const invalidateRefresh = async () => {
         roomInfoMutate()
         socket.emit('mutate', { roomID: roomID })
+    }
+
+    const dataTransfer = (data) => {
+        socket.emit('data_transfer', {
+            user: user.nickname,
+            room_id: roomID,
+            body: data,
+        })
+    }
+
+    // Setup user camera and establish ws connection
+    useEffect(() => {
+        const getDeviceMedia = async () => {
+            const stream = await navigator.mediaDevices
+                .getUserMedia({
+                    video: {
+                        height: 360,
+                        width: 480,
+                    },
+                })
+                .then(() => {
+                    setIsLocalVideoEnabled(true)
+                })
+
+            if (userVideo.current) {
+                userVideo.current.srcObject = stream
+
+                socket.connect()
+                socket.emit('join', { user: user?.nickname, room_id: roomID })
+            }
+        }
+        getDeviceMedia()
+        return function cleanup() {
+            stopwebcam()
+            peerConnection?.close()
+        }
+    }, [])
+
+    // RTC Connection Reference: https://www.100ms.live/blog/webrtc-python-react
+    // *************************************************************************
+    const onIceCandidate = (event) => {
+        if (event.candidate) {
+            console.log('Sending ICE candidate')
+            dataTransfer({
+                type: 'candidate',
+                candidate: event.candidate,
+            })
+        }
+    }
+
+    const onTrack = (event) => {
+        console.log('Received track from other user.')
+        setIsRemoteVideoEnabled(true)
+        remoteVideo.current.srcObject = event.streams[0]
+    }
+
+    const createPeerConnection = () => {
+        try {
+            peerConnection = new RTCPeerConnection({
+                iceServers: [
+                    {
+                        urls: 'stun:openrelay.metered.ca:80',
+                    },
+                    {
+                        urls: 'turn:openrelay.metered.ca:80',
+                        username: 'openrelayproject',
+                        credential: 'openrelayproject',
+                    },
+                    {
+                        urls: 'turn:openrelay.metered.ca:443',
+                        username: 'openrelayproject',
+                        credential: 'openrelayproject',
+                    },
+                    {
+                        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                        username: 'openrelayproject',
+                        credential: 'openrelayproject',
+                    },
+                ],
+            })
+            peerConnection.onicecandidate = onIceCandidate
+            peerConnection.ontrack = onTrack
+            const userStream = userVideo.current.srcObject
+            for (const track of userStream.getTracks()) {
+                peerConnection.addTrack(track, userStream)
+            }
+            console.log('Peer connection established')
+        } catch (error) {
+            console.error('Failed to establish connection: ', error)
+        }
+    }
+
+    const setAndSendLocalDescription = (sessionDescription) => {
+        console.log('Broadcasting local description.')
+        peerConnection.setLocalDescription(sessionDescription)
+        dataTransfer(sessionDescription)
+    }
+
+    const sendOffer = () => {
+        console.log('Sending an offer to other peer')
+        peerConnection.createOffer().then(setAndSendLocalDescription, (error) => {
+            console.error('Unable to send offer: ', error)
+        })
+    }
+
+    const sendAnswer = () => {
+        peerConnection.createAnswer().then(setAndSendLocalDescription, (error) => {
+            console.error('Unable to send answer: ', error)
+        })
+    }
+
+    const signalingDataHandler = (data) => {
+        if (data.type === 'offer') {
+            createPeerConnection()
+            peerConnection.setRemoteDescription(new RTCSessionDescription(data))
+            sendAnswer()
+        } else if (data.type === 'answer') {
+            peerConnection.setRemoteDescription(new RTCSessionDescription(data))
+        } else if (data.type === 'candidate') {
+            peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate))
+        } else {
+            console.log('Unrecognized data received...')
+        }
+    }
+    // *************************************************************************
+
+    const getVideoPlaceholder = () => {
+        return (
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
+            >
+                <div
+                    style={{
+                        width: '55%',
+                        aspectRatio: 'auto 4 / 3',
+                        border: '2px solid #f0f0f0',
+                    }}
+                >
+                    <div style={{ position: 'relative', top: '40%' }}>
+                        <Spin
+                            indicator={
+                                <LoadingOutlined
+                                    style={{
+                                        fontSize: 40,
+                                    }}
+                                    spin
+                                />
+                            }
+                        />
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    const getRemoteUserName = () => {
+        const remoteUser = roomInfo.users.find((username) => username !== user.nickname)
+        return remoteUser ? (
+            <span>
+                <span>{remoteUser}</span>
+                <span>{` (${userRole === 'ASL' ? 'Speaker' : 'ASL Signer'})`}</span>
+            </span>
+        ) : (
+            <span className={styles.remoteUserLoading}>
+                Awaiting user connection<span>.</span>
+                <span>.</span>
+                <span>.</span>
+            </span>
+        )
     }
 
     if (user && initialized && !isLoading) {
@@ -256,7 +465,44 @@ export default function CallPage({ accessToken }) {
                         />
                     </div>
                     <div style={{ width: '40%' }}>
-                        <VideoFeedComponent />
+                        <div style={{ width: '-webkit-fill-available' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <h2 style={{ marginBottom: 10 }}>{getRemoteUserName()}</h2>
+                                    <div>
+                                        {isRemoteVideoEnabled ? (
+                                            <video
+                                                autoPlay
+                                                muted
+                                                playsInline
+                                                style={{ width: '55%', height: '55%' }}
+                                                ref={remoteVideo}
+                                            ></video>
+                                        ) : (
+                                            getVideoPlaceholder()
+                                        )}
+                                    </div>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                    <h2 style={{ marginBottom: 10 }}>{`${user?.nickname} (${
+                                        userRole === 'ASL' ? 'ASL Signer' : 'Speaker'
+                                    })`}</h2>
+                                    <div>
+                                        {isLocalVideoEnabled ? (
+                                            <video
+                                                autoPlay
+                                                muted
+                                                playsInline
+                                                ref={userVideo}
+                                                style={{ width: '55%', height: '55%' }}
+                                            ></video>
+                                        ) : (
+                                            getVideoPlaceholder()
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </ConfigProvider>
