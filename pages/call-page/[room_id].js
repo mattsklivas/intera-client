@@ -1,5 +1,5 @@
 import { React, useState, useEffect, useRef } from 'react'
-import { ConfigProvider, Button, Spin } from 'antd'
+import { ConfigProvider, Button, Spin, message } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import '@babel/polyfill'
 import { useRouter } from 'next/router'
@@ -98,6 +98,8 @@ export default function CallPage({ accessToken }) {
 
             setUserRole(getType())
 
+            socket.emit('mutate', { roomID: roomID })
+
             // Render page
             setInitialized(true)
         }
@@ -157,6 +159,7 @@ export default function CallPage({ accessToken }) {
                 setSpaceBoolCheck(false)
                 SpeechRecognition.startListening({ continuous: true })
                 setSpaceBarPressed(true)
+                message.info('Speech recording started...')
             }
         }
         const handleKeyRelease = (event) => {
@@ -168,6 +171,8 @@ export default function CallPage({ accessToken }) {
                     resetTranscript()
                     setSpaceBoolCheck(true)
                 }, 500)
+
+                message.info('Speech recording finished...')
             }
         }
         document.addEventListener('keydown', handleKeyPress)
@@ -251,6 +256,7 @@ export default function CallPage({ accessToken }) {
             })
         }
 
+        roomInfoMutate()
         if (userVideo?.current?.srcObject) {
             userVideo.current.srcObject.getTracks().forEach((track) => track.stop())
         }
