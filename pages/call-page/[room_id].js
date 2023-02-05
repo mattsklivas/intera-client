@@ -37,13 +37,36 @@ export default function CallPage({ accessToken }) {
     const [latestTranscript, setLatestTranscript] = useState('')
     const [lastTranscript, setLastTranscript] = useState('')
 
+    // const servers = {
+    //     iceServers: [
+    //         {
+    //             urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'],
+    //         },
+    //     ],
+    //     iceCandidatePoolSize: 10,
+    // }
+
     const servers = {
         iceServers: [
             {
-                urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'],
+                urls: 'stun:relay.metered.ca:80',
+            },
+            {
+                urls: 'turn:relay.metered.ca:80',
+                username: `${process.env.TURN_USER}`,
+                credential: `${process.env.TURN_PASSWORD}`,
+            },
+            {
+                urls: 'turn:relay.metered.ca:443',
+                username: `${process.env}`,
+                credential: `${process.env.TURN_USER}`,
+            },
+            {
+                urls: 'turn:relay.metered.ca:443?transport=tcp',
+                username: `${process.env}`,
+                credential: `${process.env.TURN_USER}`,
             },
         ],
-        iceCandidatePoolSize: 10,
     }
 
     if (!browserSupportsSpeechRecognition) {
