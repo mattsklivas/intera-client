@@ -1,4 +1,4 @@
-import { React, useState, useEffect, useRef, useMemo } from 'react'
+import { React, useState, useEffect, useRef } from 'react'
 import { ConfigProvider, Button, Spin, message } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import '@babel/polyfill'
@@ -24,6 +24,7 @@ export default function CallPage({ accessToken }) {
     const remoteVideo = useRef(null)
     const [isLocalVideoEnabled, setIsLocalVideoEnabled] = useState(false)
     const [isRemoteVideoEnabled, setIsRemoteVideoEnabled] = useState(false)
+    const [hasJoined, setHasJoined] = useState(false)
     const [userRole, setUserRole] = useState(null)
     const { transcript, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition()
     const [spaceBarPressed, setSpaceBarPressed] = useState(false)
@@ -36,15 +37,6 @@ export default function CallPage({ accessToken }) {
     const [spaceCheck, setSpaceBoolCheck] = useState(false)
     const [latestTranscript, setLatestTranscript] = useState('')
     const [lastTranscript, setLastTranscript] = useState('')
-
-    // const servers = {
-    //     iceServers: [
-    //         {
-    //             urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'],
-    //         },
-    //     ],
-    //     iceCandidatePoolSize: 10,
-    // }
 
     const servers = {
         iceServers: [
@@ -335,7 +327,7 @@ export default function CallPage({ accessToken }) {
         remoteVideo.current.srcObject = event.stream
     }
 
-    const createPeerConnection = () => {
+    const initializePeerConnection = () => {
         try {
             peerConnection = new RTCPeerConnection(servers)
             peerConnection.onicecandidate = onIceCandidate
@@ -369,11 +361,11 @@ export default function CallPage({ accessToken }) {
         })
     }
 
-    const signalingDataHandler = (data) => {
+    const handleDataTransfer = (data) => {
         console.log('HANDLER', data.type)
         if (data.type === 'offer') {
             console.log('Offer received')
-            createPeerConnection()
+            initializePeerConnection()
             peerConnection.setRemoteDescription(new RTCSessionDescription(data))
             sendAnswer()
         } else if (data.type === 'answer') {
@@ -444,22 +436,19 @@ export default function CallPage({ accessToken }) {
 
     // Following a succesful join, establish a peer connection
     // and send an offer to the other user
-    socketVid.on('ready', (data) => {
-        if (data.user !== user?.nickname) {
-            console.log('Ready to connect! Vid')
-            createPeerConnection()
+    socketVid.on('ready', () => {
+        console.log('Ready to connect!')
+        if (!hasJoined) {
+            setHasJoined(true)
+            initializePeerConnection()
             sendOffer()
         }
     })
 
-    socketMsg.on('ready', () => {
-        console.log('Ready to connect! Msg')
-    })
-
     socketVid.on('data_transfer', (data) => {
-        console.log('data transfer', data)
-        if (data.user_id !== user?.nickname) {
-            signalingDataHandler(data)
+        console.log('Data transfer received')
+        if (data.user !== user.nickname) {
+            handleDataTransfer(data.body)
         }
     })
 
@@ -472,16 +461,11 @@ export default function CallPage({ accessToken }) {
         console.log('disconnect', data)
     })
 
-    // useEffect(() => {
-    //     initializeLocalVideo()
-    //     return function cleanup() {
-    //         peerConnection?.close()
-    //     }
-    // }, [user, initialized, isLoading])
-    // initializeLocalVideo()
-
-    useMemo(() => {
+    useEffect(() => {
         initializeLocalVideo()
+        return function cleanup() {
+            peerConnection?.close()
+        }
     }, [initialized])
 
     if (user && initialized && !isLoading) {
