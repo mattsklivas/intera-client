@@ -25,7 +25,7 @@ export default function HistoryComponent(props) {
         <>
             <div className={styles.historySidebar} style={{ width: '-webkit-fill-available' }}>
                 <div className={styles.historyTitle}>Call History</div>
-                <div style={{ maxHeight: '80vh', overflowY: 'scroll' }}>
+                <div style={{ height: '80vh', overflowY: 'scroll' }}>
                     {props.transcripts.length > 0 ? (
                         <List
                             dataSource={props.transcripts}
