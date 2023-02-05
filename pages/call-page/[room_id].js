@@ -24,6 +24,7 @@ export default function CallPage({ accessToken }) {
     const remoteVideo = useRef(null)
     const [isLocalVideoEnabled, setIsLocalVideoEnabled] = useState(false)
     const [isRemoteVideoEnabled, setIsRemoteVideoEnabled] = useState(false)
+    const [hasJoined, setHasJoined] = useState(false)
     const [userRole, setUserRole] = useState(null)
     const { transcript, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition()
     const [spaceBarPressed, setSpaceBarPressed] = useState(false)
@@ -307,8 +308,6 @@ export default function CallPage({ accessToken }) {
                 setIsLocalVideoEnabled(true)
 
                 // Establish websocket connection after successful local video setup
-                // socketMsg.connect()
-                // socketMsg.emit('join', { user: user.nickname, room_id: roomID })
                 socketVid.connect()
                 socketVid.emit('join', { user: user?.nickname, room_id: roomID })
 
@@ -339,7 +338,7 @@ export default function CallPage({ accessToken }) {
         })
     }
 
-    const createPeerConnection = () => {
+    const initializePeerConnection = () => {
         try {
             peerConnection = new RTCPeerConnection(servers)
             peerConnection.onicecandidate = onIceCandidate
@@ -373,11 +372,11 @@ export default function CallPage({ accessToken }) {
         })
     }
 
-    const signalingDataHandler = (data) => {
+    const handleDataTransfer = (data) => {
         console.log('HANDLER', data.type)
         if (data.type === 'offer') {
             console.log('Offer received')
-            createPeerConnection()
+            initializePeerConnection()
             peerConnection.setRemoteDescription(new RTCSessionDescription(data))
             sendAnswer()
         } else if (data.type === 'answer') {
@@ -449,18 +448,19 @@ export default function CallPage({ accessToken }) {
     // Following a succesful join, establish a peer connection
     // and send an offer to the other user
     socketVid.on('ready', () => {
-        console.log('Ready to connect! Vid')
-        createPeerConnection()
-        sendOffer()
-    })
-
-    socketMsg.on('ready', () => {
-        console.log('Ready to connect! Msg')
+        console.log('Ready to connect!')
+        if (!hasJoined) {
+            setHasJoined(true)
+            initializePeerConnection()
+            sendOffer()
+        }
     })
 
     socketVid.on('data_transfer', (data) => {
-        console.log('data transfer', data)
-        signalingDataHandler(data)
+        console.log('Data transfer received')
+        if (data.user !== user.nickname) {
+            handleDataTransfer(data.body)
+        }
     })
 
     socketMsg.on('message', (data) => {
