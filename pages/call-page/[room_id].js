@@ -42,14 +42,16 @@ export default function CallPage({ accessToken }) {
         console.log('Browser does not support speech to text')
     }
 
-    const socket = socketio(process.env.API_URL || 'http://localhost:5000', {
+    const socket = socketio(`${process.env.API_URL}` || 'http://localhost:5000', {
         cors: {
-            origin: process.env.CLIENT_URL || 'http://localhost:3000',
+            origin: `${process.env.CLIENT_URL}` || 'http://localhost:3000',
             credentials: true,
         },
         transports: ['websocket'],
-        upgrade: false,
-        autoConnect: false,
+        upgrade: true,
+        reconnection: true,
+        // autoConnect: false,
+        setTimeout: 100000,
     })
 
     // SWR hooks
@@ -109,6 +111,35 @@ export default function CallPage({ accessToken }) {
         }
     }, [transcriptHistory, roomInfo])
 
+    const handleMutate = () => {
+        socket.emit('mutate', { roomID: roomID })
+    }
+
+    const handleMessage = () => {
+        socket.emit('message', { message: 'ping', room_id: roomID })
+    }
+
+    const handleLeave = async () => {
+        socket.emit('leave', { room_id: roomID, user: user?.nickname })
+
+        // Close the room
+        if (roomInfo.users[0] == user?.nickname) {
+            fetcher(accessToken, '/api/rooms/close_room', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    room_id: roomID,
+                }),
+            })
+        }
+
+        roomInfoMutate()
+        if (userVideo?.current?.srcObject) {
+            userVideo.current.srcObject.getTracks().forEach((track) => track.stop())
+        }
+
+        router.push('/')
+    }
+
     // Websocket listeners
     useEffect(() => {
         socket.on('connect', (data) => {})
@@ -122,32 +153,6 @@ export default function CallPage({ accessToken }) {
             // let users = roomUsers
             // users.add(data.user_sid)
             // setRoomUsers(users)
-        })
-
-        socket.on('message', (data) => {
-            console.log('message', data || 'none')
-        })
-
-        socket.on('close_room', (data) => {
-            socket.close()
-        })
-
-        // Refresh chatbox
-        socket.on('mutate', (data) => {
-            if (data?.room_id == roomID) {
-                roomInfoMutate()
-            }
-        })
-
-        // Following a succesful join, establish a peer connection
-        // and send an offer to the other user
-        socket.on('ready', () => {
-            createPeerConnection()
-            sendOffer()
-        })
-
-        socket.on('data_transfer', (data) => {
-            signalingDataHandler(data)
         })
     }, [socket])
 
@@ -216,7 +221,7 @@ export default function CallPage({ accessToken }) {
                     roomInfoMutate()
 
                     // Emit mutate message over websocket to other user
-                    socket.emit('mutate', { roomID: roomID })
+                    handleMutate()
                 } else {
                     api.error({
                         message: `Error ${res.status}: ${res.error}`,
@@ -243,27 +248,6 @@ export default function CallPage({ accessToken }) {
         }
     }
 
-    const handleLeave = async () => {
-        socket.emit('leave', { room_id: roomID, user: user?.nickname })
-
-        // Close the room
-        if (roomInfo.users[0] == user?.nickname) {
-            fetcher(accessToken, '/api/rooms/close_room', {
-                method: 'PUT',
-                body: JSON.stringify({
-                    room_id: roomID,
-                }),
-            })
-        }
-
-        roomInfoMutate()
-        if (userVideo?.current?.srcObject) {
-            userVideo.current.srcObject.getTracks().forEach((track) => track.stop())
-        }
-
-        router.push('/')
-    }
-
     // Refresh chatbox for both users upon invalidation
     const invalidateRefresh = async () => {
         roomInfoMutate()
@@ -278,34 +262,35 @@ export default function CallPage({ accessToken }) {
         })
     }
 
-    const intializeLocalVideo = async () => {
-        const stream = await navigator.mediaDevices
-            .getUserMedia({
-                audio: false,
-                video: {
-                    height: 360,
-                    width: 480,
-                },
-            })
-            .then((stream) => {
-                userVideo.current.srcObject = stream
-                setIsLocalVideoEnabled(true)
+    const intializeLocalVideo = () => {
+        // navigator.mediaDevices
+        //     .getUserMedia({
+        //         audio: false,
+        //         video: {
+        //             height: 360,
+        //             width: 480,
+        //         },
+        //     })
+        //     .then((stream) => {
+        //         if (userVideo && userVideo?.current && userVideo?.current?.srcObject) {
+        //             userVideo.current.srcObject = stream
+        //             setIsLocalVideoEnabled(true)
+        //         }
 
-                // Establish websocket connection after successful local video setup
-                socket.connect()
-                socket.emit('join', { user: user.nickname, room_id: roomID })
-            })
-            .catch((error) => {
-                console.error('Stream not found: ', error)
-            })
+        //         // Establish websocket connection after successful local video setup
+        //         socket.connect()
+        //         socket.emit('join', { user: user.nickname, room_id: roomID })
+
+        //         roomInfoMutate()
+        //     })
+        //     .catch((error) => {
+        //         console.error('Stream not found:: ', error)
+        //     })
+
+        socket.connect()
+        socket.emit('join', { user: user.nickname, room_id: roomID })
+        handleMutate()
     }
-
-    useEffect(() => {
-        intializeLocalVideo()
-        return function cleanup() {
-            peerConnection?.close()
-        }
-    }, [user && initialized && !isLoading])
 
     // RTC Connection Reference: https://www.100ms.live/blog/webrtc-python-react
     // *************************************************************************
@@ -327,28 +312,7 @@ export default function CallPage({ accessToken }) {
 
     const createPeerConnection = () => {
         try {
-            peerConnection = new RTCPeerConnection({
-                iceServers: [
-                    {
-                        urls: 'stun:openrelay.metered.ca:80',
-                    },
-                    {
-                        urls: 'turn:openrelay.metered.ca:80',
-                        username: 'openrelayproject',
-                        credential: 'openrelayproject',
-                    },
-                    {
-                        urls: 'turn:openrelay.metered.ca:443',
-                        username: 'openrelayproject',
-                        credential: 'openrelayproject',
-                    },
-                    {
-                        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-                        username: 'openrelayproject',
-                        credential: 'openrelayproject',
-                    },
-                ],
-            })
+            peerConnection = new RTCPeerConnection({})
             peerConnection.onicecandidate = onIceCandidate
             peerConnection.ontrack = onTrack
             const userStream = userVideo.current.srcObject
@@ -444,6 +408,43 @@ export default function CallPage({ accessToken }) {
             </span>
         )
     }
+
+    socket.on('close_room', (data) => {
+        console.log('close_room', data)
+        socket.close()
+    })
+
+    // Refresh chatbox
+    socket.on('mutate', (data) => {
+        console.log('mutate', data)
+        roomInfoMutate()
+        // if (data?.room_id == roomID) {
+        // }
+    })
+
+    // Following a succesful join, establish a peer connection
+    // and send an offer to the other user
+    socket.on('ready', () => {
+        console.log('Ready to connect!')
+        // createPeerConnection()
+        // sendOffer()
+    })
+
+    socket.on('data_transfer', (data) => {
+        console.log('data transfer', data)
+        // signalingDataHandler(data)
+    })
+
+    socket.on('message', (data) => {
+        console.log('message', data || 'none')
+    })
+
+    useEffect(() => {
+        intializeLocalVideo()
+        return function cleanup() {
+            peerConnection?.close()
+        }
+    }, [])
 
     if (user && initialized && !isLoading) {
         return (
