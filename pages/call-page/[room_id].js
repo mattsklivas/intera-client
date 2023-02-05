@@ -334,7 +334,9 @@ export default function CallPage({ accessToken }) {
     const onTrack = (event) => {
         console.log('Received track from other user.')
         setIsRemoteVideoEnabled(true)
-        remoteVideo.current.srcObject = event.streams[0]
+        remoteVideo.current.srcObject = event.streams[0].getTracks().forEach((track) => {
+            remoteVideo.addTrack(track)
+        })
     }
 
     const createPeerConnection = () => {
@@ -374,12 +376,15 @@ export default function CallPage({ accessToken }) {
     const signalingDataHandler = (data) => {
         console.log('HANDLER', data.type)
         if (data.type === 'offer') {
+            console.log('Offer received')
             createPeerConnection()
             peerConnection.setRemoteDescription(new RTCSessionDescription(data))
             sendAnswer()
         } else if (data.type === 'answer') {
+            console.log('Answer received')
             peerConnection.setRemoteDescription(new RTCSessionDescription(data))
         } else if (data.type === 'candidate') {
+            console.log('Candidate received')
             peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate))
         } else {
             console.log('Unrecognized data received...')
@@ -435,15 +440,6 @@ export default function CallPage({ accessToken }) {
             </span>
         )
     }
-
-    // socketMsg.on('close_room', (data) => {
-    //     console.log('close_room', data)
-    //     roomInfoMutate()
-    //     socketMsg.close()
-    //     socketVid.close()
-
-    //     handleLeave()
-    // })
 
     // Refresh chatbox
     socketMsg.on('mutate', (data) => {
