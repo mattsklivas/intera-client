@@ -32,6 +32,7 @@ export default function CallPage({ accessToken }) {
     const roomID = getQuery(router, 'room_id')
     const [initialized, setInitialized] = useState(false)
     const { user, error, isLoading } = useUser()
+    const [nickname, setNickname] = useState(null)
     let peerConnection
 
     const [spaceCheck, setSpaceBoolCheck] = useState(false)
@@ -97,6 +98,7 @@ export default function CallPage({ accessToken }) {
     } = useRoomInfo(roomID || '', accessToken)
 
     // Room initialization
+    // TODO: update how we run this, maybe put in main initialization
     useEffect(() => {
         // If JWT is expired, force a logout
         if (transcriptHistoryError?.status == 401) {
@@ -157,13 +159,15 @@ export default function CallPage({ accessToken }) {
 
     useEffect(() => {
         if (
+            !initialized &&
             typeof transcriptHistory !== 'undefined' &&
             typeof roomInfo !== 'undefined' &&
             user.nickname !== undefined &&
             roomInfo?.active == true
         ) {
+            setNickname(user.nickname)
             socketMsg.connect()
-            socketMsg.emit('join', { user: user?.nickname, room_id: roomID })
+            socketMsg.emit('join', { user: user.nickname, room_id: roomID })
 
             setUserRole(getType())
 
@@ -176,7 +180,7 @@ export default function CallPage({ accessToken }) {
         if (roomInfo?.active == false) {
             handleLeave()
         }
-    }, [transcriptHistory, roomInfo])
+    }, [user, transcriptHistory, roomInfo])
 
     // User input for push to talk
     useEffect(() => {
@@ -277,8 +281,9 @@ export default function CallPage({ accessToken }) {
 
     const dataTransfer = (data) => {
         console.log('data transfer')
+        console.log('NICKNAME DATA TRANSFER EMIT', nickname)
         socketVid.emit('data_transfer', {
-            user: user?.nickname,
+            user: nickname,
             room_id: roomID,
             body: data,
         })
@@ -294,13 +299,14 @@ export default function CallPage({ accessToken }) {
                 },
             })
             .then((stream) => {
+                console.log('NICKNAME INITIALIZE', nickname)
                 console.log('Stream found')
                 userVideo.current.srcObject = stream
                 setIsLocalVideoEnabled(true)
 
                 // Establish websocket connection after successful local video setup
                 socketVid.connect()
-                socketVid.emit('join', { user: user?.nickname, room_id: roomID })
+                socketVid.emit('join', { user: nickname, room_id: roomID })
 
                 // handleMutate()
             })
@@ -447,7 +453,8 @@ export default function CallPage({ accessToken }) {
 
     socketVid.on('data_transfer', (data) => {
         console.log('Data transfer received')
-        if (data.user !== user.nickname) {
+        console.log('NICKNAME DATA TRANSFER RECEIVE', nickname)
+        if (data.user !== nickname) {
             handleDataTransfer(data.body)
         }
     })
@@ -462,9 +469,11 @@ export default function CallPage({ accessToken }) {
     })
 
     useEffect(() => {
-        initializeLocalVideo()
-        return function cleanup() {
-            peerConnection?.close()
+        if (initialized) {
+            initializeLocalVideo()
+            return function cleanup() {
+                peerConnection?.close()
+            }
         }
     }, [initialized])
 
