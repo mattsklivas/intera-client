@@ -73,7 +73,7 @@ export default function CallPage({ accessToken }) {
             credentials: true,
         },
         transports: ['websocket'],
-        upgrade: true,
+        upgrade: false, // Was originally true
         reconnection: true,
     })
 
@@ -282,6 +282,7 @@ export default function CallPage({ accessToken }) {
     }
 
     const dataTransfer = (data) => {
+        console.log('$$ sending data transfer $$')
         socketVid.emit('data_transfer', {
             user: nickname,
             room_id: roomID,
@@ -327,9 +328,9 @@ export default function CallPage({ accessToken }) {
 
     const onTrack = (event) => {
         console.log('{{{{{{{{{{{Received track from other user.}}}}}}}}}}}}')
-        console.log('***src object being received', event.stream)
+        console.log('***src object being received', event)
         setIsRemoteVideoEnabled(true)
-        remoteVideo.current.srcObject = event.stream
+        remoteVideo.current.srcObject = event.streams[0]
     }
 
     const initializePeerConnection = () => {
@@ -444,7 +445,7 @@ export default function CallPage({ accessToken }) {
     socketVid.on('ready', () => {
         console.log('Ready to connect!')
         if (!hasJoined) {
-            roomInfoMutate()
+            roomInfoMutate() // This is new
             setHasJoined(true)
             initializePeerConnection()
             sendOffer()
@@ -479,6 +480,7 @@ export default function CallPage({ accessToken }) {
     // Get the remote nickname
     useEffect(() => {
         if (!remoteNickname && typeof roomInfo !== 'undefined' && roomInfo.users.length == 2) {
+            console.log('GET OTHER NAME', nickname)
             setRemoteNickname(roomInfo.users.find((username) => username !== nickname))
         }
     }, [roomInfo])
