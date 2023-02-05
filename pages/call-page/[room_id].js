@@ -31,7 +31,6 @@ export default function CallPage({ accessToken }) {
     const roomID = getQuery(router, 'room_id')
     const [initialized, setInitialized] = useState(false)
     const { user, error, isLoading } = useUser()
-    const [roomUsers, setRoomUsers] = useState(new Set())
     let peerConnection
 
     const [spaceCheck, setSpaceBoolCheck] = useState(false)
@@ -50,7 +49,6 @@ export default function CallPage({ accessToken }) {
         transports: ['websocket'],
         upgrade: true,
         reconnection: true,
-        // autoConnect: false,
     })
 
     const socketVid = socketio(`${process.env.API_URL}` || 'http://localhost:5000', {
@@ -97,35 +95,9 @@ export default function CallPage({ accessToken }) {
         }
     }, [])
 
-    useEffect(() => {
-        if (
-            !initialized &&
-            typeof transcriptHistory !== 'undefined' &&
-            typeof roomInfo !== 'undefined' &&
-            user.nickname !== undefined &&
-            roomInfo?.active == true
-        ) {
-            socketMsg.connect()
-            // socketVid.connect()
-            socketMsg.emit('join', { user: user?.nickname, room_id: roomID })
-            // socketVid.emit('join', { user: user?.nickname, room_id: roomID })
-
-            setUserRole(getType())
-
-            roomInfoMutate()
-            // socketMsg.emit('mutate', { roomID: roomID })
-
-            // Render page
-            setInitialized(true)
-        }
-
-        if (roomInfo?.active == false) {
-            handleLeave()
-        }
-    }, [transcriptHistory, roomInfo])
-
     const handleMutate = () => {
         socketMsg.emit('mutate', { roomID: roomID })
+        roomInfoMutate()
     }
 
     const handleMessage = () => {
@@ -143,10 +115,16 @@ export default function CallPage({ accessToken }) {
                 body: JSON.stringify({
                     room_id: roomID,
                 }),
+            }).then((res) => {
+                if (res.status == 200) {
+                    console.log('Room closed')
+                    socketMsg.close()
+                    socketVid.close()
+                }
             })
         }
 
-        roomInfoMutate()
+        handleMutate()
         if (userVideo?.current?.srcObject) {
             userVideo.current.srcObject.getTracks().forEach((track) => track.stop())
         }
@@ -154,21 +132,30 @@ export default function CallPage({ accessToken }) {
         router.push('/')
     }
 
-    // // Websocket listeners
-    // useEffect(() => {
-    //     socket.on('connect', (data) => {})
+    useEffect(() => {
+        if (
+            !initialized &&
+            typeof transcriptHistory !== 'undefined' &&
+            typeof roomInfo !== 'undefined' &&
+            user.nickname !== undefined &&
+            roomInfo?.active == true
+        ) {
+            socketMsg.connect()
+            socketMsg.emit('join', { user: user?.nickname, room_id: roomID })
 
-    //     socket.on('disconnect', (data) => {
-    //         console.log('disconnect', data)
-    //     })
+            setUserRole(getType())
 
-    //     socket.on('join', (data) => {
-    //         console.log('joined')
-    //         // let users = roomUsers
-    //         // users.add(data.user_sid)
-    //         // setRoomUsers(users)
-    //     })
-    // }, [socket])
+            handleMutate()
+
+
+            // Render page
+            setInitialized(true)
+        }
+
+        if (roomInfo?.active == false) {
+            handleLeave()
+        }
+    }, [transcriptHistory, roomInfo])
 
     // User input for push to talk
     useEffect(() => {
@@ -231,9 +218,9 @@ export default function CallPage({ accessToken }) {
         })
             .then((res) => {
                 if (res.status == 200) {
-                    // Update chatbox
-                    roomInfoMutate()
+                    // roomInfoMutate()
 
+                    // Update chatbox
                     // Emit mutate message over websocket to other user
                     handleMutate()
                 } else {
@@ -264,8 +251,7 @@ export default function CallPage({ accessToken }) {
 
     // Refresh chatbox for both users upon invalidation
     const invalidateRefresh = async () => {
-        roomInfoMutate()
-        socketMsg.emit('mutate', { roomID: roomID })
+        handleMutate()
     }
 
     const dataTransfer = (data) => {
@@ -290,22 +276,16 @@ export default function CallPage({ accessToken }) {
                 setIsLocalVideoEnabled(true)
 
                 // Establish websocket connection after successful local video setup
-                socketMsg.connect()
-                socketMsg.emit('join', { user: user.nickname, room_id: roomID })
+                // socketMsg.connect()
+                // socketMsg.emit('join', { user: user.nickname, room_id: roomID })
                 socketVid.connect()
                 socketVid.emit('join', { user: user.nickname, room_id: roomID })
 
-                roomInfoMutate()
+                handleMutate()
             })
             .catch((error) => {
                 console.error('Stream not found:: ', error)
             })
-
-        // socketMsg.connect()
-        // socketVid.connect()
-        // socketMsg.emit('join', { user: user.nickname, room_id: roomID })
-        // socketVid.emit('join', { user: user.nickname, room_id: roomID })
-        // handleMutate()
     }
 
     // RTC Connection Reference: https://www.100ms.live/blog/webrtc-python-react
@@ -425,19 +405,18 @@ export default function CallPage({ accessToken }) {
         )
     }
 
-    socketMsg.on('close_room', (data) => {
-        console.log('close_room', data)
-        roomInfoMutate()
-        socketMsg.close()
-        socketVid.close()
-    })
+    // socketMsg.on('close_room', (data) => {
+    //     console.log('close_room', data)
+    //     roomInfoMutate()
+    //     socketMsg.close()
+    //     socketVid.close()
+
+    //     handleLeave()
+    // })
 
     // Refresh chatbox
     socketMsg.on('mutate', (data) => {
-        console.log('mutate', data)
         roomInfoMutate()
-        // if (data?.room_id == roomID) {
-        // }
     })
 
     // Following a succesful join, establish a peer connection
@@ -450,8 +429,6 @@ export default function CallPage({ accessToken }) {
 
     socketMsg.on('ready', () => {
         console.log('Ready to connect! Msg')
-        // createPeerConnection()
-        // sendOffer()
     })
 
     socketVid.on('data_transfer', (data) => {
