@@ -147,6 +147,7 @@ export default function CallPage({ accessToken }) {
 
             handleMutate()
 
+
             // Render page
             setInitialized(true)
         }
