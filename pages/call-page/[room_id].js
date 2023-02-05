@@ -334,9 +334,7 @@ export default function CallPage({ accessToken }) {
     const onTrack = (event) => {
         console.log('Received track from other user.')
         setIsRemoteVideoEnabled(true)
-        remoteVideo.current.srcObject = event.streams[0].getTracks().forEach((track) => {
-            remoteVideo.addTrack(track)
-        })
+        remoteVideo.current.srcObject = event.streams[0]
     }
 
     const createPeerConnection = () => {
