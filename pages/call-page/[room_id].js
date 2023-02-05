@@ -446,10 +446,12 @@ export default function CallPage({ accessToken }) {
 
     // Following a succesful join, establish a peer connection
     // and send an offer to the other user
-    socketVid.on('ready', () => {
-        console.log('Ready to connect! Vid')
-        createPeerConnection()
-        sendOffer()
+    socketVid.on('ready', (data) => {
+        if (data.user !== user?.nickname) {
+            console.log('Ready to connect! Vid')
+            createPeerConnection()
+            sendOffer()
+        }
     })
 
     socketMsg.on('ready', () => {
@@ -458,7 +460,9 @@ export default function CallPage({ accessToken }) {
 
     socketVid.on('data_transfer', (data) => {
         console.log('data transfer', data)
-        signalingDataHandler(data)
+        if (data.user !== user?.nickname) {
+            signalingDataHandler(data)
+        }
     })
 
     socketMsg.on('message', (data) => {
