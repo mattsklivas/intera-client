@@ -177,9 +177,10 @@ export default function CallPage({ accessToken }) {
             setInitialized(true)
         }
 
-        if (roomInfo?.active == false) {
-            handleLeave()
-        }
+        // TODO: This is causing the close of the transport (leave signal -> disconnect signal)
+        // if (roomInfo?.active == false) {
+        //     handleLeave()
+        // }
     }, [user, transcriptHistory, roomInfo])
 
     // User input for push to talk
@@ -280,8 +281,6 @@ export default function CallPage({ accessToken }) {
     }
 
     const dataTransfer = (data) => {
-        console.log('data transfer')
-        console.log('NICKNAME DATA TRANSFER EMIT', nickname)
         socketVid.emit('data_transfer', {
             user: nickname,
             room_id: roomID,
@@ -299,8 +298,6 @@ export default function CallPage({ accessToken }) {
                 },
             })
             .then((stream) => {
-                console.log('NICKNAME INITIALIZE', nickname)
-                console.log('Stream found')
                 userVideo.current.srcObject = stream
                 setIsLocalVideoEnabled(true)
 
@@ -328,7 +325,7 @@ export default function CallPage({ accessToken }) {
     }
 
     const onTrack = (event) => {
-        console.log('Received track from other user.')
+        console.log('{{{{{{{{{{{Received track from other user.}}}}}}}}}}}}')
         setIsRemoteVideoEnabled(true)
         remoteVideo.current.srcObject = event.stream
     }
@@ -342,20 +339,18 @@ export default function CallPage({ accessToken }) {
             for (const track of userStream?.getTracks()) {
                 peerConnection.addTrack(track, userStream)
             }
-            console.log('Peer connection established')
+            console.log('{{{Peer connection established}}}')
         } catch (error) {
             console.error('Failed to establish connection: ', error)
         }
     }
 
     const setAndSendLocalDescription = (sessionDescription) => {
-        console.log('Broadcasting local description.')
         peerConnection.setLocalDescription(sessionDescription)
         dataTransfer(sessionDescription)
     }
 
     const sendOffer = () => {
-        console.log('Sending an offer to other peer')
         peerConnection.createOffer().then(setAndSendLocalDescription, (error) => {
             console.error('Unable to send offer: ', error)
         })
@@ -368,17 +363,17 @@ export default function CallPage({ accessToken }) {
     }
 
     const handleDataTransfer = (data) => {
-        console.log('HANDLER', data.type)
+        console.log('(HANDLER)', data.type)
         if (data.type === 'offer') {
-            console.log('Offer received')
+            console.log('[Offer received]')
             initializePeerConnection()
             peerConnection.setRemoteDescription(new RTCSessionDescription(data))
             sendAnswer()
         } else if (data.type === 'answer') {
-            console.log('Answer received')
+            console.log('[Answer received]')
             peerConnection.setRemoteDescription(new RTCSessionDescription(data))
         } else if (data.type === 'candidate') {
-            console.log('Candidate received')
+            console.log('[Candidate received]')
             peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate))
         } else {
             console.log('Unrecognized data received...')
@@ -452,8 +447,7 @@ export default function CallPage({ accessToken }) {
     })
 
     socketVid.on('data_transfer', (data) => {
-        console.log('Data transfer received')
-        console.log('NICKNAME DATA TRANSFER RECEIVE', nickname)
+        console.log('Received from ' + data.user)
         if (data.user !== nickname) {
             handleDataTransfer(data.body)
         }
