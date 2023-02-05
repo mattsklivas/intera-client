@@ -38,15 +38,6 @@ export default function CallPage({ accessToken }) {
     const [latestTranscript, setLatestTranscript] = useState('')
     const [lastTranscript, setLastTranscript] = useState('')
 
-    // const servers = {
-    //     iceServers: [
-    //         {
-    //             urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'],
-    //         },
-    //     ],
-    //     iceCandidatePoolSize: 10,
-    // }
-
     const servers = {
         iceServers: [
             {
@@ -90,8 +81,7 @@ export default function CallPage({ accessToken }) {
             credentials: true,
         },
         transports: ['websocket'],
-        upgrade: true,
-        reconnection: true,
+        upgrade: false,
         autoConnect: false,
     })
 
@@ -294,7 +284,7 @@ export default function CallPage({ accessToken }) {
         })
     }
 
-    const intializeLocalVideo = () => {
+    const initializeLocalVideo = () => {
         navigator.mediaDevices
             .getUserMedia({
                 audio: false,
@@ -304,6 +294,7 @@ export default function CallPage({ accessToken }) {
                 },
             })
             .then((stream) => {
+                console.log('Stream found')
                 userVideo.current.srcObject = stream
                 setIsLocalVideoEnabled(true)
 
@@ -311,7 +302,7 @@ export default function CallPage({ accessToken }) {
                 socketVid.connect()
                 socketVid.emit('join', { user: user?.nickname, room_id: roomID })
 
-                handleMutate()
+                // handleMutate()
             })
             .catch((error) => {
                 console.error('Stream not found:: ', error)
@@ -333,9 +324,7 @@ export default function CallPage({ accessToken }) {
     const onTrack = (event) => {
         console.log('Received track from other user.')
         setIsRemoteVideoEnabled(true)
-        remoteVideo.current.srcObject = event.streams[0].getTracks().forEach((track) => {
-            remoteVideo.addTrack(track)
-        })
+        remoteVideo.current.srcObject = event.stream
     }
 
     const initializePeerConnection = () => {
@@ -473,11 +462,11 @@ export default function CallPage({ accessToken }) {
     })
 
     useEffect(() => {
-        intializeLocalVideo()
+        initializeLocalVideo()
         return function cleanup() {
             peerConnection?.close()
         }
-    }, [user, initialized, isLoading])
+    }, [initialized])
 
     if (user && initialized && !isLoading) {
         return (
