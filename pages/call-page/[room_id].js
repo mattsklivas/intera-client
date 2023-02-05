@@ -96,7 +96,7 @@ export default function CallPage({ accessToken }) {
 
     // SWR hooks
     const { data: transcriptHistory, error: transcriptHistoryError } = useTranscriptHistory(
-        user ? user.nickname : '',
+        user ? user?.nickname : '',
         accessToken
     )
     const {
@@ -166,7 +166,6 @@ export default function CallPage({ accessToken }) {
 
     useEffect(() => {
         if (
-            !initialized &&
             typeof transcriptHistory !== 'undefined' &&
             typeof roomInfo !== 'undefined' &&
             user.nickname !== undefined &&
@@ -269,7 +268,7 @@ export default function CallPage({ accessToken }) {
 
     // Get the communication type of the user
     const getType = () => {
-        if (roomInfo.users[0] === user.nickname) {
+        if (roomInfo.users[0] === user?.nickname) {
             return roomInfo.host_type
         } else {
             if (roomInfo.host_type === 'STT') {
@@ -286,8 +285,9 @@ export default function CallPage({ accessToken }) {
     }
 
     const dataTransfer = (data) => {
+        console.log('data transfer')
         socketVid.emit('data_transfer', {
-            user: user.nickname,
+            user: user?.nickname,
             room_id: roomID,
             body: data,
         })
@@ -310,7 +310,7 @@ export default function CallPage({ accessToken }) {
                 // socketMsg.connect()
                 // socketMsg.emit('join', { user: user.nickname, room_id: roomID })
                 socketVid.connect()
-                socketVid.emit('join', { user: user.nickname, room_id: roomID })
+                socketVid.emit('join', { user: user?.nickname, room_id: roomID })
 
                 handleMutate()
             })
@@ -426,7 +426,7 @@ export default function CallPage({ accessToken }) {
     }
 
     const getRemoteUserName = () => {
-        const remoteUser = roomInfo.users.find((username) => username !== user.nickname)
+        const remoteUser = roomInfo.users.find((username) => username !== user?.nickname)
         return remoteUser ? (
             <span>
                 <span>{remoteUser}</span>
@@ -477,7 +477,7 @@ export default function CallPage({ accessToken }) {
         return function cleanup() {
             peerConnection?.close()
         }
-    }, [])
+    }, [user, initialized, isLoading])
 
     if (user && initialized && !isLoading) {
         return (
