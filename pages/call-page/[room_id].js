@@ -415,6 +415,7 @@ export default function CallPage({ accessToken }) {
     }
 
     const getRemoteUserName = () => {
+        console.log('|||| GET OTHER USERNAME ||||', roomInfo.users)
         const remoteUser = roomInfo.users.find((username) => username !== user?.nickname)
         return remoteUser ? (
             <span>
@@ -440,6 +441,7 @@ export default function CallPage({ accessToken }) {
     socketVid.on('ready', () => {
         console.log('Ready to connect!')
         if (!hasJoined) {
+            roomInfoMutate()
             setHasJoined(true)
             initializePeerConnection()
             sendOffer()
