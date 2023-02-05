@@ -1,4 +1,4 @@
-import { React, useState, useEffect, useRef } from 'react'
+import { React, useState, useEffect, useRef, useMemo } from 'react'
 import { ConfigProvider, Button, Spin, message } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import '@babel/polyfill'
@@ -89,8 +89,7 @@ export default function CallPage({ accessToken }) {
             credentials: true,
         },
         transports: ['websocket'],
-        upgrade: true,
-        reconnection: true,
+        upgrade: false,
         autoConnect: false,
     })
 
@@ -293,7 +292,7 @@ export default function CallPage({ accessToken }) {
         })
     }
 
-    const intializeLocalVideo = () => {
+    const initializeLocalVideo = () => {
         navigator.mediaDevices
             .getUserMedia({
                 audio: false,
@@ -303,16 +302,15 @@ export default function CallPage({ accessToken }) {
                 },
             })
             .then((stream) => {
+                console.log('Stream found')
                 userVideo.current.srcObject = stream
                 setIsLocalVideoEnabled(true)
 
                 // Establish websocket connection after successful local video setup
-                // socketMsg.connect()
-                // socketMsg.emit('join', { user: user.nickname, room_id: roomID })
                 socketVid.connect()
                 socketVid.emit('join', { user: user?.nickname, room_id: roomID })
 
-                handleMutate()
+                // handleMutate()
             })
             .catch((error) => {
                 console.error('Stream not found:: ', error)
@@ -334,7 +332,7 @@ export default function CallPage({ accessToken }) {
     const onTrack = (event) => {
         console.log('Received track from other user.')
         setIsRemoteVideoEnabled(true)
-        remoteVideo.current.srcObject = event.streams[0]
+        remoteVideo.current.srcObject = event.stream
     }
 
     const createPeerConnection = () => {
@@ -460,7 +458,7 @@ export default function CallPage({ accessToken }) {
 
     socketVid.on('data_transfer', (data) => {
         console.log('data transfer', data)
-        if (data.user !== user?.nickname) {
+        if (data.user_id !== user?.nickname) {
             signalingDataHandler(data)
         }
     })
@@ -474,12 +472,17 @@ export default function CallPage({ accessToken }) {
         console.log('disconnect', data)
     })
 
-    useEffect(() => {
-        intializeLocalVideo()
-        return function cleanup() {
-            peerConnection?.close()
-        }
-    }, [user, initialized, isLoading])
+    // useEffect(() => {
+    //     initializeLocalVideo()
+    //     return function cleanup() {
+    //         peerConnection?.close()
+    //     }
+    // }, [user, initialized, isLoading])
+    // initializeLocalVideo()
+
+    useMemo(() => {
+        initializeLocalVideo()
+    }, [initialized])
 
     if (user && initialized && !isLoading) {
         return (
