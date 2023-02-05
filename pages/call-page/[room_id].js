@@ -33,6 +33,7 @@ export default function CallPage({ accessToken }) {
     const [initialized, setInitialized] = useState(false)
     const { user, error, isLoading } = useUser()
     const [nickname, setNickname] = useState(null)
+    const [remoteNickname, setRemoteNickname] = useState(null)
     let peerConnection
 
     const [spaceCheck, setSpaceBoolCheck] = useState(false)
@@ -177,7 +178,7 @@ export default function CallPage({ accessToken }) {
             setInitialized(true)
         }
 
-        // TODO: This is causing the close of the transport (leave signal -> disconnect signal)
+        // TODO: I think this is causing the premature close of the transport (leave signal -> disconnect signal)
         // if (roomInfo?.active == false) {
         //     handleLeave()
         // }
@@ -326,6 +327,7 @@ export default function CallPage({ accessToken }) {
 
     const onTrack = (event) => {
         console.log('{{{{{{{{{{{Received track from other user.}}}}}}}}}}}}')
+        console.log('***src object being received', event.stream)
         setIsRemoteVideoEnabled(true)
         remoteVideo.current.srcObject = event.stream
     }
@@ -335,6 +337,7 @@ export default function CallPage({ accessToken }) {
             peerConnection = new RTCPeerConnection(servers)
             peerConnection.onicecandidate = onIceCandidate
             peerConnection.ontrack = onTrack
+            console.log('***src object being sent out', userVideo.current.srcObject)
             const userStream = userVideo.current.srcObject
             for (const track of userStream?.getTracks()) {
                 peerConnection.addTrack(track, userStream)
@@ -414,22 +417,22 @@ export default function CallPage({ accessToken }) {
         )
     }
 
-    const getRemoteUserName = () => {
-        console.log('|||| GET OTHER USERNAME ||||', roomInfo.users)
-        const remoteUser = roomInfo.users.find((username) => username !== user?.nickname)
-        return remoteUser ? (
-            <span>
-                <span>{remoteUser}</span>
-                <span>{` (${userRole === 'ASL' ? 'Speaker' : 'ASL Signer'})`}</span>
-            </span>
-        ) : (
-            <span className={styles.remoteUserLoading}>
-                Awaiting user connection<span>.</span>
-                <span>.</span>
-                <span>.</span>
-            </span>
-        )
-    }
+    // const getRemoteUserName = () => {
+    //     console.log('|||| GET OTHER USERNAME ||||', roomInfo.users)
+    //     const remoteUser = roomInfo.users.find((username) => username !== user?.nickname)
+    //     return remoteNickname ? (
+    //         <span>
+    //             <span>{remoteNickname}</span>
+    //             <span>{` (${userRole === 'ASL' ? 'Speaker' : 'ASL Signer'})`}</span>
+    //         </span>
+    //     ) : (
+    //         <span className={styles.remoteUserLoading}>
+    //             Awaiting user connection<span>.</span>
+    //             <span>.</span>
+    //             <span>.</span>
+    //         </span>
+    //     )
+    // }
 
     // Refresh chatbox
     socketMsg.on('mutate', (data) => {
@@ -473,6 +476,13 @@ export default function CallPage({ accessToken }) {
         }
     }, [initialized])
 
+    // Get the remote nickname
+    useEffect(() => {
+        if (!remoteNickname && typeof roomInfo !== 'undefined' && roomInfo.users.length == 2) {
+            setRemoteNickname(roomInfo.users.find((username) => username !== nickname))
+        }
+    }, [roomInfo])
+
     if (user && initialized && !isLoading) {
         return (
             <ConfigProvider theme={theme}>
@@ -509,7 +519,22 @@ export default function CallPage({ accessToken }) {
                         <div style={{ width: '-webkit-fill-available' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <div style={{ textAlign: 'center' }}>
-                                    <h2 style={{ marginBottom: 10 }}>{getRemoteUserName()}</h2>
+                                    <h2 style={{ marginBottom: 10 }}>
+                                        {remoteNickname ? (
+                                            <span>
+                                                <span>{remoteNickname}</span>
+                                                <span>{` (${
+                                                    userRole === 'ASL' ? 'Speaker' : 'ASL Signer'
+                                                })`}</span>
+                                            </span>
+                                        ) : (
+                                            <span className={styles.remoteUserLoading}>
+                                                Awaiting user connection<span>.</span>
+                                                <span>.</span>
+                                                <span>.</span>
+                                            </span>
+                                        )}
+                                    </h2>
                                     <div>
                                         <video
                                             autoPlay
