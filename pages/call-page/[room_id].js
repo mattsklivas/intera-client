@@ -37,6 +37,15 @@ export default function CallPage({ accessToken }) {
     const [latestTranscript, setLatestTranscript] = useState('')
     const [lastTranscript, setLastTranscript] = useState('')
 
+    const servers = {
+        iceServers: [
+            {
+                urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'],
+            },
+        ],
+        iceCandidatePoolSize: 10,
+    }
+
     if (!browserSupportsSpeechRecognition) {
         console.log('Browser does not support speech to text')
     }
@@ -146,7 +155,6 @@ export default function CallPage({ accessToken }) {
             setUserRole(getType())
 
             handleMutate()
-
 
             // Render page
             setInitialized(true)
@@ -308,7 +316,7 @@ export default function CallPage({ accessToken }) {
 
     const createPeerConnection = () => {
         try {
-            peerConnection = new RTCPeerConnection({})
+            peerConnection = new RTCPeerConnection(servers)
             peerConnection.onicecandidate = onIceCandidate
             peerConnection.ontrack = onTrack
             const userStream = userVideo.current.srcObject
