@@ -477,7 +477,7 @@ export default function CallPage({ accessToken }) {
         return function cleanup() {
             peerConnection?.close()
         }
-    }, [user && initialized && !isLoading])
+    }, [user, initialized, isLoading])
 
     if (user && initialized && !isLoading) {
         return (
