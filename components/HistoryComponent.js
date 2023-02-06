@@ -23,7 +23,10 @@ export default function HistoryComponent(props) {
 
     return (
         <>
-            <div className={styles.historySidebar} style={{ width: '-webkit-fill-available' }}>
+            <div
+                className={styles.historySidebar}
+                style={{ width: '-webkit-fill-available', height: '-webkit-fill-available' }}
+            >
                 <div className={styles.historyTitle}>Call History</div>
                 <div style={{ height: '80vh', overflowY: 'scroll' }}>
                     {props.transcripts.length > 0 ? (

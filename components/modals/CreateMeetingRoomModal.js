@@ -79,7 +79,7 @@ function CreateMeetingRoomModal(props) {
                 okButtonProps={{ disabled: hostType === '' || roomID === '', loading: loading }}
                 okText="Continue"
                 width={300}
-                bodyStyle={{ height: '46vh' }}
+                bodyStyle={{ height: 335 }}
             >
                 {contextHolder}
                 <Divider plain style={{ margin: '10px 0' }}>
