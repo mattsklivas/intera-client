@@ -167,7 +167,7 @@ export default function CallPage({ accessToken }) {
             roomInfo?.active == true
         ) {
             setNickname(user.nickname)
-            getRemoteUserNickname()
+            // getRemoteUserNickname()
             socketMsg.connect()
             socketMsg.emit('join', { user: user.nickname, room_id: roomID })
 
@@ -460,7 +460,7 @@ export default function CallPage({ accessToken }) {
 
     // Refresh chatbox
     socketMsg.on('mutate', (data) => {
-        getRemoteUserNickname()
+        // getRemoteUserNickname()
         roomInfoMutate()
     })
 
@@ -474,7 +474,7 @@ export default function CallPage({ accessToken }) {
         //     initializePeerConnection()
         //     sendOffer()
         // }
-        getRemoteUserNickname()
+        // getRemoteUserNickname()
         roomInfoMutate()
         initializePeerConnection()
         sendOffer()
@@ -482,7 +482,7 @@ export default function CallPage({ accessToken }) {
 
     socketVid.on('data_transfer', (data) => {
         console.log('Received from ' + data.user)
-        getRemoteUserNickname()
+        // getRemoteUserNickname()
         // Messy I know, need to find a better way to get the user's nickname
         console.log('@@@ ON DATA TRANSFER @@@', nickname, user?.nickname)
         if (!nickname) {
@@ -507,7 +507,7 @@ export default function CallPage({ accessToken }) {
 
     useMemo(() => {
         if (initialized) {
-            getRemoteUserNickname()
+            // getRemoteUserNickname()
             initializeLocalVideo()
             return function cleanup() {
                 peerConnection?.close()
@@ -533,18 +533,18 @@ export default function CallPage({ accessToken }) {
         }
     }, [roomInfo, user, nickname])
 
-    const getRemoteUserNickname = () => {
-        console.log('getRemoteUserName', roomInfo, user?.nickname)
-        if (
-            !remoteNickname &&
-            typeof user?.nickname !== 'undefined' &&
-            typeof roomInfo !== 'undefined' &&
-            roomInfo.users.length == 2
-        ) {
-            console.log('ENTERED')
-            setRemoteNickname(roomInfo.users.find((username) => username !== user.nickname))
-        }
-    }
+    // const getRemoteUserNickname = () => {
+    //     console.log('getRemoteUserName', roomInfo, user?.nickname)
+    //     if (
+    //         !remoteNickname &&
+    //         typeof user?.nickname !== 'undefined' &&
+    //         typeof roomInfo !== 'undefined' &&
+    //         roomInfo.users.length == 2
+    //     ) {
+    //         console.log('ENTERED')
+    //         setRemoteNickname(roomInfo.users.find((username) => username !== user.nickname))
+    //     }
+    // }
 
     if (user && initialized && !isLoading) {
         return (
