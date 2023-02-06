@@ -167,6 +167,7 @@ export default function CallPage({ accessToken }) {
             roomInfo?.active == true
         ) {
             setNickname(user.nickname)
+            getRemoteUserNickname()
             socketMsg.connect()
             socketMsg.emit('join', { user: user.nickname, room_id: roomID })
 
@@ -437,6 +438,7 @@ export default function CallPage({ accessToken }) {
 
     // Refresh chatbox
     socketMsg.on('mutate', (data) => {
+        getRemoteUserNickname()
         roomInfoMutate()
     })
 
@@ -444,13 +446,19 @@ export default function CallPage({ accessToken }) {
     // and send an offer to the other user
     socketVid.on('ready', () => {
         console.log('Ready to connect!')
-        if (!hasJoined) {
-            roomInfoMutate() // This is new
-            setHasJoined(true)
-            initializePeerConnection()
-            sendOffer()
-        }
+        // if (!hasJoined) {
+        //     roomInfoMutate() // This is new
+        //     setHasJoined(true)
+        //     initializePeerConnection()
+        //     sendOffer()
+        // }
+        getRemoteUserNickname()
+        roomInfoMutate()
+        initializePeerConnection()
+        sendOffer()
     })
+
+    console.log('roomInfo', roomInfo)
 
     socketVid.on('data_transfer', (data) => {
         console.log('Received from ' + data.user)
@@ -470,6 +478,7 @@ export default function CallPage({ accessToken }) {
 
     useEffect(() => {
         if (initialized) {
+            getRemoteUserNickname()
             initializeLocalVideo()
             return function cleanup() {
                 peerConnection?.close()
@@ -477,13 +486,21 @@ export default function CallPage({ accessToken }) {
         }
     }, [initialized])
 
-    // Get the remote nickname
-    useEffect(() => {
+    // // Get the remote nickname
+    // useEffect(() => {
+    //     if (!remoteNickname && typeof roomInfo !== 'undefined' && roomInfo.users.length == 2) {
+    //         console.log('GET OTHER NAME', nickname)
+    //         setRemoteNickname(roomInfo.users.find((username) => username !== nickname))
+    //     }
+    // }, [roomInfo])
+
+    const getRemoteUserNickname = () => {
+        console.log('getRemoteUserName roomInfo', roomInfo)
         if (!remoteNickname && typeof roomInfo !== 'undefined' && roomInfo.users.length == 2) {
             console.log('GET OTHER NAME', nickname)
             setRemoteNickname(roomInfo.users.find((username) => username !== nickname))
         }
-    }, [roomInfo])
+    }
 
     if (user && initialized && !isLoading) {
         return (
