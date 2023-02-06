@@ -1,4 +1,4 @@
-import { React, useState, useEffect, useRef } from 'react'
+import { React, useState, useEffect, useRef, useMemo } from 'react'
 import { ConfigProvider, Button, Spin, message } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import '@babel/polyfill'
@@ -505,7 +505,7 @@ export default function CallPage({ accessToken }) {
         console.log('disconnect', data)
     })
 
-    useEffect(() => {
+    useMemo(() => {
         if (initialized) {
             getRemoteUserNickname()
             initializeLocalVideo()
