@@ -307,8 +307,30 @@ export default function CallPage({ accessToken }) {
                 // Establish websocket connection after successful local video setup
                 socketVid.connect()
                 socketVid.emit('join', { user: nickname, room_id: roomID })
-
-                // handleMutate()
+            })
+            .then((stream) => {
+                if (roomInfo.users.length == 1 && roomInfo.users[0] !== nickname) {
+                    fetcher(props.accessToken, '/api/rooms/join_room', {
+                        method: 'PUT',
+                        body: JSON.stringify({ room_id: roomID, user_id: nickname }),
+                    })
+                        .then((res) => {
+                            if (res.status == 200) {
+                                handleMutate()
+                            } else {
+                                api.error({
+                                    message: `Error ${res.status}: ${res.error}`,
+                                })
+                            }
+                        })
+                        .catch((res) => {
+                            api.error({
+                                message: 'An unknown error has occurred',
+                            })
+                        })
+                } else {
+                    handleMutate()
+                }
             })
             .catch((error) => {
                 console.error('Stream not found:: ', error)
@@ -458,10 +480,9 @@ export default function CallPage({ accessToken }) {
         sendOffer()
     })
 
-    console.log('roomInfo', roomInfo)
-
     socketVid.on('data_transfer', (data) => {
         console.log('Received from ' + data.user)
+        getRemoteUserNickname()
         if (data.user !== nickname) {
             handleDataTransfer(data.body)
         }
@@ -495,10 +516,15 @@ export default function CallPage({ accessToken }) {
     // }, [roomInfo])
 
     const getRemoteUserNickname = () => {
-        console.log('getRemoteUserName roomInfo', roomInfo)
-        if (!remoteNickname && typeof roomInfo !== 'undefined' && roomInfo.users.length == 2) {
-            console.log('GET OTHER NAME', nickname)
-            setRemoteNickname(roomInfo.users.find((username) => username !== nickname))
+        console.log('getRemoteUserName', roomInfo, user.nickname)
+        if (
+            !remoteNickname &&
+            typeof user.nickname !== 'undefined' &&
+            typeof roomInfo !== 'undefined' &&
+            roomInfo.users.length == 2
+        ) {
+            console.log('ENTERED')
+            setRemoteNickname(roomInfo.users.find((username) => username !== user.nickname))
         }
     }
 
