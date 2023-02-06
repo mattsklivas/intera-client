@@ -515,6 +515,24 @@ export default function CallPage({ accessToken }) {
         }
     }, [initialized])
 
+    useMemo(() => {
+        if (
+            !remoteNickname &&
+            typeof user?.nickname !== 'undefined' &&
+            typeof roomInfo !== 'undefined' &&
+            roomInfo.users.length == 2
+        ) {
+            setRemoteNickname(roomInfo.users.find((username) => username !== user.nickname))
+        } else if (
+            !remoteNickname &&
+            nickname != null &&
+            typeof roomInfo !== 'undefined' &&
+            roomInfo.users.length == 2
+        ) {
+            setRemoteNickname(roomInfo.users.find((username) => username !== nickname))
+        }
+    }, [roomInfo, user, nickname])
+
     const getRemoteUserNickname = () => {
         console.log('getRemoteUserName', roomInfo, user?.nickname)
         if (
