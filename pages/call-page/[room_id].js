@@ -173,7 +173,7 @@ export default function CallPage({ accessToken }) {
 
             setUserRole(getType())
 
-            handleMutate()
+            handleMutate() // TODO: Might be problematic?
 
             // Render page
             setInitialized(true)
@@ -483,8 +483,16 @@ export default function CallPage({ accessToken }) {
     socketVid.on('data_transfer', (data) => {
         console.log('Received from ' + data.user)
         getRemoteUserNickname()
-        if (data.user !== nickname) {
-            handleDataTransfer(data.body)
+        // Messy I know, need to find a better way to get the user's nickname
+        console.log('@@@ ON DATA TRANSFER @@@', nickname, user.nickname)
+        if (!nickname) {
+            if (data.user !== user.nickname) {
+                handleDataTransfer(data.body)
+            }
+        } else {
+            if (data.user !== nickname) {
+                handleDataTransfer(data.body)
+            }
         }
     })
 
@@ -506,14 +514,6 @@ export default function CallPage({ accessToken }) {
             }
         }
     }, [initialized])
-
-    // // Get the remote nickname
-    // useEffect(() => {
-    //     if (!remoteNickname && typeof roomInfo !== 'undefined' && roomInfo.users.length == 2) {
-    //         console.log('GET OTHER NAME', nickname)
-    //         setRemoteNickname(roomInfo.users.find((username) => username !== nickname))
-    //     }
-    // }, [roomInfo])
 
     const getRemoteUserNickname = () => {
         console.log('getRemoteUserName', roomInfo, user.nickname)
