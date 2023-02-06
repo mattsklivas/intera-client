@@ -484,7 +484,7 @@ export default function CallPage({ accessToken }) {
         console.log('Received from ' + data.user)
         getRemoteUserNickname()
         // Messy I know, need to find a better way to get the user's nickname
-        console.log('@@@ ON DATA TRANSFER @@@', nickname, user.nickname)
+        console.log('@@@ ON DATA TRANSFER @@@', nickname, user?.nickname)
         if (!nickname) {
             if (data.user !== user.nickname) {
                 handleDataTransfer(data.body)
@@ -516,7 +516,7 @@ export default function CallPage({ accessToken }) {
     }, [initialized])
 
     const getRemoteUserNickname = () => {
-        console.log('getRemoteUserName', roomInfo, user.nickname)
+        console.log('getRemoteUserName', roomInfo, user?.nickname)
         if (
             !remoteNickname &&
             typeof user.nickname !== 'undefined' &&
