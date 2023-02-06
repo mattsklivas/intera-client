@@ -86,9 +86,11 @@ export default function Home({ accessToken }) {
                         <main className={styles.main}>
                             <Header user={user} />
                             <div className={styles.row}>
-                                <div style={{ width: '30%' }}>
+                                <div style={{ width: '30%', height: '100%' }}>
                                     <HistoryComponent transcripts={transcriptHistory} user={user} />
                                 </div>
+                            </div>
+                            <div>
                                 <div className={styles.rightColumn}>
                                     <Button
                                         className={styles.roomButton}

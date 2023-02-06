@@ -163,7 +163,7 @@ export default function CallPage({ accessToken }) {
             !initialized &&
             typeof transcriptHistory !== 'undefined' &&
             typeof roomInfo !== 'undefined' &&
-            user.nickname !== undefined &&
+            typeof user?.nickname !== undefined &&
             roomInfo?.active == true
         ) {
             setNickname(user.nickname)
@@ -519,7 +519,7 @@ export default function CallPage({ accessToken }) {
         console.log('getRemoteUserName', roomInfo, user?.nickname)
         if (
             !remoteNickname &&
-            typeof user.nickname !== 'undefined' &&
+            typeof user?.nickname !== 'undefined' &&
             typeof roomInfo !== 'undefined' &&
             roomInfo.users.length == 2
         ) {
