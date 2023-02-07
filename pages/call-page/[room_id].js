@@ -130,7 +130,7 @@ export default function CallPage({ accessToken }) {
         socketMsg.emit('message', { message: 'ping', room_id: roomID })
     }
 
-    const handleLeave = async () => {
+    const handleLeave = () => {
         console.log('here')
         socketMsg.emit('leave', { room_id: roomID, user: user?.nickname })
 
@@ -246,9 +246,6 @@ export default function CallPage({ accessToken }) {
         })
             .then((res) => {
                 if (res.status == 200) {
-                    // roomInfoMutate()
-
-                    // Update chatbox
                     // Emit mutate message over websocket to other user
                     handleMutate()
                 } else {
@@ -441,23 +438,6 @@ export default function CallPage({ accessToken }) {
         )
     }
 
-    // const getRemoteUserName = () => {
-    //     console.log('|||| GET OTHER USERNAME ||||', roomInfo.users)
-    //     const remoteUser = roomInfo.users.find((username) => username !== user?.nickname)
-    //     return remoteNickname ? (
-    //         <span>
-    //             <span>{remoteNickname}</span>
-    //             <span>{` (${userRole === 'ASL' ? 'Speaker' : 'ASL Signer'})`}</span>
-    //         </span>
-    //     ) : (
-    //         <span className={styles.remoteUserLoading}>
-    //             Awaiting user connection<span>.</span>
-    //             <span>.</span>
-    //             <span>.</span>
-    //         </span>
-    //     )
-    // }
-
     // Refresh chatbox
     socketMsg.on('mutate', (data) => {
         // getRemoteUserNickname()
@@ -509,9 +489,9 @@ export default function CallPage({ accessToken }) {
         if (initialized) {
             // getRemoteUserNickname()
             initializeLocalVideo()
-            return function cleanup() {
-                peerConnection?.close()
-            }
+            // return function cleanup() {
+            //     peerConnection?.close()
+            // }
         }
     }, [initialized])
 
@@ -532,19 +512,6 @@ export default function CallPage({ accessToken }) {
             setRemoteNickname(roomInfo.users.find((username) => username !== nickname))
         }
     }, [roomInfo, user, nickname])
-
-    // const getRemoteUserNickname = () => {
-    //     console.log('getRemoteUserName', roomInfo, user?.nickname)
-    //     if (
-    //         !remoteNickname &&
-    //         typeof user?.nickname !== 'undefined' &&
-    //         typeof roomInfo !== 'undefined' &&
-    //         roomInfo.users.length == 2
-    //     ) {
-    //         console.log('ENTERED')
-    //         setRemoteNickname(roomInfo.users.find((username) => username !== user.nickname))
-    //     }
-    // }
 
     if (user && initialized && !isLoading) {
         return (
