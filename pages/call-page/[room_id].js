@@ -520,15 +520,7 @@ export default function CallPage({ accessToken }) {
                 <div className={styles.callWrapper}>
                     <div style={{ width: '20%' }}>
                         <Button type="primary" onClick={() => appendMessage('Example message')}>
-                            ADD TEST MSG (temp)
-                        </Button>
-                        <Button
-                            type="primary"
-                            onClick={() => {
-                                socketMsg.emit('message', { room_id: roomID, message: 'ping' })
-                            }}
-                        >
-                            SOCKETIO PING
+                            Send Test Msg (temp)
                         </Button>
                         <HistoryComponent transcripts={transcriptHistory} user={user} />
                     </div>
