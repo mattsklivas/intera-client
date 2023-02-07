@@ -21,6 +21,8 @@ export default function HistoryComponent(props) {
         }
     }
 
+    console.log(props.transcripts)
+
     return (
         <>
             <div
@@ -32,35 +34,40 @@ export default function HistoryComponent(props) {
                     {props.transcripts.length > 0 ? (
                         <List
                             dataSource={props.transcripts}
-                            renderItem={(item) => (
-                                <List.Item
-                                    style={{ width: '100%', justifyContent: 'center' }}
-                                    key={item._id['$oid']}
-                                    onClick={() => {
-                                        setActiveTranscript(item)
-                                        setIsCallTranscriptModalOpen(true)
-                                    }}
-                                >
-                                    <div style={{ cursor: 'pointer' }}>
-                                        <p
-                                            style={{
-                                                display: 'flex',
-                                                justifyContent: 'center',
-                                            }}
-                                        >
-                                            <span className={styles.tabText}>{getUser(item)}</span>
-                                            <span
-                                                className={styles.tabText}
-                                                style={{ color: '#8c8c8c' }}
+                            renderItem={(item) =>
+                                item.messages.length > 0 && (
+                                    <List.Item
+                                        style={{ width: '100%', justifyContent: 'center' }}
+                                        key={item._id['$oid']}
+                                        onClick={() => {
+                                            setActiveTranscript(item)
+                                            setIsCallTranscriptModalOpen(true)
+                                        }}
+                                    >
+                                        <div style={{ cursor: 'pointer' }}>
+                                            <p
+                                                style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'center',
+                                                }}
                                             >
-                                                (Date:{' '}
-                                                {item?.date_created['$date'].split('T')[0] || 'N/A'}
-                                                )
-                                            </span>
-                                        </p>
-                                    </div>
-                                </List.Item>
-                            )}
+                                                <span className={styles.tabText}>
+                                                    {getUser(item)}
+                                                </span>
+                                                <span
+                                                    className={styles.tabText}
+                                                    style={{ color: '#8c8c8c' }}
+                                                >
+                                                    (Date:{' '}
+                                                    {item?.date_created['$date'].split('T')[0] ||
+                                                        'N/A'}
+                                                    )
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </List.Item>
+                                )
+                            }
                         />
                     ) : (
                         <>
