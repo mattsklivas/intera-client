@@ -1,9 +1,22 @@
-import { Modal, Input, Button, Select, Row, Col, Space, notification, Divider, Spin } from 'antd'
+import {
+    Modal,
+    Input,
+    Button,
+    Select,
+    Row,
+    Col,
+    Space,
+    notification,
+    Divider,
+    Spin,
+    Form,
+} from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import { React, useState, useEffect } from 'react'
 import fetcher from '../../core/fetcher.js'
 
 function CreateMeetingRoomModal(props) {
+    const [form] = Form.useForm()
     const [visible, setVisible] = useState(true)
     const [api, contextHolder] = notification.useNotification()
     const [roomID, setRoomId] = useState('')
@@ -12,6 +25,7 @@ function CreateMeetingRoomModal(props) {
     const [initialized, setInitialized] = useState(false)
     const [loading, setLoading] = useState(false)
     const [loadingMail, setLoadingMail] = useState(false)
+    const [disableInvite, setDisableInvite] = useState(true)
     const [email, setEmail] = useState('')
 
     const handleOk = async () => {
@@ -79,13 +93,13 @@ function CreateMeetingRoomModal(props) {
                 okButtonProps={{ disabled: hostType === '' || roomID === '', loading: loading }}
                 okText="Continue"
                 width={300}
-                bodyStyle={{ height: 335 }}
+                bodyStyle={{ height: 342 }}
             >
                 {contextHolder}
                 <Divider plain style={{ margin: '10px 0' }}>
                     Meeting Info
                 </Divider>
-                <Space direction="vertical" size="middle">
+                <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                     <Row type="flex" align="middle">
                         <Col span={24}>
                             <div
@@ -139,16 +153,75 @@ function CreateMeetingRoomModal(props) {
                         Guest Invitation
                     </Divider>
                     <Row type="flex" align="middle">
-                        <Col span={24} style={{ paddingBottom: 15 }}>
-                            <Input
-                                block="true"
-                                placeholder="Enter Email of Guest to Invite"
-                                onChange={(e) => {
-                                    setEmail(e.target.value)
+                        <Col span={24} style={{}}>
+                            <Form
+                                form={form}
+                                validateMessages={{
+                                    types: {
+                                        email: 'Please enter a valid email',
+                                    },
                                 }}
-                            />
+                                onFieldsChange={() => {
+                                    const errors = form
+                                        .getFieldsError()
+                                        .some((item) => item.errors.length)
+                                    setDisableInvite(errors)
+                                }}
+                            >
+                                <Form.Item
+                                    name={['email']}
+                                    rules={[
+                                        {
+                                            type: 'email',
+                                        },
+                                    ]}
+                                >
+                                    <Input
+                                        block="true"
+                                        placeholder="Enter Email of Guest to Invite"
+                                        onChange={(e) => {
+                                            setEmail(e.target.value)
+                                        }}
+                                    />
+                                </Form.Item>
+                                <Button
+                                    block="true"
+                                    type="primary"
+                                    loading={loadingMail}
+                                    disabled={disableInvite}
+                                    onClick={() => {
+                                        setLoadingMail(true)
+                                        console.log(roomID, email)
+                                        fetcher(props.accessToken, '/api/rooms/email_invite', {
+                                            method: 'POST',
+                                            body: JSON.stringify({ room_id: roomID, email: email }),
+                                        })
+                                            .then(async (res) => {
+                                                if (res.status == 200) {
+                                                    api.success({
+                                                        message: 'Email sent successfully',
+                                                    })
+                                                    setLoadingMail(false)
+                                                } else {
+                                                    api.error({
+                                                        message: `Error ${res.status}: ${res.error}`,
+                                                    })
+                                                    setLoadingMail(false)
+                                                }
+                                            })
+                                            .catch((e) => {
+                                                api.error({
+                                                    message: 'An unknown error has occurred' + e,
+                                                })
+                                                setLoadingMail(false)
+                                            })
+                                    }}
+                                >
+                                    Send Invite
+                                </Button>
+                            </Form>
                         </Col>
-                        <Col span={24}>
+                        {/* <Col span={24}>
                             <Button
                                 block="true"
                                 type="primary"
@@ -183,7 +256,7 @@ function CreateMeetingRoomModal(props) {
                             >
                                 Send Invite
                             </Button>
-                        </Col>
+                        </Col> */}
                     </Row>
                     <Divider plain style={{ margin: 0 }}>
                         Role Selection <span style={{ color: 'red' }}>*</span>
