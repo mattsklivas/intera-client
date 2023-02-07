@@ -21,8 +21,6 @@ export default function HistoryComponent(props) {
         }
     }
 
-    console.log(props.transcripts)
-
     return (
         <>
             <div
