@@ -135,7 +135,7 @@ export default function CallPage({ accessToken }) {
         socketMsg.emit('leave', { room_id: roomID, user: user?.nickname })
 
         // Close the room
-        if (roomInfo.users[0] == user?.nickname) {
+        if (roomInfo?.users[0] == user?.nickname) {
             fetcher(accessToken, '/api/rooms/close_room', {
                 method: 'PUT',
                 body: JSON.stringify({
@@ -261,7 +261,7 @@ export default function CallPage({ accessToken }) {
 
     // Get the communication type of the user
     const getType = () => {
-        if (roomInfo.users[0] === user?.nickname) {
+        if (roomInfo?.users[0] === user?.nickname) {
             return roomInfo.host_type
         } else {
             if (roomInfo.host_type === 'STT') {
