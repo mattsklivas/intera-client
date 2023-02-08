@@ -88,7 +88,7 @@ export default function PracticeModule({ accessToken }) {
         }
     }
 
-    const StopWebcam = () => {
+    const StopWebcam = async () => {
         if (videoStream.current && isRecording) {
             videoStream.current.stop()
             // videoReference.current.srcObject = null
@@ -137,9 +137,13 @@ export default function PracticeModule({ accessToken }) {
     }, [isResultView])
 
     const handleLeave = async () => {
-        StopWebcam()
-
-        router.push('/')
+        await StopWebcam()
+            .then(() => {
+                router.push('/')
+            })
+            .catch(() => {
+                router.push('/')
+            })
     }
 
     // To do : change result text color based on server response
