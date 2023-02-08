@@ -17,8 +17,9 @@ export default function PracticeModule({ accessToken }) {
     const videoStream = useRef(null)
     const [isRecording, SetIsRecording] = useState(false)
     const [isResultView, SetIsResultView] = useState(false)
+    const [isInitalized, setIsInitalized] = useState(false)
     const [randomWord, setRandomWord] = useState(null)
-    const [isretry, setIsRetry] = useState(true)
+    const [isRetry, setIsRetry] = useState(true)
     const [wordYoutubeUrl, setWordYoutubeUrl] = useState(null)
     const [translationResponse, setTranslationResponse] = useState(null)
     const [video, setVideo] = useState(null)
@@ -30,7 +31,10 @@ export default function PracticeModule({ accessToken }) {
         }
 
         // get webcam stream
-        const webcamStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+        const webcamStream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: true,
+        })
         // create useref to show the video on display
         videoReference.current.srcObject = webcamStream
 
@@ -72,15 +76,14 @@ export default function PracticeModule({ accessToken }) {
             //        SetIsResultView(true)
             //    })
 
-            setIsRetry(false)
             // change to result view only if response is received
             SetIsResultView(true)
         }
-        SetIsRecording(true)
-
+        setIsRetry(false)
+        setIsInitalized(true)
         if (isRecording) {
             setTimeout(() => {
-                stopRecording()
+                StopWebcam()
             }, 10000)
         }
     }
@@ -88,7 +91,7 @@ export default function PracticeModule({ accessToken }) {
     const StopWebcam = () => {
         if (videoStream.current && isRecording) {
             videoStream.current.stop()
-            videoReference.current.srcObject = null
+            // videoReference.current.srcObject = null
         }
         if (video) {
             video.getTracks().forEach((track) => track.stop())
@@ -107,8 +110,22 @@ export default function PracticeModule({ accessToken }) {
         setTranslationResponse(null)
     }
 
+    const startRecording = () => {
+        if (videoStream.current && !isRecording) {
+            videoStream.current.start()
+        }
+        SetIsRecording(true)
+    }
+
+    const stopRecording = () => {
+        if (videoStream.current && isRecording) {
+            videoStream.current.stop()
+        }
+        SetIsRecording(false)
+    }
+
     useEffect(() => {
-        if (isretry) {
+        if (isRetry) {
             fetcher(accessToken, '/api/practice/get_word', {
                 method: 'GET',
             }).then((response) => {
@@ -120,6 +137,8 @@ export default function PracticeModule({ accessToken }) {
     }, [isResultView])
 
     const handleLeave = async () => {
+        StopWebcam()
+
         router.push('/')
     }
 
@@ -170,13 +189,13 @@ export default function PracticeModule({ accessToken }) {
                 ) : (
                     <Row className={styles.row3StartStop}>
                         {isRecording ? (
-                            <Button onClick={StopWebcam} className={styles.StopButton}>
+                            <Button onClick={stopRecording} className={styles.StopButton}>
                                 Stop Recording
                             </Button>
                         ) : (
                             <Button
-                                onClick={videoStream.current.start()}
-                                disabled={isretry}
+                                onClick={() => startRecording()}
+                                disabled={!isInitalized}
                                 type="primary"
                                 className={styles.StartButton}
                             >
