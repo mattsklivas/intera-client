@@ -3,14 +3,13 @@ import { React, useState } from 'react'
 
 function AnswerModal(props) {
     const [visible, setVisible] = useState(true)
-    const wordDetails = props.word // Has the youtube url, need to parse the id
-    const midPoint = wordDetails.indexOf('=')
-    const embedID = wordDetails.substr(midPoint + 1)
+    const wordDetails = props.word
 
     const handleClose = () => {
         setVisible(false)
         props.hideAnswerModal()
     }
+
     // Make sure the youtube url is of the format  yt.com/embed/id
     return (
         <>
@@ -31,7 +30,7 @@ function AnswerModal(props) {
                 }}
             >
                 <iframe
-                    src={`https://www.youtube.com/embed/${embedID}`}
+                    src={wordDetails}
                     style={{
                         width: 500,
                         height: 300,
