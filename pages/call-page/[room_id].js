@@ -131,11 +131,10 @@ export default function CallPage({ accessToken }) {
     }
 
     const handleLeave = () => {
-        console.log('here')
         socketMsg.emit('leave', { room_id: roomID, user: user?.nickname })
 
         // Close the room
-        if (roomInfo.users[0] == user?.nickname) {
+        if (roomInfo?.users[0] == user?.nickname) {
             fetcher(accessToken, '/api/rooms/close_room', {
                 method: 'PUT',
                 body: JSON.stringify({
@@ -150,44 +149,45 @@ export default function CallPage({ accessToken }) {
             })
         }
 
-        handleMutate()
         if (userVideo?.current?.srcObject) {
             userVideo.current.srcObject.getTracks().forEach((track) => track.stop())
         }
 
+        handleMutate()
+
         router.push('/')
     }
 
-    useEffect(() => {
-        if (
-            !initialized &&
-            typeof transcriptHistory !== 'undefined' &&
-            typeof roomInfo !== 'undefined' &&
-            typeof user?.nickname !== undefined &&
-            roomInfo?.active == true
-        ) {
-            setNickname(user.nickname)
-            // getRemoteUserNickname()
-            socketMsg.connect()
-            socketMsg.emit('join', { user: user.nickname, room_id: roomID })
+    // useEffect(() => {
+    //     if (
+    //         !initialized &&
+    //         typeof transcriptHistory !== 'undefined' &&
+    //         typeof roomInfo !== 'undefined' &&
+    //         typeof user?.nickname !== undefined &&
+    //         roomInfo?.active == true
+    //     ) {
+    //         setNickname(user.nickname)
+    //         // getRemoteUserNickname()
+    //         socketMsg.connect()
+    //         socketMsg.emit('join', { user: user.nickname, room_id: roomID })
 
-            setUserRole(getType())
+    //         setUserRole(getType())
 
-            handleMutate()
+    //         handleMutate()
 
-            // Render page
-            setInitialized(true)
-        }
+    //         // Render page
+    //         setInitialized(true)
+    //     }
 
-        if (roomInfo?.active == false) {
-            handleLeave()
-        }
-    }, [user, transcriptHistory, roomInfo])
+    //     if (roomInfo?.active == false) {
+    //         handleLeave()
+    //     }
+    // }, [user, transcriptHistory, roomInfo])
 
     // User input for push to talk
     useEffect(() => {
         const handleKeyPress = (event) => {
-            if (event.keyCode === 32 && !spaceBarPressed && getType() == 'STT') {
+            if (event.keyCode === 32 && !spaceBarPressed && userRole === 'STT') {
                 setSpaceBoolCheck(false)
                 SpeechRecognition.startListening({ continuous: true })
                 setSpaceBarPressed(true)
@@ -195,8 +195,7 @@ export default function CallPage({ accessToken }) {
             }
         }
         const handleKeyRelease = (event) => {
-            if (event.keyCode === 32 && spaceBarPressed && getType() == 'STT') {
-                // console.log('space bar released')
+            if (event.keyCode === 32 && spaceBarPressed && userRole === 'STT') {
                 SpeechRecognition.stopListening()
                 setSpaceBarPressed(false)
                 setTimeout(() => {
@@ -213,7 +212,7 @@ export default function CallPage({ accessToken }) {
             document.removeEventListener('keydown', handleKeyPress)
             document.removeEventListener('keyup', handleKeyRelease)
         }
-    }, [spaceBarPressed])
+    }, [spaceBarPressed, userRole])
 
     useEffect(() => {
         setLatestTranscript(transcript)
@@ -261,15 +260,19 @@ export default function CallPage({ accessToken }) {
 
     // Get the communication type of the user
     const getType = () => {
-        if (roomInfo.users[0] === user?.nickname) {
-            return roomInfo.host_type
-        } else {
-            if (roomInfo.host_type === 'STT') {
-                return 'ASL'
+        if (userRole == null) {
+            if (roomInfo?.users[0] === user?.nickname) {
+                return roomInfo?.host_type
             } else {
-                return 'STT'
+                if (roomInfo?.host_type === 'ASL') {
+                    return 'STT'
+                } else {
+                    return 'ASL'
+                }
             }
         }
+
+        return userRole
     }
 
     // Refresh chatbox for both users upon invalidation
@@ -486,6 +489,9 @@ export default function CallPage({ accessToken }) {
     useMemo(() => {
         if (initialized) {
             // getRemoteUserNickname()
+            console.log(roomInfo)
+
+            setUserRole(getType())
             initializeLocalVideo()
             // return function cleanup() {
             //     peerConnection?.close()
@@ -508,6 +514,30 @@ export default function CallPage({ accessToken }) {
             roomInfo.users.length == 2
         ) {
             setRemoteNickname(roomInfo.users.find((username) => username !== nickname))
+        }
+
+        if (
+            !initialized &&
+            typeof transcriptHistory !== 'undefined' &&
+            typeof roomInfo !== 'undefined' &&
+            typeof user?.nickname !== undefined &&
+            roomInfo?.active == true
+        ) {
+            setNickname(user.nickname)
+            // getRemoteUserNickname()
+            socketMsg.connect()
+            socketMsg.emit('join', { user: user.nickname, room_id: roomID })
+
+            // setUserRole(getType())
+
+            handleMutate()
+
+            // Render page
+            setInitialized(true)
+        }
+
+        if (roomInfo?.active == false) {
+            handleLeave()
         }
     }, [roomInfo, user, nickname])
 
