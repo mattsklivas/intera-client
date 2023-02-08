@@ -40,7 +40,6 @@ export default function PracticeModule({ accessToken }) {
         const mediaRecorderObject = new MediaRecorder(webcamStream, { mimeType: 'video/webm' })
         // set the use ref to the media recorder
         videoStream.current = mediaRecorderObject
-        mediaRecorderObject.start()
 
         const blobsArray = []
         // send data to array
@@ -115,6 +114,7 @@ export default function PracticeModule({ accessToken }) {
             }).then((response) => {
                 setRandomWord(response.data.word.toUpperCase())
                 setWordYoutubeUrl(response.data.url)
+                startWebcam()
             })
         }
     }, [isResultView])
@@ -175,7 +175,8 @@ export default function PracticeModule({ accessToken }) {
                             </Button>
                         ) : (
                             <Button
-                                onClick={startWebcam}
+                                onClick={videoStream.current.start()}
+                                disabled={isretry}
                                 type="primary"
                                 className={styles.StartButton}
                             >

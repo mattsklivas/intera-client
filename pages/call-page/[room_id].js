@@ -173,23 +173,21 @@ export default function CallPage({ accessToken }) {
 
             setUserRole(getType())
 
-            handleMutate() // TODO: Might be problematic?
+            handleMutate()
 
             // Render page
             setInitialized(true)
         }
 
-        // TODO: I think this is causing the premature close of the transport (leave signal -> disconnect signal)
-        // if (roomInfo?.active == false) {
-        //     handleLeave()
-        // }
+        if (roomInfo?.active == false) {
+            handleLeave()
+        }
     }, [user, transcriptHistory, roomInfo])
 
     // User input for push to talk
     useEffect(() => {
         const handleKeyPress = (event) => {
-            if (event.keyCode === 32 && !spaceBarPressed) {
-                // console.log('space bar pressed')
+            if (event.keyCode === 32 && !spaceBarPressed && getType() == 'STT') {
                 setSpaceBoolCheck(false)
                 SpeechRecognition.startListening({ continuous: true })
                 setSpaceBarPressed(true)
@@ -197,7 +195,7 @@ export default function CallPage({ accessToken }) {
             }
         }
         const handleKeyRelease = (event) => {
-            if (event.keyCode === 32 && spaceBarPressed) {
+            if (event.keyCode === 32 && spaceBarPressed && getType() == 'STT') {
                 // console.log('space bar released')
                 SpeechRecognition.stopListening()
                 setSpaceBarPressed(false)
