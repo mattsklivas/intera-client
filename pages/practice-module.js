@@ -3,7 +3,8 @@ import styles from '../styles/Practice.module.css'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { useRouter } from 'next/router'
 import auth0 from '../auth/auth0'
-import { Row, Col, Button, ConfigProvider, Typography } from 'antd'
+import { Row, Col, Button, ConfigProvider, Typography, Spin } from 'antd'
+import { LoadingOutlined } from '@ant-design/icons'
 import { useEffect, useRef, useState } from 'react'
 import { theme } from '../core/theme'
 import AnswerModal from '../components/modals/AnswerModal'
@@ -15,6 +16,7 @@ export default function PracticeModule({ accessToken }) {
     const router = useRouter()
     const videoReference = useRef(null)
     const videoStream = useRef(null)
+    const [isVideoEnabled, setIsVideoEnabled] = useState(false)
     const [isRecording, SetIsRecording] = useState(false)
     const [isResultView, SetIsResultView] = useState(false)
     const [isInitalized, setIsInitalized] = useState(false)
@@ -31,61 +33,66 @@ export default function PracticeModule({ accessToken }) {
         }
 
         // get webcam stream
-        const webcamStream = await navigator.mediaDevices.getUserMedia({
-            audio: false,
-            video: true,
-        })
-        // create useref to show the video on display
-        videoReference.current.srcObject = webcamStream
+        const webcamStream = await navigator.mediaDevices
+            .getUserMedia({
+                audio: false,
+                video: true,
+            })
+            .then((stream) => {
+                stream?.active && setIsVideoEnabled(true)
 
-        setVideo(webcamStream)
+                // create useref to show the video on display
+                videoReference.current.srcObject = stream
 
-        // create media recorder, and set the stream to it
-        const mediaRecorderObject = new MediaRecorder(webcamStream, { mimeType: 'video/webm' })
-        // set the use ref to the media recorder
-        videoStream.current = mediaRecorderObject
+                setVideo(stream)
 
-        const blobsArray = []
-        // send data to array
-        mediaRecorderObject.ondataavailable = (e) => {
-            blobsArray.push(e.data)
-        }
+                // create media recorder, and set the stream to it
+                const mediaRecorderObject = new MediaRecorder(stream, { mimeType: 'video/webm' })
+                // set the use ref to the media recorder
+                videoStream.current = mediaRecorderObject
 
-        // on stop create blob object, and covert to formdata to send to server
-        mediaRecorderObject.onstop = (e) => {
-            const recordedChunk = new Blob(blobsArray, { type: 'video/webm' })
-            const formD = new FormData()
-            formD.append('video', recordedChunk)
+                const blobsArray = []
+                // send data to array
+                mediaRecorderObject.ondataavailable = (e) => {
+                    blobsArray.push(e.data)
+                }
 
-            // to check the video data
-            // console.log(recordedChunk)
+                // on stop create blob object, and covert to formdata to send to server
+                mediaRecorderObject.onstop = (e) => {
+                    const recordedChunk = new Blob(blobsArray, { type: 'video/webm' })
+                    const formD = new FormData()
+                    formD.append('video', recordedChunk)
 
-            // this is where you send the video and get the response, usesState values have been set
-            // fetch('http://localhost:8000/api/upload', {
-            //     method: 'POST',
-            //     body: formD,
-            // })
-            //     .then((response) => response.json())
-            //    .then((data) => {
-            //        setTranslationResponse(data.result)
-            //        if (data.result == 'bad') {
-            //            setIsAnswerModalOpen(true)
-            //        }
-            //        setIsRetry(false)
-            // change to result view only if response is received
-            //        SetIsResultView(true)
-            //    })
+                    // to check the video data
+                    // console.log(recordedChunk)
 
-            // change to result view only if response is received
-            SetIsResultView(true)
-        }
-        setIsRetry(false)
-        setIsInitalized(true)
-        if (isRecording) {
-            setTimeout(() => {
-                StopWebcam()
-            }, 10000)
-        }
+                    // this is where you send the video and get the response, usesState values have been set
+                    // fetch('http://localhost:8000/api/upload', {
+                    //     method: 'POST',
+                    //     body: formD,
+                    // })
+                    //     .then((response) => response.json())
+                    //    .then((data) => {
+                    //        setTranslationResponse(data.result)
+                    //        if (data.result == 'bad') {
+                    //            setIsAnswerModalOpen(true)
+                    //        }
+                    //        setIsRetry(false)
+                    // change to result view only if response is received
+                    //        SetIsResultView(true)
+                    //    })
+
+                    // change to result view only if response is received
+                    SetIsResultView(true)
+                }
+                setIsRetry(false)
+                setIsInitalized(true)
+                if (isRecording) {
+                    setTimeout(() => {
+                        StopWebcam()
+                    }, 10000)
+                }
+            })
     }
 
     const StopWebcam = async () => {
@@ -124,6 +131,10 @@ export default function PracticeModule({ accessToken }) {
         SetIsRecording(false)
     }
 
+    const formatWord = (word) => {
+        return word?.charAt(0).toUpperCase() + word?.slice(1).toLowerCase()
+    }
+
     useEffect(() => {
         if (isRetry) {
             fetcher(accessToken, '/api/practice/get_word', {
@@ -153,66 +164,111 @@ export default function PracticeModule({ accessToken }) {
             <div className={styles.main}>
                 <Row className={styles.row1}>
                     <Col>
-                        <video ref={videoReference} autoPlay className={styles.row1Col1} />
+                        <video
+                            ref={videoReference}
+                            autoPlay
+                            className={styles.row1Col1}
+                            style={{
+                                display: isVideoEnabled ? 'inline' : 'none',
+                            }}
+                        />
+                        {!isVideoEnabled && (
+                            <div
+                                className={styles.row1Col1}
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <Spin
+                                    indicator={
+                                        <LoadingOutlined
+                                            style={{
+                                                fontSize: 40,
+                                            }}
+                                            spin
+                                        />
+                                    }
+                                />
+                            </div>
+                        )}
                     </Col>
                 </Row>
                 {isResultView ? (
                     <Row className={styles.row2}>
-                        <Typography className={styles.typo}>
-                            <strong>Result: {translationResponse}</strong>
+                        <Typography className={styles.typo} style={{ fontSize: 20 }}>
+                            <div>
+                                Result:{' '}
+                                <span
+                                    style={{
+                                        fontWeight: 'bold',
+                                        fontStyle: !translationResponse ? 'italic' : 'none',
+                                    }}
+                                >
+                                    {translationResponse || 'N/A'}
+                                </span>
+                            </div>
                         </Typography>
                     </Row>
                 ) : (
                     <Row className={styles.row2}>
                         <Typography className={styles.typo}>
-                            <strong>Sign the word: {randomWord}</strong>
+                            <div style={{ fontSize: 20 }}>
+                                <span>Sign the word: </span>
+                                {randomWord ? (
+                                    <span
+                                        style={{
+                                            fontWeight: 'bold',
+                                        }}
+                                    >{`${formatWord(randomWord)}`}</span>
+                                ) : (
+                                    <span>
+                                        <Spin
+                                            style={{ paddingLeft: 10 }}
+                                            indicator={
+                                                <LoadingOutlined
+                                                    style={{
+                                                        fontSize: 20,
+                                                    }}
+                                                    spin
+                                                />
+                                            }
+                                        />
+                                    </span>
+                                )}
+                            </div>
                         </Typography>
                     </Row>
                 )}
                 {isResultView ? (
-                    <Row>
-                        <Col span={12} className={styles.row3col}>
-                            <Button
-                                type="primary"
-                                className={styles.row3ButtonRetry}
-                                onClick={retry}
-                            >
-                                Retry
-                            </Button>
-                        </Col>
-                        <Col span={12} className={styles.row3col}>
-                            <Button
-                                type="primary"
-                                className={styles.row3ButtonNewWord}
-                                onClick={getNewWord}
-                            >
-                                New Word
-                            </Button>
-                        </Col>
+                    <Row style={{ display: 'flex', justifyContent: 'center' }}>
+                        <Button type="primary" className={styles.row3WordBtn} onClick={retry}>
+                            Retry
+                        </Button>
+                        <Button type="primary" className={styles.row3WordBtn} onClick={getNewWord}>
+                            New Word
+                        </Button>
                     </Row>
                 ) : (
                     <Row className={styles.row3StartStop}>
-                        {isRecording ? (
-                            <Button onClick={stopRecording} className={styles.StopButton}>
-                                Stop Recording
-                            </Button>
-                        ) : (
-                            <Button
-                                onClick={() => startRecording()}
-                                disabled={!isInitalized}
-                                type="primary"
-                                className={styles.StartButton}
-                            >
-                                Start Recording
-                            </Button>
-                        )}
+                        <Button
+                            onClick={() => {
+                                !isRecording ? startRecording() : stopRecording()
+                            }}
+                            disabled={!isInitalized}
+                            danger={isRecording ? true : false}
+                            type="primary"
+                            className={styles.StartButton}
+                        >
+                            {!isRecording ? 'Start Recording' : 'Stop Recording'}
+                        </Button>
                     </Row>
                 )}
 
                 <Row className={styles.row4}>
                     <Button
                         onClick={() => setIsAnswerModalOpen(true)}
-                        type="primary"
                         className={styles.viewAnswerButton}
                     >
                         View Answer
@@ -221,7 +277,8 @@ export default function PracticeModule({ accessToken }) {
             </div>
             {isAnswerModalOpen && (
                 <AnswerModal
-                    word={wordYoutubeUrl}
+                    word={randomWord}
+                    link={wordYoutubeUrl}
                     hideAnswerModal={() => {
                         setIsAnswerModalOpen(false)
                     }}

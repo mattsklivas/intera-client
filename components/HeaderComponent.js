@@ -30,7 +30,12 @@ function Header({ user, roomID, handleLeave }) {
                 }
             >
                 {['practice-module', 'call-page'].includes(router.pathname.split('/')[1]) ? (
-                    <Button loading={isLoadingExit} type="primary" onClick={() => handleLeave()}>
+                    <Button
+                        // style={{ marginLeft: router.pathname.split('/')[1] === 'practice-module' ? '2%' : 0 }}
+                        loading={isLoadingExit}
+                        type="primary"
+                        onClick={() => handleLeave()}
+                    >
                         {router.pathname.split('/')[1] === 'practice-module'
                             ? 'Exit Practice Module'
                             : 'Leave Meeting'}
