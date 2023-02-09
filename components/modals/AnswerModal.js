@@ -3,7 +3,8 @@ import { React, useState } from 'react'
 
 function AnswerModal(props) {
     const [visible, setVisible] = useState(true)
-    const wordDetails = props.word
+    const link = props.link
+    const word = props.word
 
     const handleClose = () => {
         setVisible(false)
@@ -14,7 +15,14 @@ function AnswerModal(props) {
     return (
         <>
             <Modal
-                title="Answer"
+                title={
+                    <div>
+                        <span>How to sign the word: </span>
+                        <span style={{ fontWeight: 'bold' }}>{`${
+                            word?.charAt(0).toUpperCase() + word?.slice(1).toLowerCase()
+                        }`}</span>
+                    </div>
+                }
                 open={visible}
                 onOk={handleClose}
                 onCancel={handleClose}
@@ -30,11 +38,11 @@ function AnswerModal(props) {
                 }}
             >
                 <iframe
-                    src={wordDetails}
+                    src={link}
                     style={{
                         width: 500,
                         height: 300,
-                        border: '1px solid black',
+                        border: '2px solid #f0f0f0',
                         allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
                     }}
                     allowFullScreen

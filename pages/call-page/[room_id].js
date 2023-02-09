@@ -547,8 +547,11 @@ export default function CallPage({ accessToken }) {
                 <HeaderComponent user={user} roomID={roomID} handleLeave={handleLeave} />
                 <div className={styles.callWrapper}>
                     <div style={{ width: '20%' }}>
-                        <Button type="primary" onClick={() => appendMessage('Example message')}>
-                            Send Test Msg (temp)
+                        <Button
+                            style={{ position: 'absolute', left: 10, top: 46 }}
+                            onClick={() => appendMessage('Example message')}
+                        >
+                            Send Message (temporary)
                         </Button>
                         <HistoryComponent transcripts={transcriptHistory} user={user} />
                     </div>
