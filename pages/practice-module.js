@@ -35,6 +35,7 @@ export default function PracticeModule({ accessToken }) {
             audio: false,
             video: true,
         })
+
         // create useref to show the video on display
         videoReference.current.srcObject = webcamStream
 
@@ -83,12 +84,12 @@ export default function PracticeModule({ accessToken }) {
         setIsInitalized(true)
         if (isRecording) {
             setTimeout(() => {
-                StopWebcam()
+                stopWebcam()
             }, 10000)
         }
     }
 
-    const StopWebcam = async () => {
+    const stopWebcam = async () => {
         if (videoStream.current && isRecording) {
             videoStream.current.stop()
             // videoReference.current.srcObject = null
@@ -137,7 +138,7 @@ export default function PracticeModule({ accessToken }) {
     }, [isResultView])
 
     const handleLeave = async () => {
-        await StopWebcam()
+        await stopWebcam()
             .then(() => {
                 router.push('/')
             })
