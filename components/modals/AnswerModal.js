@@ -19,7 +19,7 @@ function AnswerModal(props) {
                     <div>
                         <span>How to sign the word: </span>
                         <span style={{ fontWeight: 'bold' }}>{`${
-                            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                            word?.charAt(0).toUpperCase() + word?.slice(1).toLowerCase()
                         }`}</span>
                     </div>
                 }

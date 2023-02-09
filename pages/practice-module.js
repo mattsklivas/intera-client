@@ -42,6 +42,7 @@ export default function PracticeModule({ accessToken }) {
                 stream?.active && setIsVideoEnabled(true)
 
                 // create useref to show the video on display
+                // todo possible issue if user allows video but leaves before it is setup
                 videoReference.current.srcObject = stream
 
                 setVideo(stream)
