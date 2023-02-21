@@ -35,6 +35,7 @@ export default function CallPage({ accessToken }) {
     const [nickname, setNickname] = useState(null)
     const [remoteNickname, setRemoteNickname] = useState(null)
     let peerConnection
+    let userAudio
 
     const [spaceCheck, setSpaceBoolCheck] = useState(false)
     const [latestTranscript, setLatestTranscript] = useState('')
@@ -52,12 +53,12 @@ export default function CallPage({ accessToken }) {
             },
             {
                 urls: 'turn:relay.metered.ca:443',
-                username: `${process.env}`,
+                username: `${process.env.TURN_USER}`,
                 credential: `${process.env.TURN_USER}`,
             },
             {
                 urls: 'turn:relay.metered.ca:443?transport=tcp',
-                username: `${process.env}`,
+                username: `${process.env.TURN_USER}`,
                 credential: `${process.env.TURN_USER}`,
             },
         ],
@@ -157,32 +158,6 @@ export default function CallPage({ accessToken }) {
 
         router.push('/')
     }
-
-    // useEffect(() => {
-    //     if (
-    //         !initialized &&
-    //         typeof transcriptHistory !== 'undefined' &&
-    //         typeof roomInfo !== 'undefined' &&
-    //         typeof user?.nickname !== undefined &&
-    //         roomInfo?.active == true
-    //     ) {
-    //         setNickname(user.nickname)
-    //         // getRemoteUserNickname()
-    //         socketMsg.connect()
-    //         socketMsg.emit('join', { user: user.nickname, room_id: roomID })
-
-    //         setUserRole(getType())
-
-    //         handleMutate()
-
-    //         // Render page
-    //         setInitialized(true)
-    //     }
-
-    //     if (roomInfo?.active == false) {
-    //         handleLeave()
-    //     }
-    // }, [user, transcriptHistory, roomInfo])
 
     // User input for push to talk
     useEffect(() => {
@@ -292,7 +267,7 @@ export default function CallPage({ accessToken }) {
     const initializeLocalVideo = () => {
         navigator.mediaDevices
             .getUserMedia({
-                audio: false,
+                audio: roomInfo.host_type === 'STT' ? true : false,
                 video: {
                     height: 360,
                     width: 480,
@@ -488,7 +463,6 @@ export default function CallPage({ accessToken }) {
 
     useMemo(() => {
         if (initialized) {
-            // getRemoteUserNickname()
             console.log(roomInfo)
 
             setUserRole(getType())
