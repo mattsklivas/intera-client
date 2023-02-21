@@ -52,12 +52,12 @@ export default function CallPage({ accessToken }) {
             },
             {
                 urls: 'turn:relay.metered.ca:443',
-                username: `${process.env}`,
+                username: `${process.env.TURN_USER}`,
                 credential: `${process.env.TURN_USER}`,
             },
             {
                 urls: 'turn:relay.metered.ca:443?transport=tcp',
-                username: `${process.env}`,
+                username: `${process.env.TURN_USER}`,
                 credential: `${process.env.TURN_USER}`,
             },
         ],
