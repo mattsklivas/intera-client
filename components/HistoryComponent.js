@@ -29,11 +29,11 @@ export default function HistoryComponent(props) {
             >
                 <div className={styles.historyTitle}>Call History</div>
                 <div style={{ height: '80vh', overflowY: 'scroll' }}>
-                    {props.transcripts.length > 0 ? (
+                    {props?.transcripts?.length > 0 ? (
                         <List
-                            dataSource={props.transcripts}
+                            dataSource={props?.transcripts}
                             renderItem={(item) =>
-                                item.messages.length > 0 && (
+                                item?.messages?.length > 0 && (
                                     <List.Item
                                         style={{ width: '100%', justifyContent: 'center' }}
                                         key={item._id['$oid']}
