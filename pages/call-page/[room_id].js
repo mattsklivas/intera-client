@@ -58,6 +58,7 @@ export default function CallPage({ accessToken }) {
     const [remoteNickname, setRemoteNickname] = useState(null)
     const [peerConnectionEstablished, setPeerConnectionEstablished] = useState(false)
     let peerConnection
+    let userAudio
 
     const [spaceCheck, setSpaceBoolCheck] = useState(false)
     const [latestTranscript, setLatestTranscript] = useState('')
@@ -195,6 +196,66 @@ export default function CallPage({ accessToken }) {
         return userRole
     }
 
+    // Refresh chatbox for both users upon invalidation
+    const invalidateRefresh = async () => {
+        handleMutate()
+    }
+
+    const dataTransfer = (data) => {
+        console.log('$$ sending data transfer $$')
+        socketVid.emit('data_transfer', {
+            user: nickname,
+            room_id: roomID,
+            body: data,
+        })
+    }
+
+    const initializeLocalVideo = () => {
+        navigator.mediaDevices
+            .getUserMedia({
+                audio: roomInfo.host_type === 'STT' ? true : false,
+                video: {
+                    height: 360,
+                    width: 480,
+                },
+            })
+            .then((stream) => {
+                userVideo.current.srcObject = stream
+                setIsLocalVideoEnabled(true)
+
+                // Establish websocket connection after successful local video setup
+                socketVid.connect()
+                socketVid.emit('join', { user: nickname, room_id: roomID })
+            })
+            .then((stream) => {
+                if (roomInfo.users.length == 1 && roomInfo.users[0] !== nickname) {
+                    fetcher(props.accessToken, '/api/rooms/join_room', {
+                        method: 'PUT',
+                        body: JSON.stringify({ room_id: roomID, user_id: nickname }),
+                    })
+                        .then((res) => {
+                            if (res.status == 200) {
+                                handleMutate()
+                            } else {
+                                api.error({
+                                    message: `Error ${res.status}: ${res.error}`,
+                                })
+                            }
+                        })
+                        .catch((res) => {
+                            api.error({
+                                message: 'An unknown error has occurred',
+                            })
+                        })
+                } else {
+                    handleMutate()
+                }
+            })
+            .catch((error) => {
+                console.error('Stream not found:: ', error)
+            })
+    }
+
     // RTC Connection Reference: https://www.100ms.live/blog/webrtc-python-react
     // *************************************************************************
     const onIceCandidate = (event) => {
@@ -300,47 +361,6 @@ export default function CallPage({ accessToken }) {
         console.log('pong', data)
     })
 
-    // useMemo(() => {
-    //     if (initialized) {
-    //         // do something
-    //         console.log("initialized")
-    //         setUserRole(getType())
-    //         if (roomInfo?.users.length == 2 && !peerConnectionEstablished) {
-    //             // re-emit join
-    //             console.log('re-emit join')
-    //             socketVid.emit('ready', { user: user?.nickname, room_id: roomID })
-
-    //             console.log('updating user info')
-    //             setRemoteNickname(roomInfo.users.find((username) => username !== user?.nickname))
-
-    //             // initialize peer connection
-    //             // initializePeerConnection()
-    //             // sendOffer()
-    //         }
-    //     } else {
-    //         // init page
-    //         console.log("not initialized")
-    //         if (roomInfo && user && roomInfo?.active) {
-    //             setNickname(user?.nickname)
-
-    //             // connect message socket
-    //             socketMsg.connect()
-    //             socketMsg.emit('join', { user: user?.nickname, room_id: roomID })
-    //             //
-    //             setUserRole(getType())
-    //             initializeLocalVideo()
-    //         }
-    //     }
-
-    //     if (roomInfo?.active == false) {
-    //         // handleLeave()
-    //         console.log("handle leave")
-    //     }
-
-    //     return function cleanup() {
-    //         peerConnection?.close();
-    //     };
-    // }, [initialized, roomInfo, user])
 
     useEffect(() => {
         console.log('useEffect')
@@ -359,6 +379,7 @@ export default function CallPage({ accessToken }) {
                         <Button
                             style={{ position: 'absolute', left: 10, top: 46 }}
                             // onClick={() => appendMessage('Example message')}
+
                         >
                             Send Message (temporary)
                         </Button>
