@@ -21,22 +21,18 @@ import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognitio
 
 /*
 How call page should work:
-
 Host creates the room and is added
 Host is prompted to enable their video camera (if they are Speaker, they are also prompted for audio)
 When video camera is enabled, video feed will be displayed
 User can now send messages and do actions (i.e STT or ASL) for their role while they wait for the other user
-
 When guest user joins (they should already be added to the room on the backend, this action should be done on "join room")
 Guest is prompted to enable their video camera (if they are Speaker, they are also prompted for audio)
 When video camera is enabled, video feed will be displayed
 A socket ping will be sent out to the other user in the room to notify them that the other user has joined,
 a mutate will occur to update the room info. When this happens the peerConnection process should begin
-
 We should now begin to initializePeerConnection
 The remote and local video feeds should be set on both guest and host
 When this occurs, both feeds should appear
-
 Socket pings for ready state, data_transfer, offer, answer, candidate should occur
 When the remote video stream can be found onTrack, the remote video feed should be set and appear
 */
@@ -196,66 +192,6 @@ export default function CallPage({ accessToken }) {
         return userRole
     }
 
-    // Refresh chatbox for both users upon invalidation
-    const invalidateRefresh = async () => {
-        handleMutate()
-    }
-
-    const dataTransfer = (data) => {
-        console.log('$$ sending data transfer $$')
-        socketVid.emit('data_transfer', {
-            user: nickname,
-            room_id: roomID,
-            body: data,
-        })
-    }
-
-    const initializeLocalVideo = () => {
-        navigator.mediaDevices
-            .getUserMedia({
-                audio: roomInfo.host_type === 'STT' ? true : false,
-                video: {
-                    height: 360,
-                    width: 480,
-                },
-            })
-            .then((stream) => {
-                userVideo.current.srcObject = stream
-                setIsLocalVideoEnabled(true)
-
-                // Establish websocket connection after successful local video setup
-                socketVid.connect()
-                socketVid.emit('join', { user: nickname, room_id: roomID })
-            })
-            .then((stream) => {
-                if (roomInfo.users.length == 1 && roomInfo.users[0] !== nickname) {
-                    fetcher(props.accessToken, '/api/rooms/join_room', {
-                        method: 'PUT',
-                        body: JSON.stringify({ room_id: roomID, user_id: nickname }),
-                    })
-                        .then((res) => {
-                            if (res.status == 200) {
-                                handleMutate()
-                            } else {
-                                api.error({
-                                    message: `Error ${res.status}: ${res.error}`,
-                                })
-                            }
-                        })
-                        .catch((res) => {
-                            api.error({
-                                message: 'An unknown error has occurred',
-                            })
-                        })
-                } else {
-                    handleMutate()
-                }
-            })
-            .catch((error) => {
-                console.error('Stream not found:: ', error)
-            })
-    }
-
     // RTC Connection Reference: https://www.100ms.live/blog/webrtc-python-react
     // *************************************************************************
     const onIceCandidate = (event) => {
@@ -360,7 +296,6 @@ export default function CallPage({ accessToken }) {
     socketVid.on('pong', (data) => {
         console.log('pong', data)
     })
-
 
     useEffect(() => {
         console.log('useEffect')
