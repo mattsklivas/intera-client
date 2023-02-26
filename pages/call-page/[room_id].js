@@ -1,5 +1,5 @@
-import { React, useState, useEffect, useRef } from 'react'
-import { ConfigProvider, Button, Spin } from 'antd'
+import { React, useState, useEffect, useRef, useMemo, use } from 'react'
+import { ConfigProvider, Button, Spin, message } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import '@babel/polyfill'
 import { useRouter } from 'next/router'
@@ -15,9 +15,9 @@ import ChatboxComponent from '../../components/ChatboxComponent'
 import useTranscriptHistory from '../../hooks/useTranscriptHistory'
 import useRoomInfo from '../../hooks/useRoomInfo'
 import styles from '../../styles/CallPage.module.css'
-// import fetcher from '../../core/fetcher'
+import fetcher from '../../core/fetcher'
 import socketio from 'socket.io-client'
-// import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
 
 /*
 How call page should work:
@@ -62,7 +62,7 @@ export default function CallPage({ accessToken }) {
     const [spaceCheck, setSpaceBoolCheck] = useState(false)
     const [latestTranscript, setLatestTranscript] = useState('')
     const [lastTranscript, setLastTranscript] = useState('')
-
+    const [stop, setStop] = useState(false)
     const servers = {
         iceServers: [
             {
@@ -107,7 +107,6 @@ export default function CallPage({ accessToken }) {
             credentials: true,
         },
         transports: ['websocket'],
-        upgrade: false, // Was originally true
         reconnection: true,
     })
 
@@ -117,8 +116,8 @@ export default function CallPage({ accessToken }) {
             credentials: true,
         },
         transports: ['websocket'],
-        upgrade: false,
         autoConnect: false,
+        reconnection: true,
     })
 
     const getVideoPlaceholder = () => {
@@ -154,7 +153,7 @@ export default function CallPage({ accessToken }) {
         )
     }
 
-    const initializeLocalVideo = () => {
+    const initializeLocalVideo = async () => {
         navigator.mediaDevices
             .getUserMedia({
                 audio: roomInfo?.host_type === 'STT' ? true : false,
@@ -169,9 +168,10 @@ export default function CallPage({ accessToken }) {
                 setIsLocalVideoEnabled(true)
                 setInitialized(true)
 
-                // maybe??
                 socketVid.connect()
-                socketVid.emit('join', { user: user?.nickname, room_id: roomID })
+                socketVid.emit('join', { user: user?.nickname, room_id: roomID, test: 'test' })
+                socketVid.emit('ping', { room_id: roomID })
+                console.log('socketVid: ', socketVid, roomInfo)
             })
             .catch((error) => {
                 console.error('Stream not found:: ', error)
@@ -255,6 +255,7 @@ export default function CallPage({ accessToken }) {
         console.log('(HANDLER)', data.type)
         if (data.type === 'offer') {
             console.log('[Offer received]')
+            setStop(true)
             initializePeerConnection()
             peerConnection.setRemoteDescription(new RTCSessionDescription(data))
             sendAnswer()
@@ -286,50 +287,68 @@ export default function CallPage({ accessToken }) {
 
     // Following a succesful join, establish a peer connection
     // and send an offer to the other user
-    socketVid.on('ready', () => {
-        console.log('Ready to connect!')
+    socketVid.on('ready', (data) => {
+        console.log('Ready to connect!', data)
+        socketVid.emit('ping', { room_id: roomID })
         initializePeerConnection()
         sendOffer()
-        // }
     })
 
+    // Following a succesful join, establish a peer connection
+    // and send an offer to the other user
+    socketVid.on('pong', (data) => {
+        console.log('pong', data)
+    })
+
+    // useMemo(() => {
+    //     if (initialized) {
+    //         // do something
+    //         console.log("initialized")
+    //         setUserRole(getType())
+    //         if (roomInfo?.users.length == 2 && !peerConnectionEstablished) {
+    //             // re-emit join
+    //             console.log('re-emit join')
+    //             socketVid.emit('ready', { user: user?.nickname, room_id: roomID })
+
+    //             console.log('updating user info')
+    //             setRemoteNickname(roomInfo.users.find((username) => username !== user?.nickname))
+
+    //             // initialize peer connection
+    //             // initializePeerConnection()
+    //             // sendOffer()
+    //         }
+    //     } else {
+    //         // init page
+    //         console.log("not initialized")
+    //         if (roomInfo && user && roomInfo?.active) {
+    //             setNickname(user?.nickname)
+
+    //             // connect message socket
+    //             socketMsg.connect()
+    //             socketMsg.emit('join', { user: user?.nickname, room_id: roomID })
+    //             //
+    //             setUserRole(getType())
+    //             initializeLocalVideo()
+    //         }
+    //     }
+
+    //     if (roomInfo?.active == false) {
+    //         // handleLeave()
+    //         console.log("handle leave")
+    //     }
+
+    //     return function cleanup() {
+    //         peerConnection?.close();
+    //     };
+    // }, [initialized, roomInfo, user])
+
     useEffect(() => {
-        if (initialized) {
-            // do something
-            console.log('initialized')
-            setUserRole(getType())
-            if (roomInfo?.users.length == 2 && !peerConnectionEstablished) {
-                console.log('updating user info')
-                setRemoteNickname(roomInfo.users.find((username) => username !== user?.nickname))
-
-                // initialize peer connection
-                // initializePeerConnection()
-                // sendOffer()
-            }
-        } else {
-            // init page
-            console.log('not initialized')
-            if (roomInfo && user && roomInfo?.active) {
-                setNickname(user?.nickname)
-
-                // connect message socket
-                socketMsg.connect()
-                socketMsg.emit('join', { user: user?.nickname, room_id: roomID })
-                //
-                setUserRole(getType())
-                initializeLocalVideo()
-            }
-        }
-
-        if (roomInfo?.active == false) {
-            // handleLeave()
-            console.log('handle leave')
-        }
-
+        console.log('useEffect')
+        initializeLocalVideo()
         return function cleanup() {
             peerConnection?.close()
         }
-    }, [initialized, roomInfo, user])
+    }, [])
 
     if (user && !isLoading) {
         return (
