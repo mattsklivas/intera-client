@@ -196,66 +196,6 @@ export default function CallPage({ accessToken }) {
         return userRole
     }
 
-    // Refresh chatbox for both users upon invalidation
-    const invalidateRefresh = async () => {
-        handleMutate()
-    }
-
-    const dataTransfer = (data) => {
-        console.log('$$ sending data transfer $$')
-        socketVid.emit('data_transfer', {
-            user: nickname,
-            room_id: roomID,
-            body: data,
-        })
-    }
-
-    const initializeLocalVideo = () => {
-        navigator.mediaDevices
-            .getUserMedia({
-                audio: roomInfo.host_type === 'STT' ? true : false,
-                video: {
-                    height: 360,
-                    width: 480,
-                },
-            })
-            .then((stream) => {
-                userVideo.current.srcObject = stream
-                setIsLocalVideoEnabled(true)
-
-                // Establish websocket connection after successful local video setup
-                socketVid.connect()
-                socketVid.emit('join', { user: nickname, room_id: roomID })
-            })
-            .then((stream) => {
-                if (roomInfo.users.length == 1 && roomInfo.users[0] !== nickname) {
-                    fetcher(props.accessToken, '/api/rooms/join_room', {
-                        method: 'PUT',
-                        body: JSON.stringify({ room_id: roomID, user_id: nickname }),
-                    })
-                        .then((res) => {
-                            if (res.status == 200) {
-                                handleMutate()
-                            } else {
-                                api.error({
-                                    message: `Error ${res.status}: ${res.error}`,
-                                })
-                            }
-                        })
-                        .catch((res) => {
-                            api.error({
-                                message: 'An unknown error has occurred',
-                            })
-                        })
-                } else {
-                    handleMutate()
-                }
-            })
-            .catch((error) => {
-                console.error('Stream not found:: ', error)
-            })
-    }
-
     // RTC Connection Reference: https://www.100ms.live/blog/webrtc-python-react
     // *************************************************************************
     const onIceCandidate = (event) => {
@@ -360,7 +300,6 @@ export default function CallPage({ accessToken }) {
     socketVid.on('pong', (data) => {
         console.log('pong', data)
     })
-
 
     useEffect(() => {
         console.log('useEffect')

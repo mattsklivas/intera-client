@@ -7,6 +7,11 @@
     cursor: default;
 }
 
+.headerHelp {
+    padding: 6px 0 5px 0;
+    cursor: default;
+}
+
 .headerLanding {
     padding-left: 20%;
     display: flex;
