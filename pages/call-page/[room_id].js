@@ -21,18 +21,22 @@ import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognitio
 
 /*
 How call page should work:
+
 Host creates the room and is added
 Host is prompted to enable their video camera (if they are Speaker, they are also prompted for audio)
 When video camera is enabled, video feed will be displayed
 User can now send messages and do actions (i.e STT or ASL) for their role while they wait for the other user
+
 When guest user joins (they should already be added to the room on the backend, this action should be done on "join room")
 Guest is prompted to enable their video camera (if they are Speaker, they are also prompted for audio)
 When video camera is enabled, video feed will be displayed
 A socket ping will be sent out to the other user in the room to notify them that the other user has joined,
 a mutate will occur to update the room info. When this happens the peerConnection process should begin
+
 We should now begin to initializePeerConnection
 The remote and local video feeds should be set on both guest and host
 When this occurs, both feeds should appear
+
 Socket pings for ready state, data_transfer, offer, answer, candidate should occur
 When the remote video stream can be found onTrack, the remote video feed should be set and appear
 */

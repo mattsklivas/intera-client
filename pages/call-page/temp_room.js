@@ -1,1497 +1,617 @@
-// // import { React, useState, useEffect, useRef, useMemo } from 'react'
-// // import { ConfigProvider, Button, Spin, message } from 'antd'
-// // import { LoadingOutlined } from '@ant-design/icons'
-// // import '@babel/polyfill'
-// // import { useRouter } from 'next/router'
-// // import { useUser } from '@auth0/nextjs-auth0/client'
-// // import auth0 from '../../auth/auth0'
-// // import LoadingComponent from '../../components/LoadingComponent'
-// // import HeaderComponent from '../../components/HeaderComponent'
-// // // import VideoFeedComponent from '../../components/VideoFeedComponent'
-// // import { theme } from '../../core/theme'
-// // import { getQuery } from '../../core/utils'
-// // import HistoryComponent from '../../components/HistoryComponent'
-// // import ChatboxComponent from '../../components/ChatboxComponent'
-// // import useTranscriptHistory from '../../hooks/useTranscriptHistory'
-// // import useRoomInfo from '../../hooks/useRoomInfo'
-// // import styles from '../../styles/CallPage.module.css'
-// // import fetcher from '../../core/fetcher'
-// // import socketio from 'socket.io-client'
-// // import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
-
-// // export default function CallPage({ accessToken }) {
-// //     /* -------------Setup------------- */
-// //     const [initialized, setInitialized] = useState(false)
-// //     const router = useRouter()
-// //     const roomID = getQuery(router, 'room_id')
-// //     const { user, error, isLoading } = useUser()
-// //     const [nickname, setNickname] = useState(null)
-// //     const [remoteNickname, setRemoteNickname] = useState(null)
-
-// //     // Video
-// //     const userVideo = useRef(null)
-// //     const remoteVideo = useRef(null)
-// //     const [isLocalVideoEnabled, setIsLocalVideoEnabled] = useState(false)
-// //     const [isRemoteVideoEnabled, setIsRemoteVideoEnabled] = useState(false)
-
-// //     // STT
-// //     const [userRole, setUserRole] = useState(null)
-// //     const { transcript, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition()
-// //     const [spaceBarPressed, setSpaceBarPressed] = useState(false)
-// //     const [spaceCheck, setSpaceBoolCheck] = useState(false)
-// //     const [latestTranscript, setLatestTranscript] = useState('')
-// //     const [lastTranscript, setLastTranscript] = useState('')
-
-// //     let peerConnection
-
-// //     const servers = {
-// //         iceServers: [
-// //             {
-// //                 urls: 'stun:relay.metered.ca:80',
-// //             },
-// //             {
-// //                 urls: 'turn:relay.metered.ca:80',
-// //                 username: `${process.env.TURN_USER}`,
-// //                 credential: `${process.env.TURN_PASSWORD}`,
-// //             },
-// //             {
-// //                 urls: 'turn:relay.metered.ca:443',
-// //                 username: `${process.env.TURN_USER}`,
-// //                 credential: `${process.env.TURN_USER}`,
-// //             },
-// //             {
-// //                 urls: 'turn:relay.metered.ca:443?transport=tcp',
-// //                 username: `${process.env.TURN_USER}`,
-// //                 credential: `${process.env.TURN_USER}`,
-// //             },
-// //         ],
-// //     }
-
-// //     if (!browserSupportsSpeechRecognition) {
-// //         console.log('Browser does not support speech to text')
-// //     }
-
-// //     const socketMsg = socketio(`${process.env.API_URL}` || 'http://localhost:5000', {
-// //         cors: {
-// //             origin: `${process.env.CLIENT_URL}` || 'http://localhost:3000',
-// //             credentials: true,
-// //         },
-// //         transports: ['websocket'],
-// //         reconnection: true,
-// //     })
-
-// //     const socketVid = socketio(`${process.env.API_URL}` || 'http://localhost:5000', {
-// //         cors: {
-// //             origin: `${process.env.CLIENT_URL}` || 'http://localhost:3000',
-// //             credentials: true,
-// //         },
-// //         transports: ['websocket'],
-// //         autoConnect: false,
-// //     })
-
-// //     // SWR hooks
-// //     const { data: transcriptHistory, error: transcriptHistoryError } = useTranscriptHistory(
-// //         user ? user?.nickname : '',
-// //         accessToken
-// //     )
-// //     const {
-// //         data: roomInfo,
-// //         error: roomInfoError,
-// //         mutate: roomInfoMutate,
-// //     } = useRoomInfo(roomID || '', accessToken)
-
-// //     /* -------------STT------------- */
-
-// //     // User input for push to talk
-// //     useEffect(() => {
-// //         const handleKeyPress = (event) => {
-// //             if (event.keyCode === 32 && !spaceBarPressed && userRole === 'STT') {
-// //                 setSpaceBoolCheck(false)
-// //                 SpeechRecognition.startListening({ continuous: true })
-// //                 setSpaceBarPressed(true)
-// //                 message.info('Speech recording started...')
-// //             }
-// //         }
-// //         const handleKeyRelease = (event) => {
-// //             if (event.keyCode === 32 && spaceBarPressed && userRole === 'STT') {
-// //                 SpeechRecognition.stopListening()
-// //                 setSpaceBarPressed(false)
-// //                 setTimeout(() => {
-// //                     resetTranscript()
-// //                     setSpaceBoolCheck(true)
-// //                 }, 500)
-
-// //                 message.info('Speech recording finished...')
-// //             }
-// //         }
-// //         document.addEventListener('keydown', handleKeyPress)
-// //         document.addEventListener('keyup', handleKeyRelease)
-// //         return () => {
-// //             document.removeEventListener('keydown', handleKeyPress)
-// //             document.removeEventListener('keyup', handleKeyRelease)
-// //         }
-// //     }, [spaceBarPressed, userRole])
-
-// //     useEffect(() => {
-// //         setLatestTranscript(transcript)
-// //     }, [spaceCheck, transcript])
-
-// //     useEffect(() => {
-// //         if (spaceCheck) {
-// //             if (latestTranscript !== lastTranscript) {
-// //                 // console.log(latestTranscript)
-// //                 if (latestTranscript != '') {
-// //                     appendMessage(latestTranscript)
-// //                 }
-// //                 setLastTranscript(latestTranscript)
-// //             }
-// //         }
-// //     }, [spaceCheck, latestTranscript, lastTranscript])
-
-// //     // Add a STT message
-// //     const appendMessage = async (message) => {
-// //         fetcher(accessToken, '/api/transcripts/create_message', {
-// //             method: 'POST',
-// //             body: JSON.stringify({
-// //                 room_id: roomInfo.room_id,
-// //                 to_user: roomInfo.users.find((username) => username !== user.nickname) || 'N/A',
-// //                 message: message,
-// //                 type: getType(),
-// //             }),
-// //         })
-// //             .then((res) => {
-// //                 if (res.status == 200) {
-// //                     // Emit mutate message over websocket to other user
-// //                     handleMutate()
-// //                 } else {
-// //                     api.error({
-// //                         message: `Error ${res.status}: ${res.error}`,
-// //                     })
-// //                 }
-// //             })
-// //             .catch((res) => {
-// //                 api.error({
-// //                     message: 'An unknown error has occurred',
-// //                 })
-// //             })
-// //     }
-
-// //     // Get the communication type of the user
-// //     const getType = () => {
-// //         if (userRole == null) {
-// //             if (roomInfo?.users[0] === user?.nickname) {
-// //                 return roomInfo?.host_type
-// //             } else {
-// //                 if (roomInfo?.host_type === 'ASL') {
-// //                     return 'STT'
-// //                 } else {
-// //                     return 'ASL'
-// //                 }
-// //             }
-// //         }
-
-// //         return userRole
-// //     }
-
-// //     /* -------------Sockets------------- */
-// //     const handleLeave = () => {
-// //         socketMsg.emit('leave', { room_id: roomID, user: user?.nickname })
-
-// //         // Close the room
-// //         if (roomInfo?.users[0] == user?.nickname) {
-// //             fetcher(accessToken, '/api/rooms/close_room', {
-// //                 method: 'PUT',
-// //                 body: JSON.stringify({
-// //                     room_id: roomID,
-// //                 }),
-// //             }).then((res) => {
-// //                 if (res.status == 200) {
-// //                     console.log('Room closed')
-// //                     socketMsg.close()
-// //                     socketVid.close()
-// //                 }
-// //             })
-// //         }
-
-// //         if (userVideo?.current?.srcObject) {
-// //             userVideo.current.srcObject.getTracks().forEach((track) => track.stop())
-// //         }
-
-// //         handleMutate()
-
-// //         router.push('/')
-// //     }
-
-// //     // Refresh chatbox for both users upon invalidation
-// //     const invalidateRefresh = async () => {
-// //         handleMutate()
-// //     }
-
-// //     const dataTransfer = (data) => {
-// //         console.log('$$ sending data transfer $$')
-// //         socketVid.emit('data_transfer', {
-// //             user: nickname,
-// //             room_id: roomID,
-// //             body: data,
-// //         })
-// //     }
-
-// //     const initializeLocalVideo = () => {
-// //         navigator.mediaDevices
-// //             .getUserMedia({
-// //                 audio: roomInfo.host_type === 'STT' ? true : false,
-// //                 video: {
-// //                     height: 360,
-// //                     width: 480,
-// //                 },
-// //             })
-// //             .then((stream) => {
-// //                 userVideo.current.srcObject = stream
-// //                 setIsLocalVideoEnabled(true)
-
-// //                 // Establish websocket connection after successful local video setup
-// //                 socketVid.connect()
-// //                 socketVid.emit('join', { user: nickname, room_id: roomID })
-// //             })
-// //             .then((stream) => {
-// //                 if (roomInfo.users.length == 1 && roomInfo.users[0] !== nickname) {
-// //                     fetcher(props.accessToken, '/api/rooms/join_room', {
-// //                         method: 'PUT',
-// //                         body: JSON.stringify({ room_id: roomID, user_id: nickname }),
-// //                     })
-// //                         .then((res) => {
-// //                             if (res.status == 200) {
-// //                                 handleMutate()
-// //                             } else {
-// //                                 api.error({
-// //                                     message: `Error ${res.status}: ${res.error}`,
-// //                                 })
-// //                             }
-// //                         })
-// //                         .catch((res) => {
-// //                             api.error({
-// //                                 message: 'An unknown error has occurred',
-// //                             })
-// //                         })
-// //                 } else {
-// //                     handleMutate()
-// //                 }
-// //             })
-// //             .catch((error) => {
-// //                 console.error('Stream not found:: ', error)
-// //             })
-// //     }
-
-// //     /* -------------RTC------------- */
-
-// //     // RTC Connection Reference: https://www.100ms.live/blog/webrtc-python-react
-// //     // *************************************************************************
-// //     const onIceCandidate = (event) => {
-// //         if (event.candidate) {
-// //             console.log('Sending ICE candidate')
-// //             dataTransfer({
-// //                 type: 'candidate',
-// //                 candidate: event.candidate,
-// //             })
-// //         }
-// //     }
-
-// //     const onTrack = (event) => {
-// //         console.log('{{{{{{{{{{{Received track from other user.}}}}}}}}}}}}')
-// //         console.log('***src object being received', event)
-// //         setIsRemoteVideoEnabled(true)
-// //         remoteVideo.current.srcObject = event.streams[0]
-// //     }
-
-// //     const initializePeerConnection = () => {
-// //         try {
-// //             peerConnection = new RTCPeerConnection({ servers })
-// //             peerConnection.onicecandidate = onIceCandidate
-// //             peerConnection.ontrack = onTrack
-// //             console.log('***src object being sent out', userVideo.current.srcObject)
-// //             const userStream = userVideo.current.srcObject
-// //             for (const track of userStream?.getTracks()) {
-// //                 peerConnection.addTrack(track, userStream)
-// //             }
-// //             console.log('{{{Peer connection established!!}}}')
-// //         } catch (error) {
-// //             console.error('Failed to establish connection: ', error)
-// //         }
-// //     }
-
-// //     const setAndSendLocalDescription = (sessionDescription) => {
-// //         peerConnection.setLocalDescription(sessionDescription)
-// //         dataTransfer(sessionDescription)
-// //     }
-
-// //     const sendOffer = () => {
-// //         peerConnection.createOffer().then(setAndSendLocalDescription, (error) => {
-// //             console.error('Unable to send offer: ', error)
-// //         })
-// //     }
-
-// //     const sendAnswer = () => {
-// //         peerConnection.createAnswer().then(setAndSendLocalDescription, (error) => {
-// //             console.error('Unable to send answer: ', error)
-// //         })
-// //     }
-
-// //     const handleDataTransfer = (data) => {
-// //         console.log('(HANDLER)', data.type)
-// //         if (data.type === 'offer') {
-// //             console.log('[Offer received]')
-// //             initializePeerConnection()
-// //             peerConnection.setRemoteDescription(new RTCSessionDescription(data))
-// //             sendAnswer()
-// //         } else if (data.type === 'answer') {
-// //             console.log('[Answer received]')
-// //             peerConnection.setRemoteDescription(new RTCSessionDescription(data))
-// //         } else if (data.type === 'candidate') {
-// //             console.log('[Candidate received]')
-// //             peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate))
-// //         } else {
-// //             console.log('Unrecognized data received...')
-// //         }
-// //     }
-// //     // *************************************************************************
-
-// //     /* -------------Video------------- */
-
-// //     const getVideoPlaceholder = () => {
-// //         return (
-// //             <div
-// //                 style={{
-// //                     display: 'flex',
-// //                     alignItems: 'center',
-// //                     justifyContent: 'center',
-// //                 }}
-// //             >
-// //                 <div
-// //                     style={{
-// //                         width: '55%',
-// //                         aspectRatio: 'auto 4 / 3',
-// //                         border: '2px solid #f0f0f0',
-// //                     }}
-// //                 >
-// //                     <div style={{ position: 'relative', top: '40%' }}>
-// //                         <Spin
-// //                             indicator={
-// //                                 <LoadingOutlined
-// //                                     style={{
-// //                                         fontSize: 40,
-// //                                     }}
-// //                                     spin
-// //                                 />
-// //                             }
-// //                         />
-// //                     </div>
-// //                 </div>
-// //             </div>
-// //         )
-// //     }
-
-// //     /* -------------Initialization------------- */
-
-// //     useEffect(() => {
-// //         if (initialized) {
-// //             console.log(roomInfo)
-// //             setUserRole(getType())
-// //             initializeLocalVideo()
-// //         }
-// //     }, [initialized])
-
-// //     useEffect(() => {
-// //         if (
-// //             !remoteNickname &&
-// //             typeof user?.nickname !== 'undefined' &&
-// //             typeof roomInfo !== 'undefined' &&
-// //             roomInfo.users.length == 2
-// //         ) {
-// //             setRemoteNickname(roomInfo.users.find((username) => username !== user.nickname))
-// //         } else if (
-// //             !remoteNickname &&
-// //             nickname != null &&
-// //             typeof roomInfo !== 'undefined' &&
-// //             roomInfo.users.length == 2
-// //         ) {
-// //             setRemoteNickname(roomInfo.users.find((username) => username !== nickname))
-// //         }
-
-// //         if (
-// //             !initialized &&
-// //             typeof transcriptHistory !== 'undefined' &&
-// //             typeof roomInfo !== 'undefined' &&
-// //             typeof user?.nickname !== undefined &&
-// //             roomInfo?.active == true
-// //         ) {
-// //             setNickname(user.nickname)
-// //             // getRemoteUserNickname()
-// //             socketMsg.connect()
-// //             socketMsg.emit('join', { user: user.nickname, room_id: roomID })
-// //             // handleMutate()
-
-// //             // Render page
-// //             setInitialized(true)
-// //         }
-
-// //         if (roomInfo?.active == false) {
-// //             handleLeave()
-// //         }
-// //     }, [roomInfo, user, nickname])
-
-// //     /* -------------Page Format------------- */
-
-// //     if (user && initialized && !isLoading) {
-// //         return (
-// //             <ConfigProvider theme={theme}>
-// //                 <HeaderComponent user={user} roomID={roomID} handleLeave={handleLeave} />
-// //                 <div className={styles.callWrapper}>
-// //                     <div style={{ width: '20%' }}>
-// //                         <Button
-// //                             style={{ position: 'absolute', left: 10, top: 46 }}
-// //                             onClick={() => appendMessage('Example message')}
-// //                         >
-// //                             Send Message (temporary)
-// //                         </Button>
-// //                         <HistoryComponent transcripts={transcriptHistory} user={user} />
-// //                     </div>
-// //                     <div style={{ width: '40%' }}>
-// //                         <ChatboxComponent
-// //                             accessToken={accessToken}
-// //                             context={'call'}
-// //                             roomInfo={roomInfo}
-// //                             roomID={roomID}
-// //                             invalidateRefresh={invalidateRefresh}
-// //                             transcript={
-// //                                 roomInfo?.messages_info.length > 0 ? roomInfo?.messages_info : []
-// //                             }
-// //                             user={user}
-// //                         />
-// //                     </div>
-// //                     <div style={{ width: '40%' }}>
-// //                         <div style={{ width: '-webkit-fill-available' }}>
-// //                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-// //                                 <div style={{ textAlign: 'center' }}>
-// //                                     <h2 style={{ marginBottom: 10 }}>
-// //                                         {remoteNickname ? (
-// //                                             <span>
-// //                                                 <span>{remoteNickname}</span>
-// //                                                 <span>{` (${
-// //                                                     userRole === 'ASL' ? 'Speaker' : 'ASL Signer'
-// //                                                 })`}</span>
-// //                                             </span>
-// //                                         ) : (
-// //                                             <span className={styles.remoteUserLoading}>
-// //                                                 Awaiting user connection<span>.</span>
-// //                                                 <span>.</span>
-// //                                                 <span>.</span>
-// //                                             </span>
-// //                                         )}
-// //                                     </h2>
-// //                                     <div>
-// //                                         <video
-// //                                             autoPlay
-// //                                             muted
-// //                                             playsInline
-// //                                             ref={remoteVideo}
-// //                                             style={{
-// //                                                 display: isRemoteVideoEnabled ? 'inline' : 'none',
-// //                                                 width: '55%',
-// //                                                 height: isRemoteVideoEnabled ? '55%' : 0,
-// //                                             }}
-// //                                         ></video>
-// //                                         {!isRemoteVideoEnabled && getVideoPlaceholder()}
-// //                                     </div>
-// //                                 </div>
-// //                                 <div style={{ textAlign: 'center' }}>
-// //                                     <h2 style={{ marginBottom: 10 }}>{`${user?.nickname} (${
-// //                                         userRole === 'ASL' ? 'ASL Signer' : 'Speaker'
-// //                                     })`}</h2>
-// //                                     <div>
-// //                                         <video
-// //                                             autoPlay
-// //                                             muted
-// //                                             playsInline
-// //                                             ref={userVideo}
-// //                                             style={{
-// //                                                 display: isLocalVideoEnabled ? 'inline' : 'none',
-// //                                                 width: '55%',
-// //                                                 height: isLocalVideoEnabled ? '55%' : 0,
-// //                                             }}
-// //                                         ></video>
-// //                                         {!isLocalVideoEnabled && getVideoPlaceholder()}
-// //                                     </div>
-// //                                 </div>
-// //                             </div>
-// //                         </div>
-// //                     </div>
-// //                 </div>
-// //             </ConfigProvider>
-// //         )
-// //     } else if (isLoading) {
-// //         return <LoadingComponent msg="Loading..." />
-// //     } else if (!user && !isLoading) {
-// //         router.push('/api/auth/login')
-// //     }
-// // }
-
-// // export const getServerSideProps = async (context) => {
-// //     let accessToken = (await auth0.getSession(context.req, context.res)) || null
-// //     if (accessToken != null) {
-// //         accessToken = accessToken.idToken
-// //     }
-// //     return { props: { accessToken } }
-// // }
-
-// import { React, useState, useEffect, useRef, useMemo, use } from 'react'
-// import { ConfigProvider, Button, Spin, message } from 'antd'
-// import { LoadingOutlined } from '@ant-design/icons'
-// import '@babel/polyfill'
-// import { useRouter } from 'next/router'
-// import { useUser } from '@auth0/nextjs-auth0/client'
-// import auth0 from '../../auth/auth0'
-// import LoadingComponent from '../../components/LoadingComponent'
-// import HeaderComponent from '../../components/HeaderComponent'
-// // import VideoFeedComponent from '../../components/VideoFeedComponent'
-// import { theme } from '../../core/theme'
-// import { getQuery } from '../../core/utils'
-// import HistoryComponent from '../../components/HistoryComponent'
-// import ChatboxComponent from '../../components/ChatboxComponent'
-// import useTranscriptHistory from '../../hooks/useTranscriptHistory'
-// import useRoomInfo from '../../hooks/useRoomInfo'
-// import styles from '../../styles/CallPage.module.css'
-// import fetcher from '../../core/fetcher'
-// import socketio from 'socket.io-client'
-// import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
-
-// export default function CallPage({ accessToken }) {
-//     const userVideo = useRef(null)
-//     const remoteVideo = useRef(null)
-//     const [isLocalVideoEnabled, setIsLocalVideoEnabled] = useState(false)
-//     const [isRemoteVideoEnabled, setIsRemoteVideoEnabled] = useState(false)
-//     const [hasJoined, setHasJoined] = useState(false)
-//     const [userRole, setUserRole] = useState(null)
-//     const { transcript, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition()
-//     const [spaceBarPressed, setSpaceBarPressed] = useState(false)
-//     const router = useRouter()
-//     const roomID = getQuery(router, 'room_id')
-//     const [initialized, setInitialized] = useState(false)
-//     const { user, error, isLoading } = useUser()
-//     const [nickname, setNickname] = useState(null)
-//     const [remoteNickname, setRemoteNickname] = useState(null)
-//     const [peerConnectionEstablished, setPeerConnectionEstablished] = useState(false)
-//     let peerConnection
-
-//     const [spaceCheck, setSpaceBoolCheck] = useState(false)
-//     const [latestTranscript, setLatestTranscript] = useState('')
-//     const [lastTranscript, setLastTranscript] = useState('')
-
-//     const servers = {
-//         iceServers: [
-//             {
-//                 urls: 'stun:relay.metered.ca:80',
-//             },
-//             {
-//                 urls: 'turn:relay.metered.ca:80',
-//                 username: `${process.env.TURN_USER}`,
-//                 credential: `${process.env.TURN_PASSWORD}`,
-//             },
-//             {
-//                 urls: 'turn:relay.metered.ca:443',
-//                 username: `${process.env.TURN_USER}`,
-//                 credential: `${process.env.TURN_USER}`,
-//             },
-//             {
-//                 urls: 'turn:relay.metered.ca:443?transport=tcp',
-//                 username: `${process.env.TURN_USER}`,
-//                 credential: `${process.env.TURN_USER}`,
-//             },
-//         ],
-//     }
-
-//     if (!browserSupportsSpeechRecognition) {
-//         console.log('Browser does not support speech to text')
-//     }
-
-//     const socketMsg = socketio(`${process.env.API_URL}` || 'http://localhost:5000', {
-//         cors: {
-//             origin: `${process.env.CLIENT_URL}` || 'http://localhost:3000',
-//             credentials: true,
-//         },
-//         transports: ['websocket'],
-//         upgrade: false, // Was originally true
-//         reconnection: true,
-//     })
-
-//     const socketVid = socketio(`${process.env.API_URL}` || 'http://localhost:5000', {
-//         cors: {
-//             origin: `${process.env.CLIENT_URL}` || 'http://localhost:3000',
-//             credentials: true,
-//         },
-//         transports: ['websocket'],
-//         upgrade: false,
-//         autoConnect: false,
-//     })
-
-//     // SWR hooks
-//     const { data: transcriptHistory, error: transcriptHistoryError } = useTranscriptHistory(
-//         user ? user?.nickname : '',
-//         accessToken
-//     )
-//     const {
-//         data: roomInfo,
-//         error: roomInfoError,
-//         mutate: roomInfoMutate,
-//     } = useRoomInfo(roomID || '', accessToken)
-
-//     // Room initialization
-//     // TODO: update how we run this, maybe put in main initialization
-//     useEffect(() => {
-//         // If JWT is expired, force a logout
-//         if (transcriptHistoryError?.status == 401) {
-//             router.push('/api/auth/logout')
-//         } else if (roomInfoError?.status == 404) {
-//             // If room ID is invalid, redirect to home page
-//             router.push(`/?invalid_room=${roomID}`)
-//         } else if (typeof roomInfo !== 'undefined' && roomInfo?.active == false) {
-//             // If room ID is expired, redirect to home page
-//             router.push(`/?expired_room=${roomID}`)
-//         } else if (
-//             typeof roomInfo !== 'undefined' &&
-//             roomInfo?.users.length == 2 &&
-//             user?.nickname &&
-//             !roomInfo?.users.find((name) => name === user?.nickname)
-//         ) {
-//             // If room if full, redirect to home page
-//             router.push(`/?full_room=${roomID}`)
-//         }
-//     }, [])
-
-//     const handleMutate = () => {
-//         socketMsg.emit('mutate', { roomID: roomID })
-//         roomInfoMutate()
-//     }
-
-//     const handleMessage = () => {
-//         socketMsg.emit('message', { message: 'ping', room_id: roomID })
-//     }
-
-//     const handleLeave = () => {
-//         socketMsg.emit('leave', { room_id: roomID, user: user?.nickname })
-
-//         // Close the room
-//         if (roomInfo?.users[0] == user?.nickname) {
-//             fetcher(accessToken, '/api/rooms/close_room', {
-//                 method: 'PUT',
-//                 body: JSON.stringify({
-//                     room_id: roomID,
-//                 }),
-//             }).then((res) => {
-//                 if (res.status == 200) {
-//                     console.log('Room closed')
-//                     socketMsg.close()
-//                     socketVid.close()
-//                 }
-//             })
-//         }
-
-//         if (userVideo?.current?.srcObject) {
-//             userVideo.current.srcObject.getTracks().forEach((track) => track.stop())
-//         }
-
-//         handleMutate()
-
-//         router.push('/')
-//     }
-
-//     // User input for push to talk
-//     useEffect(() => {
-//         const handleKeyPress = (event) => {
-//             if (event.keyCode === 32 && !spaceBarPressed && userRole === 'STT') {
-//                 setSpaceBoolCheck(false)
-//                 SpeechRecognition.startListening({ continuous: true })
-//                 setSpaceBarPressed(true)
-//                 message.info('Speech recording started...')
-//             }
-//         }
-//         const handleKeyRelease = (event) => {
-//             if (event.keyCode === 32 && spaceBarPressed && userRole === 'STT') {
-//                 SpeechRecognition.stopListening()
-//                 setSpaceBarPressed(false)
-//                 setTimeout(() => {
-//                     resetTranscript()
-//                     setSpaceBoolCheck(true)
-//                 }, 500)
-
-//                 message.info('Speech recording finished...')
-//             }
-//         }
-//         document.addEventListener('keydown', handleKeyPress)
-//         document.addEventListener('keyup', handleKeyRelease)
-//         return () => {
-//             document.removeEventListener('keydown', handleKeyPress)
-//             document.removeEventListener('keyup', handleKeyRelease)
-//         }
-//     }, [spaceBarPressed, userRole])
-
-//     useEffect(() => {
-//         setLatestTranscript(transcript)
-//     }, [spaceCheck, transcript])
-
-//     useEffect(() => {
-//         if (spaceCheck) {
-//             if (latestTranscript !== lastTranscript) {
-//                 // console.log(latestTranscript)
-//                 if (latestTranscript != '') {
-//                     appendMessage(latestTranscript)
-//                 }
-//                 setLastTranscript(latestTranscript)
-//             }
-//         }
-//     }, [spaceCheck, latestTranscript, lastTranscript])
-
-//     // Add a STT message
-//     const appendMessage = async (message) => {
-//         fetcher(accessToken, '/api/transcripts/create_message', {
-//             method: 'POST',
-//             body: JSON.stringify({
-//                 room_id: roomInfo.room_id,
-//                 to_user: roomInfo.users.find((username) => username !== user.nickname) || 'N/A',
-//                 message: message,
-//                 type: getType(),
-//             }),
-//         })
-//             .then((res) => {
-//                 if (res.status == 200) {
-//                     // Emit mutate message over websocket to other user
-//                     handleMutate()
-//                 } else {
-//                     api.error({
-//                         message: `Error ${res.status}: ${res.error}`,
-//                     })
-//                 }
-//             })
-//             .catch((res) => {
-//                 api.error({
-//                     message: 'An unknown error has occurred',
-//                 })
-//             })
-//     }
-
-//     // Get the communication type of the user
-//     const getType = () => {
-//         if (userRole == null) {
-//             if (roomInfo?.users[0] === user?.nickname) {
-//                 return roomInfo?.host_type
-//             } else {
-//                 if (roomInfo?.host_type === 'ASL') {
-//                     return 'STT'
-//                 } else {
-//                     return 'ASL'
-//                 }
-//             }
-//         }
-
-//         return userRole
-//     }
-
-//     // Refresh chatbox for both users upon invalidation
-//     const invalidateRefresh = async () => {
-//         handleMutate()
-//     }
-
-//     const dataTransfer = (data) => {
-//         console.log('$$ sending data transfer $$')
-//         socketVid.emit('data_transfer', {
-//             user: nickname,
-//             room_id: roomID,
-//             body: data,
-//         })
-//     }
-
-//     const initializeLocalVideo = () => {
-//         navigator.mediaDevices
-//             .getUserMedia({
-//                 audio: roomInfo.host_type === 'STT' ? true : false,
-//                 video: {
-//                     height: 360,
-//                     width: 480,
-//                 },
-//             })
-//             .then((stream) => {
-//                 userVideo.current.srcObject = stream
-//                 setIsLocalVideoEnabled(true)
-//             })
-//             .then(() => {
-//                 if (roomInfo.users.length == 1 && roomInfo.users[0] !== nickname) {
-//                     fetcher(props.accessToken, '/api/rooms/join_room', {
-//                         method: 'PUT',
-//                         body: JSON.stringify({ room_id: roomID, user_id: nickname }),
-//                     })
-//                         .then((res) => {
-//                             if (res.status == 200) {
-//                                 handleMutate()
-//                             } else {
-//                                 api.error({
-//                                     message: `Error ${res.status}: ${res.error}`,
-//                                 })
-//                             }
-//                         })
-//                         .catch((res) => {
-//                             api.error({
-//                                 message: 'An unknown error has occurred',
-//                             })
-//                         })
-//                 } else {
-//                     handleMutate()
-//                 }
-//             }).then(() => {
-//                 // Establish websocket connection after successful local video setup
-//                 socketVid.connect()
-//                 socketVid.emit('join', { user: nickname, room_id: roomID })
-//             })
-//             .catch((error) => {
-//                 console.error('Stream not found:: ', error)
-//             })
-//     }
-
-//     // RTC Connection Reference: https://www.100ms.live/blog/webrtc-python-react
-//     // *************************************************************************
-//     const onIceCandidate = (event) => {
-//         if (event.candidate) {
-//             console.log('Sending ICE candidate')
-//             dataTransfer({
-//                 type: 'candidate',
-//                 candidate: event.candidate,
-//             })
-//         }
-//     }
-
-//     const onTrack = (event) => {
-//         console.log('{{{{{{{{{{{Received track from other user.}}}}}}}}}}}}')
-//         console.log('***src object being received', event)
-//         setIsRemoteVideoEnabled(true)
-//         setPeerConnectionEstablished(true)
-//         remoteVideo.current.srcObject = event.streams[0]
-//     }
-
-//     const initializePeerConnection = () => {
-//         try {
-//             peerConnection = new RTCPeerConnection({ servers })
-//             peerConnection.onicecandidate = onIceCandidate
-//             peerConnection.ontrack = onTrack
-//             console.log('***src object being sent out', userVideo.current.srcObject)
-//             const userStream = userVideo.current.srcObject
-//             for (const track of userStream?.getTracks()) {
-//                 peerConnection.addTrack(track, userStream)
-//             }
-//             console.log('{{{Peer connection established!!}}}')
-//         } catch (error) {
-//             console.error('Failed to establish connection: ', error)
-//         }
-//     }
-
-//     const setAndSendLocalDescription = (sessionDescription) => {
-//         peerConnection.setLocalDescription(sessionDescription)
-//         dataTransfer(sessionDescription)
-//     }
-
-//     const sendOffer = () => {
-//         peerConnection.createOffer().then(setAndSendLocalDescription, (error) => {
-//             console.error('Unable to send offer: ', error)
-//         })
-//     }
-
-//     const sendAnswer = () => {
-//         peerConnection.createAnswer().then(setAndSendLocalDescription, (error) => {
-//             console.error('Unable to send answer: ', error)
-//         })
-//     }
-
-//     const handleDataTransfer = (data) => {
-//         console.log('(HANDLER)', data.type)
-//         if (data.type === 'offer') {
-//             console.log('[Offer received]')
-//             initializePeerConnection()
-//             peerConnection.setRemoteDescription(new RTCSessionDescription(data))
-//             sendAnswer()
-//         } else if (data.type === 'answer') {
-//             console.log('[Answer received]')
-//             peerConnection.setRemoteDescription(new RTCSessionDescription(data))
-//         } else if (data.type === 'candidate') {
-//             console.log('[Candidate received]')
-//             peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate))
-//         } else {
-//             console.log('Unrecognized data received...')
-//         }
-//     }
-//     // *************************************************************************
-
-//     const getVideoPlaceholder = () => {
-//         return (
-//             <div
-//                 style={{
-//                     display: 'flex',
-//                     alignItems: 'center',
-//                     justifyContent: 'center',
-//                 }}
-//             >
-//                 <div
-//                     style={{
-//                         width: '55%',
-//                         aspectRatio: 'auto 4 / 3',
-//                         border: '2px solid #f0f0f0',
-//                     }}
-//                 >
-//                     <div style={{ position: 'relative', top: '40%' }}>
-//                         <Spin
-//                             indicator={
-//                                 <LoadingOutlined
-//                                     style={{
-//                                         fontSize: 40,
-//                                     }}
-//                                     spin
-//                                 />
-//                             }
-//                         />
-//                     </div>
-//                 </div>
-//             </div>
-//         )
-//     }
-
-//     // Refresh chatbox
-//     socketMsg.on('mutate', (data) => {
-//         // getRemoteUserNickname()
-//         roomInfoMutate()
-//     })
-
-//     // Following a succesful join, establish a peer connection
-//     // and send an offer to the other user
-//     socketVid.on('ready', async () => {
-//         console.log('Ready to connect!')
-
-//         await roomInfoMutate().then(() => {
-//             if (roomInfo.users.length > 1) {
-//                 initializePeerConnection()
-//                 sendOffer()
-//             }
-//         })
-//     })
-
-//     socketVid.on('data_transfer', (data) => {
-//         console.log('Received from ' + data.user)
-//         // getRemoteUserNickname()
-//         // Messy I know, need to find a better way to get the user's nickname
-//         console.log('@@@ ON DATA TRANSFER @@@', nickname, user?.nickname)
-//         if (!nickname) {
-//             if (data.user !== user.nickname) {
-//                 handleDataTransfer(data.body)
-//             }
-//         } else {
-//             if (data.user !== nickname) {
-//                 handleDataTransfer(data.body)
-//             }
-//         }
-//     })
-
-//     socketMsg.on('message', (data) => {
-//         console.log('message', data || 'none')
-//     })
-
-//     socketMsg.on('disconnect', (data) => {
-//         roomInfoMutate()
-//         console.log('disconnect', data)
-//     })
-
-//     useMemo(() => {
-//         if (initialized) {
-//             console.log(roomInfo)
-
-//             setUserRole(getType())
-//             initializeLocalVideo()
-//         }
-//     }, [initialized])
-
-//     useMemo(() => {
-//         if (
-//             !remoteNickname &&
-//             typeof user?.nickname !== 'undefined' &&
-//             typeof roomInfo !== 'undefined' &&
-//             roomInfo.users.length == 2
-//         ) {
-//             setRemoteNickname(roomInfo.users.find((username) => username !== user.nickname))
-//         } else if (
-//             !remoteNickname &&
-//             nickname != null &&
-//             typeof roomInfo !== 'undefined' &&
-//             roomInfo.users.length == 2
-//         ) {
-//             setRemoteNickname(roomInfo.users.find((username) => username !== nickname))
-//         }
-
-//         if (
-//             !initialized &&
-//             typeof transcriptHistory !== 'undefined' &&
-//             typeof roomInfo !== 'undefined' &&
-//             typeof user?.nickname !== undefined &&
-//             roomInfo?.active == true
-//         ) {
-//             setNickname(user.nickname)
-
-//             socketMsg.connect()
-//             socketMsg.emit('join', { user: user.nickname, room_id: roomID })
-
-//             // setUserRole(getType())
-
-//             handleMutate()
-
-//             // Render page
-//             setInitialized(true)
-//         }
-
-//         if (roomInfo?.active == false) {
-//             handleLeave()
-//         }
-//     }, [roomInfo, user, nickname])
-
-//     if (user && initialized && !isLoading) {
-//         return (
-//             <ConfigProvider theme={theme}>
-//                 <HeaderComponent user={user} roomID={roomID} handleLeave={handleLeave} />
-//                 <div className={styles.callWrapper}>
-//                     <div style={{ width: '20%' }}>
-//                         <Button
-//                             style={{ position: 'absolute', left: 10, top: 46 }}
-//                             onClick={() => appendMessage('Example message')}
-//                         >
-//                             Send Message (temporary)
-//                         </Button>
-//                         <HistoryComponent transcripts={transcriptHistory} user={user} />
-//                     </div>
-//                     <div style={{ width: '40%' }}>
-//                         <ChatboxComponent
-//                             accessToken={accessToken}
-//                             context={'call'}
-//                             roomInfo={roomInfo}
-//                             roomID={roomID}
-//                             invalidateRefresh={invalidateRefresh}
-//                             transcript={
-//                                 roomInfo?.messages_info.length > 0 ? roomInfo?.messages_info : []
-//                             }
-//                             user={user}
-//                         />
-//                     </div>
-//                     <div style={{ width: '40%' }}>
-//                         <div style={{ width: '-webkit-fill-available' }}>
-//                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-//                                 <div style={{ textAlign: 'center' }}>
-//                                     <h2 style={{ marginBottom: 10 }}>
-//                                         {remoteNickname ? (
-//                                             <span>
-//                                                 <span>{remoteNickname}</span>
-//                                                 <span>{` (${
-//                                                     userRole === 'ASL' ? 'Speaker' : 'ASL Signer'
-//                                                 })`}</span>
-//                                             </span>
-//                                         ) : (
-//                                             <span className={styles.remoteUserLoading}>
-//                                                 Awaiting user connection<span>.</span>
-//                                                 <span>.</span>
-//                                                 <span>.</span>
-//                                             </span>
-//                                         )}
-//                                     </h2>
-//                                     <div>
-//                                         <video
-//                                             autoPlay
-//                                             muted
-//                                             playsInline
-//                                             ref={remoteVideo}
-//                                             style={{
-//                                                 display: isRemoteVideoEnabled ? 'inline' : 'none',
-//                                                 width: '55%',
-//                                                 height: isRemoteVideoEnabled ? '55%' : 0,
-//                                             }}
-//                                         ></video>
-//                                         {!isRemoteVideoEnabled && getVideoPlaceholder()}
-//                                     </div>
-//                                 </div>
-//                                 <div style={{ textAlign: 'center' }}>
-//                                     <h2 style={{ marginBottom: 10 }}>{`${user?.nickname} (${
-//                                         userRole === 'ASL' ? 'ASL Signer' : 'Speaker'
-//                                     })`}</h2>
-//                                     <div>
-//                                         <video
-//                                             autoPlay
-//                                             muted
-//                                             playsInline
-//                                             ref={userVideo}
-//                                             style={{
-//                                                 display: isLocalVideoEnabled ? 'inline' : 'none',
-//                                                 width: '55%',
-//                                                 height: isLocalVideoEnabled ? '55%' : 0,
-//                                             }}
-//                                         ></video>
-//                                         {!isLocalVideoEnabled && getVideoPlaceholder()}
-//                                     </div>
-//                                 </div>
-//                             </div>
-//                         </div>
-//                     </div>
-//                 </div>
-//             </ConfigProvider>
-//         )
-//     } else if (isLoading) {
-//         return <LoadingComponent msg="Loading..." />
-//     } else if (!user && !isLoading) {
-//         router.push('/api/auth/login')
-//     }
-// }
-
-// export const getServerSideProps = async (context) => {
-//     let accessToken = (await auth0.getSession(context.req, context.res)) || null
-//     if (accessToken != null) {
-//         accessToken = accessToken.idToken
-//     }
-//     return { props: { accessToken } }
-// }
-
-// ////////////////////////////////////////////////////
-
-// // import { useParams } from "react-router-dom";
-// import { useRef, useEffect } from "react";
-// import socketio from "socket.io-client";
-// // import "./CallScreen.css";
-
-// export default function CallScreen() {
-// //   const params = useParams();
-// //   const localUsername = params.username;
-// //   const roomName = params.room;
-//   const localUsername = "Test";
-//   const roomName = "test_room";
-//   const localVideoRef = useRef(null);
-//   const remoteVideoRef = useRef(null);
-
-//   const socket = socketio(`${process.env.API_URL}` || 'http://localhost:5000', {
-//     cors: {
-//         origin: `${process.env.CLIENT_URL}` || 'http://localhost:3000',
-//         credentials: true,
-//     },
-//     transports: ['websocket'],
-//     upgrade: false,
-//     autoConnect: false,
-// })
-
-//   let pc; // For RTCPeerConnection Object
-
-//   const sendData = (data) => {
-//     socket.emit("data_transfer", {
-//       user: localUsername,
-//       room_id: roomName,
-//       data: data,
-//     });
-//   };
-
-//   const startConnection = () => {
-//     navigator.mediaDevices
-//       .getUserMedia({
-//         audio: false,
-//         video: {
-//           height: 350,
-//           width: 350,
-//         },
-//       })
-//       .then((stream) => {
-//         console.log("Local Stream found");
-//         localVideoRef.current.srcObject = stream;
-//         socket.connect();
-//         socket.emit("join", { user: localUsername, room_id: roomName });
-//       })
-//       .catch((error) => {
-//         console.error("Stream not found: ", error);
-//       });
-//   };
-
-//   const onIceCandidate = (event) => {
-//     if (event.candidate) {
-//       console.log("Sending ICE candidate");
-//       sendData({
-//         type: "candidate",
-//         candidate: event.candidate,
-//       });
-//     }
-//   };
-
-//   const onTrack = (event) => {
-//     console.log("Adding remote track");
-//     remoteVideoRef.current.srcObject = event.streams[0];
-//   };
-
-//   const createPeerConnection = () => {
-//     try {
-//       pc = new RTCPeerConnection({
-//         iceServers: [
-//             {
-//                 urls: 'stun:relay.metered.ca:80',
-//             },
-//             {
-//                 urls: 'turn:relay.metered.ca:80',
-//                 username: `${process.env.TURN_USER}`,
-//                 credential: `${process.env.TURN_PASSWORD}`,
-//             },
-//             {
-//                 urls: 'turn:relay.metered.ca:443',
-//                 username: `${process.env.TURN_USER}`,
-//                 credential: `${process.env.TURN_USER}`,
-//             },
-//             {
-//                 urls: 'turn:relay.metered.ca:443?transport=tcp',
-//                 username: `${process.env.TURN_USER}`,
-//                 credential: `${process.env.TURN_USER}`,
-//             },
-//         ],
-//     });
-//       pc.onicecandidate = onIceCandidate;
-//       pc.ontrack = onTrack;
-//       const localStream = localVideoRef.current.srcObject;
-//       for (const track of localStream.getTracks()) {
-//         pc.addTrack(track, localStream);
-//       }
-//       console.log("PeerConnection created");
-//     } catch (error) {
-//       console.error("PeerConnection failed: ", error);
-//     }
-//   };
-
-//   const setAndSendLocalDescription = (sessionDescription) => {
-//     pc.setLocalDescription(sessionDescription);
-//     console.log("Local description set");
-//     sendData(sessionDescription);
-//   };
-
-//   const sendOffer = () => {
-//     console.log("Sending offer");
-//     pc.createOffer().then(setAndSendLocalDescription, (error) => {
-//       console.error("Send offer failed: ", error);
-//     });
-//   };
-
-//   const sendAnswer = () => {
-//     console.log("Sending answer");
-//     pc.createAnswer().then(setAndSendLocalDescription, (error) => {
-//       console.error("Send answer failed: ", error);
-//     });
-//   };
-
-//   const signalingDataHandler = (data) => {
-//     if (data.type === "offer") {
-//       createPeerConnection();
-//       pc.setRemoteDescription(new RTCSessionDescription(data));
-//       sendAnswer();
-//     } else if (data.type === "answer") {
-//       pc.setRemoteDescription(new RTCSessionDescription(data));
-//     } else if (data.type === "candidate") {
-//       pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-//     } else {
-//       console.log("Unknown Data");
-//     }
-//   };
-
-//   socket.on("ready", () => {
-//     console.log("Ready to Connect!");
-//     createPeerConnection();
-//     sendOffer();
-//   });
-
-//   socket.on("data_transfer", (data) => {
-//     console.log("Data received: ", data);
-//     signalingDataHandler(data.data);
-//   });
-
-//   useEffect(() => {
-//     console.log("Starting Connection")
-//     startConnection();
-//     return function cleanup() {
-//       pc?.close();
-//     };
-//   }, []);
-
-//   return (
-//     <div>
-//       <label>{"Username: " + localUsername}</label>
-//       <label>{"Room Id: " + roomName}</label>
-//       <video autoPlay muted playsInline ref={localVideoRef} />
-//       <video autoPlay muted playsInline ref={remoteVideoRef} />
-//     </div>
-//   );
-// }
-
-// import { useParams } from "react-router-dom";
-// import { useRef, useEffect } from "react";
-// import socketio from "socket.io-client";
-// // import "./CallScreen.css";
-
-// export default function CallScreen() {
-// //   const params = useParams();
-// //   const localUsername = params.username;
-// //   const roomName = params.room;
-//   const localUsername = "Test";
-//   const roomName = "test_room";
-//   const localVideoRef = useRef(null);
-//   const remoteVideoRef = useRef(null);
-
-//   const socket = socketio(`${process.env.API_URL}` || 'http://localhost:5000', {
-//     cors: {
-//         origin: `${process.env.CLIENT_URL}` || 'http://localhost:3000',
-//         credentials: true,
-//     },
-//     transports: ['websocket'],
-//     autoConnect: false,
-// })
-
-//   let pc; // For RTCPeerConnection Object
-
-//   const sendData = (data) => {
-//     socket.emit("data_transfer", {
-//       user: localUsername,
-//       room_id: roomName,
-//       data: data,
-//     });
-//   };
-
-//   const startConnection = () => {
-//     navigator.mediaDevices
-//       .getUserMedia({
-//         audio: false,
-//         video: {
-//           height: 350,
-//           width: 350,
-//         },
-//       })
-//       .then((stream) => {
-//         console.log("Local Stream found");
-//         localVideoRef.current.srcObject = stream;
-//         socket.connect();
-//         socket.emit("join", { user: localUsername, room_id: roomName });
-//       })
-//       .catch((error) => {
-//         console.error("Stream not found: ", error);
-//       });
-//   };
-
-//   const onIceCandidate = (event) => {
-//     if (event.candidate) {
-//       console.log("Sending ICE candidate");
-//       sendData({
-//         type: "candidate",
-//         candidate: event.candidate,
-//       });
-//     }
-//   };
-
-//   const onTrack = (event) => {
-//     console.log("Adding remote track");
-//     remoteVideoRef.current.srcObject = event.streams[0];
-//   };
-
-//   const createPeerConnection = () => {
-//     try {
-//       pc = new RTCPeerConnection({
-//         iceServers: [
-//             {
-//                 urls: 'stun:relay.metered.ca:80',
-//             },
-//             {
-//                 urls: 'turn:relay.metered.ca:80',
-//                 username: `${process.env.TURN_USER}`,
-//                 credential: `${process.env.TURN_PASSWORD}`,
-//             },
-//             {
-//                 urls: 'turn:relay.metered.ca:443',
-//                 username: `${process.env.TURN_USER}`,
-//                 credential: `${process.env.TURN_USER}`,
-//             },
-//             {
-//                 urls: 'turn:relay.metered.ca:443?transport=tcp',
-//                 username: `${process.env.TURN_USER}`,
-//                 credential: `${process.env.TURN_USER}`,
-//             },
-//         ],
-//     });
-//       pc.onicecandidate = onIceCandidate;
-//       pc.ontrack = onTrack;
-//       const localStream = localVideoRef.current.srcObject;
-//       for (const track of localStream.getTracks()) {
-//         pc.addTrack(track, localStream);
-//       }
-
-//       console.log(pc);
-//       console.log("PeerConnection created");
-//     } catch (error) {
-//       console.error("PeerConnection failed: ", error);
-//     }
-//   };
-
-//   const setAndSendLocalDescription = (sessionDescription) => {
-//     pc.setLocalDescription(sessionDescription);
-//     console.log("Local description set");
-//     sendData(sessionDescription);
-//   };
-
-//   const sendOffer = () => {
-//     console.log("Sending offer");
-//     pc.createOffer().then(setAndSendLocalDescription, (error) => {
-//       console.error("Send offer failed: ", error);
-//     });
-//   };
-
-//   const sendAnswer = () => {
-//     console.log("Sending answer");
-//     pc.createAnswer().then(setAndSendLocalDescription, (error) => {
-//       console.error("Send answer failed: ", error);
-//     });
-//   };
-
-//   const signalingDataHandler = (data) => {
-//     if (data.type === "offer") {
-//       createPeerConnection();
-//       pc.setRemoteDescription(new RTCSessionDescription(data));
-//       sendAnswer();
-//     } else if (data.type === "answer") {
-//       pc.setRemoteDescription(new RTCSessionDescription(data));
-//     } else if (data.type === "candidate") {
-//       pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-//     } else {
-//       console.log("Unknown Data");
-//     }
-//   };
-
-//   socket.on("ready", () => {
-//     console.log("Ready to Connect!");
-//     createPeerConnection();
-//     sendOffer();
-//   });
-
-//   socket.on("data_transfer", (data) => {
-//     console.log("Data received: ", data);
-//     signalingDataHandler(data.data);
-//   });
-
-//   useEffect(() => {
-//     console.log("Starting Connection")
-//     startConnection();
-//     return function cleanup() {
-//       pc?.close();
-//     };
-//   }, []);
-
-//   return (
-//     <div>
-//       <label>{"Username: " + localUsername}</label>
-//       <label>{"Room Id: " + roomName}</label>
-//       <video autoPlay muted playsInline ref={localVideoRef} />
-//       <video autoPlay muted playsInline ref={remoteVideoRef} />
-//     </div>
-//   );
-// }
+import { React, useState, useEffect, useRef, useMemo } from 'react'
+import { ConfigProvider, Button, Spin, message } from 'antd'
+import { LoadingOutlined } from '@ant-design/icons'
+import '@babel/polyfill'
+import { useRouter } from 'next/router'
+import { useUser } from '@auth0/nextjs-auth0/client'
+import auth0 from '../../auth/auth0'
+import LoadingComponent from '../../components/LoadingComponent'
+import HeaderComponent from '../../components/HeaderComponent'
+// import VideoFeedComponent from '../../components/VideoFeedComponent'
+import { theme } from '../../core/theme'
+import { getQuery } from '../../core/utils'
+import HistoryComponent from '../../components/HistoryComponent'
+import ChatboxComponent from '../../components/ChatboxComponent'
+import useTranscriptHistory from '../../hooks/useTranscriptHistory'
+import useRoomInfo from '../../hooks/useRoomInfo'
+import styles from '../../styles/CallPage.module.css'
+import fetcher from '../../core/fetcher'
+import socketio from 'socket.io-client'
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
+
+export default function CallPage({ accessToken }) {
+    const userVideo = useRef(null)
+    const remoteVideo = useRef(null)
+    const [isLocalVideoEnabled, setIsLocalVideoEnabled] = useState(false)
+    const [isRemoteVideoEnabled, setIsRemoteVideoEnabled] = useState(false)
+    const [hasJoined, setHasJoined] = useState(false)
+    const [userRole, setUserRole] = useState(null)
+    const { transcript, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition()
+    const [spaceBarPressed, setSpaceBarPressed] = useState(false)
+    const router = useRouter()
+    const roomID = getQuery(router, 'room_id')
+    const [initialized, setInitialized] = useState(false)
+    const { user, error, isLoading } = useUser()
+    const [nickname, setNickname] = useState(null)
+    const [remoteNickname, setRemoteNickname] = useState(null)
+    let peerConnection
+
+    const [spaceCheck, setSpaceBoolCheck] = useState(false)
+    const [latestTranscript, setLatestTranscript] = useState('')
+    const [lastTranscript, setLastTranscript] = useState('')
+
+    const servers = {
+        iceServers: [
+            {
+                urls: 'stun:relay.metered.ca:80',
+            },
+            {
+                urls: 'turn:relay.metered.ca:80',
+                username: `${process.env.TURN_USER}`,
+                credential: `${process.env.TURN_PASSWORD}`,
+            },
+            {
+                urls: 'turn:relay.metered.ca:443',
+                username: `${process.env.TURN_USER}`,
+                credential: `${process.env.TURN_USER}`,
+            },
+            {
+                urls: 'turn:relay.metered.ca:443?transport=tcp',
+                username: `${process.env.TURN_USER}`,
+                credential: `${process.env.TURN_USER}`,
+            },
+        ],
+    }
+
+    if (!browserSupportsSpeechRecognition) {
+        console.log('Browser does not support speech to text')
+    }
+
+    const socketMsg = socketio(`${process.env.API_URL}` || 'http://localhost:5000', {
+        cors: {
+            origin: `${process.env.CLIENT_URL}` || 'http://localhost:3000',
+            credentials: true,
+        },
+        transports: ['websocket'],
+        upgrade: false, // Was originally true
+        reconnection: true,
+    })
+
+    const socketVid = socketio(`${process.env.API_URL}` || 'http://localhost:5000', {
+        cors: {
+            origin: `${process.env.CLIENT_URL}` || 'http://localhost:3000',
+            credentials: true,
+        },
+        transports: ['websocket'],
+        upgrade: false,
+        autoConnect: false,
+    })
+
+    // SWR hooks
+    const { data: transcriptHistory, error: transcriptHistoryError } = useTranscriptHistory(
+        user ? user?.nickname : '',
+        accessToken
+    )
+    const {
+        data: roomInfo,
+        error: roomInfoError,
+        mutate: roomInfoMutate,
+    } = useRoomInfo(roomID || '', accessToken)
+
+    // Room initialization
+    // TODO: update how we run this, maybe put in main initialization
+    useEffect(() => {
+        // If JWT is expired, force a logout
+        if (transcriptHistoryError?.status == 401) {
+            router.push('/api/auth/logout')
+        } else if (roomInfoError?.status == 404) {
+            // If room ID is invalid, redirect to home page
+            router.push(`/?invalid_room=${roomID}`)
+        } else if (typeof roomInfo !== 'undefined' && roomInfo?.active == false) {
+            // If room ID is expired, redirect to home page
+            router.push(`/?expired_room=${roomID}`)
+        } else if (
+            typeof roomInfo !== 'undefined' &&
+            roomInfo?.users.length == 2 &&
+            user?.nickname &&
+            !roomInfo?.users.find((name) => name === user?.nickname)
+        ) {
+            // If room if full, redirect to home page
+            router.push(`/?full_room=${roomID}`)
+        }
+    }, [])
+
+    const handleMutate = () => {
+        socketMsg.emit('mutate', { roomID: roomID })
+        roomInfoMutate()
+    }
+
+    const handleMessage = () => {
+        socketMsg.emit('message', { message: 'ping', room_id: roomID })
+    }
+
+    const handleLeave = () => {
+        socketMsg.emit('leave', { room_id: roomID, user: user?.nickname })
+
+        // Close the room
+        if (roomInfo?.users[0] == user?.nickname) {
+            fetcher(accessToken, '/api/rooms/close_room', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    room_id: roomID,
+                }),
+            }).then((res) => {
+                if (res.status == 200) {
+                    console.log('Room closed')
+                    socketMsg.close()
+                    socketVid.close()
+                }
+            })
+        }
+
+        if (userVideo?.current?.srcObject) {
+            userVideo.current.srcObject.getTracks().forEach((track) => track.stop())
+        }
+
+        handleMutate()
+
+        router.push('/')
+    }
+
+    // User input for push to talk
+    useEffect(() => {
+        const handleKeyPress = (event) => {
+            if (event.keyCode === 32 && !spaceBarPressed && userRole === 'STT') {
+                setSpaceBoolCheck(false)
+                SpeechRecognition.startListening({ continuous: true })
+                setSpaceBarPressed(true)
+                message.info('Speech recording started...')
+            }
+        }
+        const handleKeyRelease = (event) => {
+            if (event.keyCode === 32 && spaceBarPressed && userRole === 'STT') {
+                SpeechRecognition.stopListening()
+                setSpaceBarPressed(false)
+                setTimeout(() => {
+                    resetTranscript()
+                    setSpaceBoolCheck(true)
+                }, 500)
+
+                message.info('Speech recording finished...')
+            }
+        }
+        document.addEventListener('keydown', handleKeyPress)
+        document.addEventListener('keyup', handleKeyRelease)
+        return () => {
+            document.removeEventListener('keydown', handleKeyPress)
+            document.removeEventListener('keyup', handleKeyRelease)
+        }
+    }, [spaceBarPressed, userRole])
+
+    useEffect(() => {
+        setLatestTranscript(transcript)
+    }, [spaceCheck, transcript])
+
+    useEffect(() => {
+        if (spaceCheck) {
+            if (latestTranscript !== lastTranscript) {
+                // console.log(latestTranscript)
+                if (latestTranscript != '') {
+                    appendMessage(latestTranscript)
+                }
+                setLastTranscript(latestTranscript)
+            }
+        }
+    }, [spaceCheck, latestTranscript, lastTranscript])
+
+    // Add a STT message
+    const appendMessage = async (message) => {
+        fetcher(accessToken, '/api/transcripts/create_message', {
+            method: 'POST',
+            body: JSON.stringify({
+                room_id: roomInfo.room_id,
+                to_user: roomInfo.users.find((username) => username !== user.nickname) || 'N/A',
+                message: message,
+                type: getType(),
+            }),
+        })
+            .then((res) => {
+                if (res.status == 200) {
+                    // Emit mutate message over websocket to other user
+                    handleMutate()
+                } else {
+                    api.error({
+                        message: `Error ${res.status}: ${res.error}`,
+                    })
+                }
+            })
+            .catch((res) => {
+                api.error({
+                    message: 'An unknown error has occurred',
+                })
+            })
+    }
+
+    // Get the communication type of the user
+    const getType = () => {
+        if (userRole == null) {
+            if (roomInfo?.users[0] === user?.nickname) {
+                return roomInfo?.host_type
+            } else {
+                if (roomInfo?.host_type === 'ASL') {
+                    return 'STT'
+                } else {
+                    return 'ASL'
+                }
+            }
+        }
+
+        return userRole
+    }
+
+    // Refresh chatbox for both users upon invalidation
+    const invalidateRefresh = async () => {
+        handleMutate()
+    }
+
+    const dataTransfer = (data) => {
+        console.log('$$ sending data transfer $$')
+        socketVid.emit('data_transfer', {
+            user: nickname,
+            room_id: roomID,
+            body: data,
+        })
+    }
+
+    const initializeLocalVideo = () => {
+        navigator.mediaDevices
+            .getUserMedia({
+                audio: roomInfo.host_type === 'STT' ? true : false,
+                video: {
+                    height: 360,
+                    width: 480,
+                },
+            })
+            .then((stream) => {
+                userVideo.current.srcObject = stream
+                setIsLocalVideoEnabled(true)
+
+                // Establish websocket connection after successful local video setup
+                socketVid.connect()
+                socketVid.emit('join', { user: nickname, room_id: roomID })
+            })
+            .then((stream) => {
+                if (roomInfo.users.length == 1 && roomInfo.users[0] !== nickname) {
+                    fetcher(props.accessToken, '/api/rooms/join_room', {
+                        method: 'PUT',
+                        body: JSON.stringify({ room_id: roomID, user_id: nickname }),
+                    })
+                        .then((res) => {
+                            if (res.status == 200) {
+                                handleMutate()
+                            } else {
+                                api.error({
+                                    message: `Error ${res.status}: ${res.error}`,
+                                })
+                            }
+                        })
+                        .catch((res) => {
+                            api.error({
+                                message: 'An unknown error has occurred',
+                            })
+                        })
+                } else {
+                    handleMutate()
+                }
+            })
+            .catch((error) => {
+                console.error('Stream not found:: ', error)
+            })
+    }
+
+    // RTC Connection Reference: https://www.100ms.live/blog/webrtc-python-react
+    // *************************************************************************
+    const onIceCandidate = (event) => {
+        if (event.candidate) {
+            console.log('Sending ICE candidate')
+            dataTransfer({
+                type: 'candidate',
+                candidate: event.candidate,
+            })
+        }
+    }
+
+    const onTrack = (event) => {
+        console.log('{{{{{{{{{{{Received track from other user.}}}}}}}}}}}}')
+        console.log('***src object being received', event)
+        setIsRemoteVideoEnabled(true)
+        remoteVideo.current.srcObject = event.streams[0]
+    }
+
+    const initializePeerConnection = () => {
+        try {
+            peerConnection = new RTCPeerConnection({ servers })
+            peerConnection.onicecandidate = onIceCandidate
+            peerConnection.ontrack = onTrack
+            console.log('***src object being sent out', userVideo.current.srcObject)
+            const userStream = userVideo.current.srcObject
+            for (const track of userStream?.getTracks()) {
+                peerConnection.addTrack(track, userStream)
+            }
+            console.log('{{{Peer connection established!!}}}')
+        } catch (error) {
+            console.error('Failed to establish connection: ', error)
+        }
+    }
+
+    const setAndSendLocalDescription = (sessionDescription) => {
+        peerConnection.setLocalDescription(sessionDescription)
+        dataTransfer(sessionDescription)
+    }
+
+    const sendOffer = () => {
+        peerConnection.createOffer().then(setAndSendLocalDescription, (error) => {
+            console.error('Unable to send offer: ', error)
+        })
+    }
+
+    const sendAnswer = () => {
+        peerConnection.createAnswer().then(setAndSendLocalDescription, (error) => {
+            console.error('Unable to send answer: ', error)
+        })
+    }
+
+    const handleDataTransfer = (data) => {
+        console.log('(HANDLER)', data.type)
+        if (data.type === 'offer') {
+            console.log('[Offer received]')
+            initializePeerConnection()
+            peerConnection.setRemoteDescription(new RTCSessionDescription(data))
+            sendAnswer()
+        } else if (data.type === 'answer') {
+            console.log('[Answer received]')
+            peerConnection.setRemoteDescription(new RTCSessionDescription(data))
+        } else if (data.type === 'candidate') {
+            console.log('[Candidate received]')
+            peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate))
+        } else {
+            console.log('Unrecognized data received...')
+        }
+    }
+    // *************************************************************************
+
+    const getVideoPlaceholder = () => {
+        return (
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
+            >
+                <div
+                    style={{
+                        width: '55%',
+                        aspectRatio: 'auto 4 / 3',
+                        border: '2px solid #f0f0f0',
+                    }}
+                >
+                    <div style={{ position: 'relative', top: '40%' }}>
+                        <Spin
+                            indicator={
+                                <LoadingOutlined
+                                    style={{
+                                        fontSize: 40,
+                                    }}
+                                    spin
+                                />
+                            }
+                        />
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    // Refresh chatbox
+    socketMsg.on('mutate', (data) => {
+        // getRemoteUserNickname()
+        roomInfoMutate()
+    })
+
+    // Following a succesful join, establish a peer connection
+    // and send an offer to the other user
+    socketVid.on('ready', () => {
+        console.log('Ready to connect!')
+        // if (!hasJoined) {
+        //     roomInfoMutate() // This is new
+        //     setHasJoined(true)
+        //     initializePeerConnection()
+        //     sendOffer()
+        // }
+        // getRemoteUserNickname()
+        roomInfoMutate()
+        initializePeerConnection()
+        sendOffer()
+    })
+
+    socketVid.on('data_transfer', (data) => {
+        console.log('Received from ' + data.user)
+        // getRemoteUserNickname()
+        // Messy I know, need to find a better way to get the user's nickname
+        console.log('@@@ ON DATA TRANSFER @@@', nickname, user?.nickname)
+        if (!nickname) {
+            if (data.user !== user.nickname) {
+                handleDataTransfer(data.body)
+            }
+        } else {
+            if (data.user !== nickname) {
+                handleDataTransfer(data.body)
+            }
+        }
+    })
+
+    socketMsg.on('message', (data) => {
+        console.log('message', data || 'none')
+    })
+
+    socketMsg.on('disconnect', (data) => {
+        roomInfoMutate()
+        console.log('disconnect', data)
+    })
+
+    useMemo(() => {
+        if (initialized) {
+            console.log(roomInfo)
+
+            setUserRole(getType())
+            initializeLocalVideo()
+            // return function cleanup() {
+            //     peerConnection?.close()
+            // }
+        }
+    }, [initialized])
+
+    useMemo(() => {
+        if (
+            !remoteNickname &&
+            typeof user?.nickname !== 'undefined' &&
+            typeof roomInfo !== 'undefined' &&
+            roomInfo.users.length == 2
+        ) {
+            setRemoteNickname(roomInfo.users.find((username) => username !== user.nickname))
+        } else if (
+            !remoteNickname &&
+            nickname != null &&
+            typeof roomInfo !== 'undefined' &&
+            roomInfo.users.length == 2
+        ) {
+            setRemoteNickname(roomInfo.users.find((username) => username !== nickname))
+        }
+
+        if (
+            !initialized &&
+            typeof transcriptHistory !== 'undefined' &&
+            typeof roomInfo !== 'undefined' &&
+            typeof user?.nickname !== undefined &&
+            roomInfo?.active == true
+        ) {
+            setNickname(user.nickname)
+            // getRemoteUserNickname()
+            socketMsg.connect()
+            socketMsg.emit('join', { user: user.nickname, room_id: roomID })
+
+            // setUserRole(getType())
+
+            handleMutate()
+
+            // Render page
+            setInitialized(true)
+        }
+
+        if (roomInfo?.active == false) {
+            handleLeave()
+        }
+    }, [roomInfo, user, nickname])
+
+    if (user && initialized && !isLoading) {
+        return (
+            <ConfigProvider theme={theme}>
+                <HeaderComponent user={user} roomID={roomID} handleLeave={handleLeave} />
+                <div className={styles.callWrapper}>
+                    <div style={{ width: '20%' }}>
+                        <Button
+                            style={{ position: 'absolute', left: 10, top: 46 }}
+                            onClick={() => appendMessage('Example message')}
+                        >
+                            Send Message (temporary)
+                        </Button>
+                        <HistoryComponent transcripts={transcriptHistory} user={user} />
+                    </div>
+                    <div style={{ width: '40%' }}>
+                        <ChatboxComponent
+                            accessToken={accessToken}
+                            context={'call'}
+                            roomInfo={roomInfo}
+                            roomID={roomID}
+                            invalidateRefresh={invalidateRefresh}
+                            transcript={
+                                roomInfo?.messages_info.length > 0 ? roomInfo?.messages_info : []
+                            }
+                            user={user}
+                        />
+                    </div>
+                    <div style={{ width: '40%' }}>
+                        <div style={{ width: '-webkit-fill-available' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <h2 style={{ marginBottom: 10 }}>
+                                        {remoteNickname ? (
+                                            <span>
+                                                <span>{remoteNickname}</span>
+                                                <span>{` (${
+                                                    userRole === 'ASL' ? 'Speaker' : 'ASL Signer'
+                                                })`}</span>
+                                            </span>
+                                        ) : (
+                                            <span className={styles.remoteUserLoading}>
+                                                Awaiting user connection<span>.</span>
+                                                <span>.</span>
+                                                <span>.</span>
+                                            </span>
+                                        )}
+                                    </h2>
+                                    <div>
+                                        <video
+                                            autoPlay
+                                            muted
+                                            playsInline
+                                            ref={remoteVideo}
+                                            style={{
+                                                display: isRemoteVideoEnabled ? 'inline' : 'none',
+                                                width: '55%',
+                                                height: isRemoteVideoEnabled ? '55%' : 0,
+                                            }}
+                                        ></video>
+                                        {!isRemoteVideoEnabled && getVideoPlaceholder()}
+                                    </div>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                    <h2 style={{ marginBottom: 10 }}>{`${user?.nickname} (${
+                                        userRole === 'ASL' ? 'ASL Signer' : 'Speaker'
+                                    })`}</h2>
+                                    <div>
+                                        <video
+                                            autoPlay
+                                            muted
+                                            playsInline
+                                            ref={userVideo}
+                                            style={{
+                                                display: isLocalVideoEnabled ? 'inline' : 'none',
+                                                width: '55%',
+                                                height: isLocalVideoEnabled ? '55%' : 0,
+                                            }}
+                                        ></video>
+                                        {!isLocalVideoEnabled && getVideoPlaceholder()}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </ConfigProvider>
+        )
+    } else if (isLoading) {
+        return <LoadingComponent msg="Loading..." />
+    } else if (!user && !isLoading) {
+        router.push('/api/auth/login')
+    }
+}
+
+export const getServerSideProps = async (context) => {
+    let accessToken = (await auth0.getSession(context.req, context.res)) || null
+    if (accessToken != null) {
+        accessToken = accessToken.idToken
+    }
+    return { props: { accessToken } }
+}
