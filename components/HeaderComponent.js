@@ -1,6 +1,7 @@
 /* eslint-disable jsx-a11y/alt-text */
 import { React, useState } from 'react'
 import { Row, Col, Space, Button } from 'antd'
+import HelpModal from './modals/HelpModal.js'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
 import logo from '../public/logo.svg'
@@ -11,6 +12,7 @@ function Header({ user, roomID, handleLeave }) {
     const [isLoadingExit, setIsLoadingExit] = useState(false)
     const [isLoadingChange, setIsLoadingChange] = useState(false)
     const [isLoadingLogout, setIsLoadingLogout] = useState(false)
+    const [isHelpModalOpen, setIsHelpModalOpen] = useState(false)
 
     return (
         <Row className={styles.header}>
@@ -19,6 +21,13 @@ function Header({ user, roomID, handleLeave }) {
                     <span>User: </span>
                     <span>{user?.nickname || 'N/A'}</span>
                 </div>
+            </Col>
+
+            <Col>
+                <div className={styles.headerHelp}></div>
+                <Button type="text" onClick={() => setIsHelpModalOpen(true)}>
+                    <span style={{ display: 'inline-flex' }}>Help</span>
+                </Button>
             </Col>
 
             <Col
@@ -75,6 +84,12 @@ function Header({ user, roomID, handleLeave }) {
                     </Button>
                 </Space>
             </Col>
+            {isHelpModalOpen && (
+                <HelpModal
+                    isHelpModalOpen={isHelpModalOpen}
+                    setIsHelpModalOpen={setIsHelpModalOpen}
+                />
+            )}
         </Row>
     )
 }

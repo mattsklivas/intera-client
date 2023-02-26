@@ -1,4 +1,4 @@
-import { React, useState, useEffect, useRef, useMemo, use } from 'react'
+import { React, useState, useEffect, useRef, useMemo } from 'react'
 import { ConfigProvider, Button, Spin, message } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import '@babel/polyfill'
@@ -19,30 +19,8 @@ import fetcher from '../../core/fetcher'
 import socketio from 'socket.io-client'
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
 
-/*
-How call page should work:
-
-Host creates the room and is added
-Host is prompted to enable their video camera (if they are Speaker, they are also prompted for audio)
-When video camera is enabled, video feed will be displayed
-User can now send messages and do actions (i.e STT or ASL) for their role while they wait for the other user
-
-When guest user joins (they should already be added to the room on the backend, this action should be done on "join room")
-Guest is prompted to enable their video camera (if they are Speaker, they are also prompted for audio)
-When video camera is enabled, video feed will be displayed
-A socket ping will be sent out to the other user in the room to notify them that the other user has joined,
-a mutate will occur to update the room info. When this happens the peerConnection process should begin
-
-We should now begin to initializePeerConnection
-The remote and local video feeds should be set on both guest and host
-When this occurs, both feeds should appear
-
-Socket pings for ready state, data_transfer, offer, answer, candidate should occur
-When the remote video stream can be found onTrack, the remote video feed should be set and appear
-*/
-
 export default function CallPage({ accessToken }) {
-    const userVideo = useRef({})
+    const userVideo = useRef(null)
     const remoteVideo = useRef(null)
     const [isLocalVideoEnabled, setIsLocalVideoEnabled] = useState(false)
     const [isRemoteVideoEnabled, setIsRemoteVideoEnabled] = useState(false)
@@ -56,14 +34,12 @@ export default function CallPage({ accessToken }) {
     const { user, error, isLoading } = useUser()
     const [nickname, setNickname] = useState(null)
     const [remoteNickname, setRemoteNickname] = useState(null)
-    const [peerConnectionEstablished, setPeerConnectionEstablished] = useState(false)
     let peerConnection
-    let userAudio
 
     const [spaceCheck, setSpaceBoolCheck] = useState(false)
     const [latestTranscript, setLatestTranscript] = useState('')
     const [lastTranscript, setLastTranscript] = useState('')
-    const [stop, setStop] = useState(false)
+
     const servers = {
         iceServers: [
             {
@@ -91,6 +67,26 @@ export default function CallPage({ accessToken }) {
         console.log('Browser does not support speech to text')
     }
 
+    const socketMsg = socketio(`${process.env.API_URL}` || 'http://localhost:5000', {
+        cors: {
+            origin: `${process.env.CLIENT_URL}` || 'http://localhost:3000',
+            credentials: true,
+        },
+        transports: ['websocket'],
+        upgrade: false, // Was originally true
+        reconnection: true,
+    })
+
+    const socketVid = socketio(`${process.env.API_URL}` || 'http://localhost:5000', {
+        cors: {
+            origin: `${process.env.CLIENT_URL}` || 'http://localhost:3000',
+            credentials: true,
+        },
+        transports: ['websocket'],
+        upgrade: false,
+        autoConnect: false,
+    })
+
     // SWR hooks
     const { data: transcriptHistory, error: transcriptHistoryError } = useTranscriptHistory(
         user ? user?.nickname : '',
@@ -102,80 +98,137 @@ export default function CallPage({ accessToken }) {
         mutate: roomInfoMutate,
     } = useRoomInfo(roomID || '', accessToken)
 
-    const socketMsg = socketio(`${process.env.API_URL}` || 'http://localhost:5000', {
-        cors: {
-            origin: `${process.env.CLIENT_URL}` || 'http://localhost:3000',
-            credentials: true,
-        },
-        transports: ['websocket'],
-        reconnection: true,
-    })
+    // Room initialization
+    // TODO: update how we run this, maybe put in main initialization
+    useEffect(() => {
+        // If JWT is expired, force a logout
+        if (transcriptHistoryError?.status == 401) {
+            router.push('/api/auth/logout')
+        } else if (roomInfoError?.status == 404) {
+            // If room ID is invalid, redirect to home page
+            router.push(`/?invalid_room=${roomID}`)
+        } else if (typeof roomInfo !== 'undefined' && roomInfo?.active == false) {
+            // If room ID is expired, redirect to home page
+            router.push(`/?expired_room=${roomID}`)
+        } else if (
+            typeof roomInfo !== 'undefined' &&
+            roomInfo?.users.length == 2 &&
+            user?.nickname &&
+            !roomInfo?.users.find((name) => name === user?.nickname)
+        ) {
+            // If room if full, redirect to home page
+            router.push(`/?full_room=${roomID}`)
+        }
+    }, [])
 
-    const socketVid = socketio(`${process.env.API_URL}` || 'http://localhost:5000', {
-        cors: {
-            origin: `${process.env.CLIENT_URL}` || 'http://localhost:3000',
-            credentials: true,
-        },
-        transports: ['websocket'],
-        autoConnect: false,
-        reconnection: true,
-    })
-
-    const getVideoPlaceholder = () => {
-        return (
-            <div
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                }}
-            >
-                <div
-                    style={{
-                        width: '55%',
-                        aspectRatio: 'auto 4 / 3',
-                        border: '2px solid #f0f0f0',
-                    }}
-                >
-                    <div style={{ position: 'relative', top: '40%' }}>
-                        <Spin
-                            indicator={
-                                <LoadingOutlined
-                                    style={{
-                                        fontSize: 40,
-                                    }}
-                                    spin
-                                />
-                            }
-                        />
-                    </div>
-                </div>
-            </div>
-        )
+    const handleMutate = () => {
+        socketMsg.emit('mutate', { roomID: roomID })
+        roomInfoMutate()
     }
 
-    const initializeLocalVideo = async () => {
-        navigator.mediaDevices
-            .getUserMedia({
-                audio: roomInfo?.host_type === 'STT' ? true : false,
-                video: {
-                    height: 360,
-                    width: 480,
-                },
-            })
-            .then((stream) => {
-                console.log('stream: ', stream)
-                userVideo.current.srcObject = stream
-                setIsLocalVideoEnabled(true)
-                setInitialized(true)
+    const handleMessage = () => {
+        socketMsg.emit('message', { message: 'ping', room_id: roomID })
+    }
 
-                socketVid.connect()
-                socketVid.emit('join', { user: user?.nickname, room_id: roomID, test: 'test' })
-                socketVid.emit('ping', { room_id: roomID })
-                console.log('socketVid: ', socketVid, roomInfo)
+    const handleLeave = () => {
+        socketMsg.emit('leave', { room_id: roomID, user: user?.nickname })
+
+        // Close the room
+        if (roomInfo?.users[0] == user?.nickname) {
+            fetcher(accessToken, '/api/rooms/close_room', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    room_id: roomID,
+                }),
+            }).then((res) => {
+                if (res.status == 200) {
+                    console.log('Room closed')
+                    socketMsg.close()
+                    socketVid.close()
+                }
             })
-            .catch((error) => {
-                console.error('Stream not found:: ', error)
+        }
+
+        if (userVideo?.current?.srcObject) {
+            userVideo.current.srcObject.getTracks().forEach((track) => track.stop())
+        }
+
+        handleMutate()
+
+        router.push('/')
+    }
+
+    // User input for push to talk
+    useEffect(() => {
+        const handleKeyPress = (event) => {
+            if (event.keyCode === 32 && !spaceBarPressed && userRole === 'STT') {
+                setSpaceBoolCheck(false)
+                SpeechRecognition.startListening({ continuous: true })
+                setSpaceBarPressed(true)
+                message.info('Speech recording started...')
+            }
+        }
+        const handleKeyRelease = (event) => {
+            if (event.keyCode === 32 && spaceBarPressed && userRole === 'STT') {
+                SpeechRecognition.stopListening()
+                setSpaceBarPressed(false)
+                setTimeout(() => {
+                    resetTranscript()
+                    setSpaceBoolCheck(true)
+                }, 500)
+
+                message.info('Speech recording finished...')
+            }
+        }
+        document.addEventListener('keydown', handleKeyPress)
+        document.addEventListener('keyup', handleKeyRelease)
+        return () => {
+            document.removeEventListener('keydown', handleKeyPress)
+            document.removeEventListener('keyup', handleKeyRelease)
+        }
+    }, [spaceBarPressed, userRole])
+
+    useEffect(() => {
+        setLatestTranscript(transcript)
+    }, [spaceCheck, transcript])
+
+    useEffect(() => {
+        if (spaceCheck) {
+            if (latestTranscript !== lastTranscript) {
+                // console.log(latestTranscript)
+                if (latestTranscript != '') {
+                    appendMessage(latestTranscript)
+                }
+                setLastTranscript(latestTranscript)
+            }
+        }
+    }, [spaceCheck, latestTranscript, lastTranscript])
+
+    // Add a STT message
+    const appendMessage = async (message) => {
+        fetcher(accessToken, '/api/transcripts/create_message', {
+            method: 'POST',
+            body: JSON.stringify({
+                room_id: roomInfo.room_id,
+                to_user: roomInfo.users.find((username) => username !== user.nickname) || 'N/A',
+                message: message,
+                type: getType(),
+            }),
+        })
+            .then((res) => {
+                if (res.status == 200) {
+                    // Emit mutate message over websocket to other user
+                    handleMutate()
+                } else {
+                    api.error({
+                        message: `Error ${res.status}: ${res.error}`,
+                    })
+                }
+            })
+            .catch((res) => {
+                api.error({
+                    message: 'An unknown error has occurred',
+                })
             })
     }
 
@@ -270,14 +323,14 @@ export default function CallPage({ accessToken }) {
 
     const onTrack = (event) => {
         console.log('{{{{{{{{{{{Received track from other user.}}}}}}}}}}}}')
-        console.log('***src object being received', event.streams[0])
+        console.log('***src object being received', event)
         setIsRemoteVideoEnabled(true)
         remoteVideo.current.srcObject = event.streams[0]
     }
 
     const initializePeerConnection = () => {
         try {
-            peerConnection = new RTCPeerConnection(servers)
+            peerConnection = new RTCPeerConnection({ servers })
             peerConnection.onicecandidate = onIceCandidate
             peerConnection.ontrack = onTrack
             console.log('***src object being sent out', userVideo.current.srcObject)
@@ -285,8 +338,7 @@ export default function CallPage({ accessToken }) {
             for (const track of userStream?.getTracks()) {
                 peerConnection.addTrack(track, userStream)
             }
-            console.log('{{{Peer connection created!!}}}')
-            setPeerConnectionEstablished(true)
+            console.log('{{{Peer connection established!!}}}')
         } catch (error) {
             console.error('Failed to establish connection: ', error)
         }
@@ -294,19 +346,16 @@ export default function CallPage({ accessToken }) {
 
     const setAndSendLocalDescription = (sessionDescription) => {
         peerConnection.setLocalDescription(sessionDescription)
-        console.log('Local description set')
         dataTransfer(sessionDescription)
     }
 
     const sendOffer = () => {
-        console.log('SENDING OFFER')
         peerConnection.createOffer().then(setAndSendLocalDescription, (error) => {
             console.error('Unable to send offer: ', error)
         })
     }
 
     const sendAnswer = () => {
-        console.log('SENDING Answer')
         peerConnection.createAnswer().then(setAndSendLocalDescription, (error) => {
             console.error('Unable to send answer: ', error)
         })
@@ -316,7 +365,6 @@ export default function CallPage({ accessToken }) {
         console.log('(HANDLER)', data.type)
         if (data.type === 'offer') {
             console.log('[Offer received]')
-            setStop(true)
             initializePeerConnection()
             peerConnection.setRemoteDescription(new RTCSessionDescription(data))
             sendAnswer()
@@ -332,54 +380,149 @@ export default function CallPage({ accessToken }) {
     }
     // *************************************************************************
 
-    const dataTransfer = (data) => {
-        console.log('$$ sending data transfer $$')
-        socketVid.emit('data_transfer', {
-            user: user?.nickname,
-            room_id: roomID,
-            body: data,
-        })
+    const getVideoPlaceholder = () => {
+        return (
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
+            >
+                <div
+                    style={{
+                        width: '55%',
+                        aspectRatio: 'auto 4 / 3',
+                        border: '2px solid #f0f0f0',
+                    }}
+                >
+                    <div style={{ position: 'relative', top: '40%' }}>
+                        <Spin
+                            indicator={
+                                <LoadingOutlined
+                                    style={{
+                                        fontSize: 40,
+                                    }}
+                                    spin
+                                />
+                            }
+                        />
+                    </div>
+                </div>
+            </div>
+        )
     }
 
-    socketVid.on('data_transfer', (data) => {
-        console.log('Data received: ', data)
-        handleDataTransfer(data.body)
+    // Refresh chatbox
+    socketMsg.on('mutate', (data) => {
+        // getRemoteUserNickname()
+        roomInfoMutate()
     })
 
     // Following a succesful join, establish a peer connection
     // and send an offer to the other user
-    socketVid.on('ready', (data) => {
-        console.log('Ready to connect!', data)
-        socketVid.emit('ping', { room_id: roomID })
+    socketVid.on('ready', () => {
+        console.log('Ready to connect!')
+        // if (!hasJoined) {
+        //     roomInfoMutate() // This is new
+        //     setHasJoined(true)
+        //     initializePeerConnection()
+        //     sendOffer()
+        // }
+        // getRemoteUserNickname()
+        roomInfoMutate()
         initializePeerConnection()
         sendOffer()
     })
 
-    // Following a succesful join, establish a peer connection
-    // and send an offer to the other user
-    socketVid.on('pong', (data) => {
-        console.log('pong', data)
+    socketVid.on('data_transfer', (data) => {
+        console.log('Received from ' + data.user)
+        // getRemoteUserNickname()
+        // Messy I know, need to find a better way to get the user's nickname
+        console.log('@@@ ON DATA TRANSFER @@@', nickname, user?.nickname)
+        if (!nickname) {
+            if (data.user !== user.nickname) {
+                handleDataTransfer(data.body)
+            }
+        } else {
+            if (data.user !== nickname) {
+                handleDataTransfer(data.body)
+            }
+        }
     })
 
+    socketMsg.on('message', (data) => {
+        console.log('message', data || 'none')
+    })
 
-    useEffect(() => {
-        console.log('useEffect')
-        initializeLocalVideo()
-        return function cleanup() {
-            peerConnection?.close()
+    socketMsg.on('disconnect', (data) => {
+        roomInfoMutate()
+        console.log('disconnect', data)
+    })
+
+    useMemo(() => {
+        if (initialized) {
+            console.log(roomInfo)
+
+            setUserRole(getType())
+            initializeLocalVideo()
+            // return function cleanup() {
+            //     peerConnection?.close()
+            // }
         }
-    }, [])
+    }, [initialized])
 
-    if (user && !isLoading) {
+    useMemo(() => {
+        if (
+            !remoteNickname &&
+            typeof user?.nickname !== 'undefined' &&
+            typeof roomInfo !== 'undefined' &&
+            roomInfo.users.length == 2
+        ) {
+            setRemoteNickname(roomInfo.users.find((username) => username !== user.nickname))
+        } else if (
+            !remoteNickname &&
+            nickname != null &&
+            typeof roomInfo !== 'undefined' &&
+            roomInfo.users.length == 2
+        ) {
+            setRemoteNickname(roomInfo.users.find((username) => username !== nickname))
+        }
+
+        if (
+            !initialized &&
+            typeof transcriptHistory !== 'undefined' &&
+            typeof roomInfo !== 'undefined' &&
+            typeof user?.nickname !== undefined &&
+            roomInfo?.active == true
+        ) {
+            setNickname(user.nickname)
+            // getRemoteUserNickname()
+            socketMsg.connect()
+            socketMsg.emit('join', { user: user.nickname, room_id: roomID })
+
+            // setUserRole(getType())
+
+            handleMutate()
+
+            // Render page
+            setInitialized(true)
+        }
+
+        if (roomInfo?.active == false) {
+            handleLeave()
+        }
+    }, [roomInfo, user, nickname])
+
+    if (user && initialized && !isLoading) {
         return (
             <ConfigProvider theme={theme}>
-                <HeaderComponent user={user} roomID={roomID} />
+                <HeaderComponent user={user} roomID={roomID} handleLeave={handleLeave} />
                 <div className={styles.callWrapper}>
                     <div style={{ width: '20%' }}>
                         <Button
                             style={{ position: 'absolute', left: 10, top: 46 }}
-                            // onClick={() => appendMessage('Example message')}
-
+                            onClick={() => appendMessage('Example message')}
                         >
                             Send Message (temporary)
                         </Button>
@@ -391,7 +534,7 @@ export default function CallPage({ accessToken }) {
                             context={'call'}
                             roomInfo={roomInfo}
                             roomID={roomID}
-                            // invalidateRefresh={invalidateRefresh}
+                            invalidateRefresh={invalidateRefresh}
                             transcript={
                                 roomInfo?.messages_info.length > 0 ? roomInfo?.messages_info : []
                             }
@@ -439,7 +582,7 @@ export default function CallPage({ accessToken }) {
                                     })`}</h2>
                                     <div>
                                         <video
-                                            autoPlay={true}
+                                            autoPlay
                                             muted
                                             playsInline
                                             ref={userVideo}
