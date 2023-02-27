@@ -1,4 +1,4 @@
-import { React, useState, useEffect, useRef, useMemo, use } from 'react'
+import { React, useState, useEffect, useRef } from 'react'
 import { ConfigProvider, Button, Spin, message } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import '@babel/polyfill'
@@ -58,12 +58,12 @@ export default function CallPage({ accessToken }) {
     const [remoteNickname, setRemoteNickname] = useState(null)
     const [peerConnectionEstablished, setPeerConnectionEstablished] = useState(false)
     let peerConnection
-    let userAudio
+    let timer
 
     const [spaceCheck, setSpaceBoolCheck] = useState(false)
     const [latestTranscript, setLatestTranscript] = useState('')
     const [lastTranscript, setLastTranscript] = useState('')
-    const [stop, setStop] = useState(false)
+
     const servers = {
         iceServers: [
             {
@@ -102,6 +102,8 @@ export default function CallPage({ accessToken }) {
         mutate: roomInfoMutate,
     } = useRoomInfo(roomID || '', accessToken)
 
+    /* ----------------------Sockets---------------------- */
+
     const socketMsg = socketio(`${process.env.API_URL}` || 'http://localhost:5000', {
         cors: {
             origin: `${process.env.CLIENT_URL}` || 'http://localhost:3000',
@@ -117,7 +119,7 @@ export default function CallPage({ accessToken }) {
             credentials: true,
         },
         transports: ['websocket'],
-        autoConnect: false,
+        // autoConnect: false,
         reconnection: true,
     })
 
@@ -153,6 +155,132 @@ export default function CallPage({ accessToken }) {
             </div>
         )
     }
+
+    // const emitReady = () => {
+    //     console.log('Emitting ready via timeout', socketVid)
+    //     socketVid.emit('ready', {
+    //         room_id: roomID,
+    //         user: user?.nickname,
+    //     })
+    // }
+
+    const handleMutate = () => {
+        socketMsg.emit('mutate', { roomID: roomID })
+        roomInfoMutate().then((res) => {
+            console.log('Mutated', res)
+        })
+    }
+
+    const handleLeave = () => {
+        socketMsg.emit('leave', { room_id: roomID, user: user?.nickname })
+
+        // Close the room
+        if (roomInfo?.users[0] == user?.nickname) {
+            fetcher(accessToken, '/api/rooms/close_room', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    room_id: roomID,
+                }),
+            }).then((res) => {
+                if (res.status == 200) {
+                    console.log('Room closed')
+                    socketMsg.close()
+                    socketVid.close()
+                }
+            })
+        }
+
+        if (userVideo?.current?.srcObject) {
+            userVideo.current.srcObject.getTracks().forEach((track) => track.stop())
+        }
+
+        handleMutate()
+
+        router.push('/')
+    }
+
+    /* ----------------------STT---------------------- */
+
+    // User input for push to talk
+    useEffect(() => {
+        const handleKeyPress = (event) => {
+            if (event.keyCode === 32 && !spaceBarPressed && userRole === 'STT') {
+                setSpaceBoolCheck(false)
+                SpeechRecognition.startListening({ continuous: true })
+                setSpaceBarPressed(true)
+                message.info('Speech recording started...')
+            }
+        }
+        const handleKeyRelease = (event) => {
+            if (event.keyCode === 32 && spaceBarPressed && userRole === 'STT') {
+                SpeechRecognition.stopListening()
+                setSpaceBarPressed(false)
+                setTimeout(() => {
+                    resetTranscript()
+                    setSpaceBoolCheck(true)
+                }, 500)
+
+                message.info('Speech recording finished...')
+            }
+        }
+        document.addEventListener('keydown', handleKeyPress)
+        document.addEventListener('keyup', handleKeyRelease)
+        return () => {
+            document.removeEventListener('keydown', handleKeyPress)
+            document.removeEventListener('keyup', handleKeyRelease)
+        }
+    }, [spaceBarPressed, userRole])
+
+    useEffect(() => {
+        setLatestTranscript(transcript)
+    }, [spaceCheck, transcript])
+
+    useEffect(() => {
+        if (spaceCheck) {
+            if (latestTranscript !== lastTranscript) {
+                // console.log(latestTranscript)
+                if (latestTranscript != '') {
+                    appendMessage(latestTranscript)
+                }
+                setLastTranscript(latestTranscript)
+            }
+        }
+    }, [spaceCheck, latestTranscript, lastTranscript])
+
+    // Add a STT message
+    const appendMessage = async (message) => {
+        fetcher(accessToken, '/api/transcripts/create_message', {
+            method: 'POST',
+            body: JSON.stringify({
+                room_id: roomInfo.room_id,
+                to_user: roomInfo.users.find((username) => username !== user.nickname) || 'N/A',
+                message: message,
+                type: getType(),
+            }),
+        })
+            .then((res) => {
+                if (res.status == 200) {
+                    // Emit mutate message over websocket to other user
+                    handleMutate()
+                } else {
+                    api.error({
+                        message: `Error ${res.status}: ${res.error}`,
+                    })
+                }
+            })
+            .catch((res) => {
+                api.error({
+                    message: 'An unknown error has occurred',
+                })
+            })
+    }
+
+    // Refresh chatbox for both users upon invalidation
+    const invalidateRefresh = async () => {
+        handleMutate()
+    }
+
+    /* ----------------------Video---------------------- */
 
     const initializeLocalVideo = async () => {
         navigator.mediaDevices
@@ -196,6 +324,8 @@ export default function CallPage({ accessToken }) {
         return userRole
     }
 
+    /* ----------------------RTC---------------------- */
+
     // RTC Connection Reference: https://www.100ms.live/blog/webrtc-python-react
     // *************************************************************************
     const onIceCandidate = (event) => {
@@ -226,6 +356,11 @@ export default function CallPage({ accessToken }) {
                 peerConnection.addTrack(track, userStream)
             }
             console.log('{{{Peer connection created!!}}}')
+
+            // // stop ping
+            // console.log('stop timeout')
+            // clearTimeout(timer);
+
             setPeerConnectionEstablished(true)
         } catch (error) {
             console.error('Failed to establish connection: ', error)
@@ -256,7 +391,8 @@ export default function CallPage({ accessToken }) {
         console.log('(HANDLER)', data.type)
         if (data.type === 'offer') {
             console.log('[Offer received]')
-            setStop(true)
+
+            setRemoteNickname(roomInfo?.users?.find((username) => username !== user?.nickname))
             initializePeerConnection()
             peerConnection.setRemoteDescription(new RTCSessionDescription(data))
             sendAnswer()
@@ -271,6 +407,8 @@ export default function CallPage({ accessToken }) {
         }
     }
     // *************************************************************************
+
+    /* ----------------------Signaling---------------------- */
 
     const dataTransfer = (data) => {
         console.log('$$ sending data transfer $$')
@@ -301,9 +439,39 @@ export default function CallPage({ accessToken }) {
         console.log('pong', data)
     })
 
+    // Following a succesful join, establish a peer connection
+    // and send an offer to the other user
+    socketMsg.on('mutate', (data) => {
+        console.log('mutate', data)
+        roomInfoMutate()
+    })
+
+    /* ----------------------Setup---------------------- */
+    // timer = setTimeout(emitReady, 3000)
+
     useEffect(() => {
         console.log('useEffect')
-        initializeLocalVideo()
+
+        if (transcriptHistoryError?.status == 401) {
+            router.push('/api/auth/logout')
+        } else if (roomInfoError?.status == 404) {
+            // If room ID is invalid, redirect to home page
+            router.push(`/?invalid_room=${roomID}`)
+        } else if (typeof roomInfo !== 'undefined' && roomInfo?.active == false) {
+            // If room ID is expired, redirect to home page
+            router.push(`/?expired_room=${roomID}`)
+        } else if (
+            typeof roomInfo !== 'undefined' &&
+            roomInfo?.users.length == 2 &&
+            user?.nickname &&
+            !roomInfo?.users.find((name) => name === user?.nickname)
+        ) {
+            // If room if full, redirect to home page
+            router.push(`/?full_room=${roomID}`)
+        } else {
+            initializeLocalVideo()
+        }
+
         return function cleanup() {
             peerConnection?.close()
         }
@@ -312,13 +480,12 @@ export default function CallPage({ accessToken }) {
     if (user && !isLoading) {
         return (
             <ConfigProvider theme={theme}>
-                <HeaderComponent user={user} roomID={roomID} />
+                <HeaderComponent user={user} roomID={roomID} handleLeave={handleLeave} />
                 <div className={styles.callWrapper}>
                     <div style={{ width: '20%' }}>
                         <Button
                             style={{ position: 'absolute', left: 10, top: 46 }}
-                            // onClick={() => appendMessage('Example message')}
-
+                            onClick={() => appendMessage('Example message')}
                         >
                             Send Message (temporary)
                         </Button>
@@ -330,7 +497,7 @@ export default function CallPage({ accessToken }) {
                             context={'call'}
                             roomInfo={roomInfo}
                             roomID={roomID}
-                            // invalidateRefresh={invalidateRefresh}
+                            invalidateRefresh={invalidateRefresh}
                             transcript={
                                 roomInfo?.messages_info.length > 0 ? roomInfo?.messages_info : []
                             }

@@ -1,6 +1,5 @@
 import { Modal } from 'antd'
 import { React, useState } from 'react'
-import arms from '../../public/arms.jpg'
 
 function HelpModal(props) {
     const [visible, setVisible] = useState(true)
