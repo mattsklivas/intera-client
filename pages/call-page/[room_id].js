@@ -325,7 +325,7 @@ export default function CallPage({ accessToken }) {
     }
 
     /* ----------------------RTC---------------------- */
-
+    
     // RTC Connection Reference: https://www.100ms.live/blog/webrtc-python-react
     // *************************************************************************
     const onIceCandidate = (event) => {
