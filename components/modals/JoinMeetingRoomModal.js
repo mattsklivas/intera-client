@@ -1,6 +1,7 @@
 import { Modal, Input, Space, Button, notification } from 'antd'
 import { React, useState } from 'react'
 import fetcher from '../../core/fetcher'
+import styles from '../../styles/Modal.module.css'
 
 function JoinMeetingRoomModal(props) {
     const [loading, setLoading] = useState(false)
@@ -47,7 +48,6 @@ function JoinMeetingRoomModal(props) {
     }
 
     return (
-        <>
             <Modal
                 title="Join a Meeting Room"
                 open={visible}
@@ -55,15 +55,15 @@ function JoinMeetingRoomModal(props) {
                 onCancel={handleCancel}
                 okText="Submit"
                 width={250}
-                bodyStyle={{ height: '8vh', display: 'flex', justifyContent: 'center' }}
-                style={{ paddingTop: '9%' }}
+                bodyStyle={{display: "flex", justifyContent: "center", height: "8vh" }}
+                style={{paddingTop: "9%"}}
                 footer={[
                     <Button key="cancel" onClick={handleCancel}>
                         Cancel
                     </Button>,
                     <Button key="submit" type="primary" loading={loading} onClick={handleOk}>
                         Submit
-                    </Button>,
+                    </Button>
                 ]}
             >
                 {contextHolder}
@@ -74,7 +74,6 @@ function JoinMeetingRoomModal(props) {
                     />
                 </Space>
             </Modal>
-        </>
     )
 }
 

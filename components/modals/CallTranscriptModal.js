@@ -1,15 +1,14 @@
 import { Modal } from 'antd'
 import { React, useState } from 'react'
 import ChatboxComponent from '../ChatboxComponent'
+import styles from '../../styles/Modal.module.css'
 
-function CallTranscriptModal(props) {
+const CallTranscriptModal = ({ user, transcript, hideCallTranscriptModal }) => {
     const [visible, setVisible] = useState(true)
-    const user = props.user
-    const transcript = props.transcript
 
     const handleClose = () => {
         setVisible(false)
-        props.hideCallTranscriptModal()
+        hideCallTranscriptModal()
     }
 
     // Get the communication type of the user
@@ -28,23 +27,28 @@ function CallTranscriptModal(props) {
     }
 
     return (
-        <>
             <Modal
                 title={
                     <>
-                        {transcript?.users.find((user) => user !== props?.user?.nickname) ? (
-                            <p style={{ margin: 0 }}>{`Conversation with: ${transcript?.users.find(
-                                (user) => user !== props?.user?.nickname
-                            )}`}</p>
+                        {transcript?.users.find((user) => user !== user?.nickname) ? (
+                            <p className={styles.noMargin}>
+                                {`Conversation with: ${transcript?.users.find(
+                                    (user) => user !== user?.nickname
+                                )}`}
+                            </p>
                         ) : (
-                            <p style={{ margin: 0, fontStyle: 'italic' }}>
+                            <p className={styles.unattendedConversation}>
                                 Unattended Conversation
                             </p>
                         )}
-                        <p style={{ margin: 0 }}>{`Your communication role: ${getType()}`}</p>
-                        <p style={{ margin: 0 }}>{`Date: ${
-                            transcript?.date_created['$date'].split('T')[0] || 'N/A'
-                        }`}</p>
+                        <p className={styles.noMargin}>
+                            {`Your communication role: ${getType()}`}
+                        </p>
+                        <p className={styles.noMargin}>
+                            {`Date: ${
+                                transcript?.date_created['$date'].split('T')[0] || 'N/A'
+                            }`}
+                        </p>
                     </>
                 }
                 open={visible}
@@ -62,8 +66,7 @@ function CallTranscriptModal(props) {
                     transcript={transcript?.messages_info || []}
                 />
             </Modal>
-        </>
     )
 }
 
-export default CallTranscriptModal
+export default CallTranscriptModal;

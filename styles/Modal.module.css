@@ -1,0 +1,85 @@
+/* Join */
+.joinModalBody {
+    display: flex;
+    justify-content: center;
+    height: 8vh;
+}
+
+.joinModalStyle {
+    padding-top: 9%
+}
+
+/* Create */
+.createModalBody {
+    height: 342 
+}
+
+.meetingInfoDivider {
+    margin: 10px 0
+}
+
+.addSpace {
+    width: 100%
+}
+
+.meetingInfoContainer {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 15px
+}
+
+.roomIdSpan {
+    color: #1677ff;
+    font-weight: 500;
+    padding-left: 5px;
+}
+
+.spinLoading {
+    padding-left: 8px;
+}
+
+.loadingOutline {
+    font-size: 16px;
+}
+
+.roleSelectRequired {
+    color: red
+}
+
+.roleSelectOptions {
+    display: flex;
+    justify-content: center;
+}
+
+.rolesOption {
+    width: 150
+}
+
+/* Call Transcript */
+.noMargin {
+    margin: 0;
+}
+
+.unattendedConversation {
+    margin: 0;
+    font-style: italic
+}
+
+/* Youtube Answer */
+.ytVideoIframe {
+    width: 500px;
+    height: 300px;
+    border: 2px solid #f0f0f0;
+}
+
+/* Help TODO:*/
+/*
+.helpContainer { 
+  
+}
+
+.keepHandsInFrame {
+    
+
+}
+*/

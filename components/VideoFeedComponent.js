@@ -3,14 +3,20 @@ import React, { useRef, useEffect, useState } from 'react'
 
 // in progress
 
-export default function VideoFeedComponent(props) {
+const VideoFeedComponent = () => {
     const userVideo = useRef(null)
     const guestVideo = useRef(null)
     const [stream, setStream] = useState(null)
 
     useEffect(() => {
         navigator.mediaDevices
-            .getUserMedia({ audio: true, video: true })
+            .getUserMedia({ 
+                audio: true, 
+                video: {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                } 
+            })
             .then((stream) => {
                 setStream(stream)
                 userVideo.current.srcObject = stream
@@ -55,3 +61,5 @@ export default function VideoFeedComponent(props) {
         </div>
     )
 }
+
+export default VideoFeedComponent;

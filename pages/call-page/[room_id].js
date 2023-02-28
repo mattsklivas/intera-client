@@ -287,8 +287,8 @@ export default function CallPage({ accessToken }) {
             .getUserMedia({
                 audio: roomInfo?.host_type === 'STT' ? true : false,
                 video: {
-                    height: 360,
-                    width: 480,
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
                 },
             })
             .then((stream) => {

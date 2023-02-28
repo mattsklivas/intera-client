@@ -4,21 +4,21 @@ import { useUser } from '@auth0/nextjs-auth0/client'
 import { useRouter } from 'next/router'
 import auth0 from '../auth/auth0'
 import { Row, Col, Button, ConfigProvider, Typography, Spin } from 'antd'
-import { LoadingOutlined } from '@ant-design/icons'
+import { LineHeightOutlined, LoadingOutlined } from '@ant-design/icons'
 import { useEffect, useRef, useState } from 'react'
 import { theme } from '../core/theme'
 import AnswerModal from '../components/modals/AnswerModal'
 import fetcher from '../core/fetcher'
 
-export default function PracticeModule({ accessToken }) {
+const PracticeModule = ({ accessToken }) => {
     const [isAnswerModalOpen, setIsAnswerModalOpen] = useState(false)
     const { user, error, isLoading } = useUser()
     const router = useRouter()
     const videoReference = useRef(null)
     const videoStream = useRef(null)
     const [isVideoEnabled, setIsVideoEnabled] = useState(false)
-    const [isRecording, SetIsRecording] = useState(false)
-    const [isResultView, SetIsResultView] = useState(false)
+    const [isRecording, setIsRecording] = useState(false)
+    const [isResultView, setIsResultView] = useState(false)
     const [isInitalized, setIsInitalized] = useState(false)
     const [randomWord, setRandomWord] = useState(null)
     const [isRetry, setIsRetry] = useState(true)
@@ -27,16 +27,21 @@ export default function PracticeModule({ accessToken }) {
     const [video, setVideo] = useState(null)
 
     const startWebcam = async () => {
+        console.log("Start called")
+
         // Check to see if browser has camera support
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            console.error('Browser Does not suppor current webcam library')
+            console.error('Browser does not support current webcam library')
         }
 
         // get webcam stream
         const webcamStream = await navigator.mediaDevices
             .getUserMedia({
                 audio: false,
-                video: true,
+                video: {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
             })
             .then((stream) => {
                 stream?.active && setIsVideoEnabled(true)
@@ -80,11 +85,11 @@ export default function PracticeModule({ accessToken }) {
                     //        }
                     //        setIsRetry(false)
                     // change to result view only if response is received
-                    //        SetIsResultView(true)
+                    //        setIsResultView(true)
                     //    })
 
                     // change to result view only if response is received
-                    SetIsResultView(true)
+                    setIsResultView(true)
                 }
                 setIsRetry(false)
                 setIsInitalized(true)
@@ -97,6 +102,7 @@ export default function PracticeModule({ accessToken }) {
     }
 
     const stopWebcam = async () => {
+        console.log("Stop called")
         if (videoStream.current && isRecording) {
             videoStream.current.stop()
             // videoReference.current.srcObject = null
@@ -104,17 +110,17 @@ export default function PracticeModule({ accessToken }) {
         if (video) {
             video.getTracks().forEach((track) => track.stop())
         }
-        SetIsRecording(false)
+        setIsRecording(false)
     }
 
     const retry = () => {
-        SetIsResultView(false)
+        setIsResultView(false)
         setTranslationResponse(null)
     }
 
     const getNewWord = () => {
         setIsRetry(true)
-        SetIsResultView(false)
+        setIsResultView(false)
         setTranslationResponse(null)
     }
 
@@ -122,19 +128,24 @@ export default function PracticeModule({ accessToken }) {
         if (videoStream.current && !isRecording) {
             videoStream.current.start()
         }
-        SetIsRecording(true)
+        setIsRecording(true)
     }
 
     const stopRecording = () => {
         if (videoStream.current && isRecording) {
             videoStream.current.stop()
         }
-        SetIsRecording(false)
+        setIsRecording(false)
     }
 
     const formatWord = (word) => {
-        return word?.charAt(0).toUpperCase() + word?.slice(1).toLowerCase()
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
     }
+
+    useEffect(() => {
+        // TODO: Modify startWebcam as it will only be called once to prevent creating new instance on every new word
+        startWebcam()
+    }, [])
 
     useEffect(() => {
         if (isRetry) {
@@ -143,7 +154,6 @@ export default function PracticeModule({ accessToken }) {
             }).then((response) => {
                 setRandomWord(response.data.word.toUpperCase())
                 setWordYoutubeUrl(response.data.url)
-                startWebcam()
             })
         }
     }, [isResultView])
@@ -158,36 +168,27 @@ export default function PracticeModule({ accessToken }) {
             })
     }
 
-    // To do : change result text color based on server response
+    // TODO : change result text color based on server response
     return (
         <ConfigProvider theme={theme}>
             <HeaderComponent user={user} handleLeave={handleLeave} />
-            <div className={styles.main}>
-                <Row className={styles.row1}>
+            <div className={styles.practiceModuleDiv}>
+                <Row className={styles.videoContainer}>
                     <Col>
                         <video
                             ref={videoReference}
                             autoPlay
-                            className={styles.row1Col1}
+                            className={styles.videoStream}
                             style={{
                                 display: isVideoEnabled ? 'inline' : 'none',
                             }}
                         />
                         {!isVideoEnabled && (
-                            <div
-                                className={styles.row1Col1}
-                                style={{
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                }}
-                            >
+                            <div className={styles.disabledVideoLoader}>
                                 <Spin
                                     indicator={
                                         <LoadingOutlined
-                                            style={{
-                                                fontSize: 40,
-                                            }}
+                                            className={styles.loadingDisabledOutline}
                                             spin
                                         />
                                     }
@@ -196,78 +197,67 @@ export default function PracticeModule({ accessToken }) {
                         )}
                     </Col>
                 </Row>
-                {isResultView ? (
-                    <Row className={styles.row2}>
-                        <Typography className={styles.typo} style={{ fontSize: 20 }}>
-                            <div>
-                                Result:{' '}
-                                <span
-                                    style={{
-                                        fontWeight: 'bold',
-                                        fontStyle: !translationResponse ? 'italic' : 'none',
-                                    }}
-                                >
-                                    {translationResponse || 'N/A'}
+            
+                <Row className={styles.signWordRow}>
+                    <Typography className={styles.signWordTypo}>
+                    {isResultView ? (
+                        <div>
+                            Result: 
+                            <span className={styles.signResultText}>
+                                {translationResponse || 'N/A'}
+                            </span>
+                        </div>
+                    ): (
+                        <div>
+                            <span> Sign the word: </span>
+                            {randomWord ? (
+                                <span className={styles.actualSignWord}>
+                                    {formatWord(randomWord)}
                                 </span>
-                            </div>
-                        </Typography>
-                    </Row>
-                ) : (
-                    <Row className={styles.row2}>
-                        <Typography className={styles.typo}>
-                            <div style={{ fontSize: 20 }}>
-                                <span>Sign the word: </span>
-                                {randomWord ? (
-                                    <span
-                                        style={{
-                                            fontWeight: 'bold',
-                                        }}
-                                    >{`${formatWord(randomWord)}`}</span>
-                                ) : (
-                                    <span>
-                                        <Spin
-                                            style={{ paddingLeft: 10 }}
-                                            indicator={
-                                                <LoadingOutlined
-                                                    style={{
-                                                        fontSize: 20,
-                                                    }}
-                                                    spin
-                                                />
-                                            }
-                                        />
-                                    </span>
-                                )}
-                            </div>
-                        </Typography>
-                    </Row>
-                )}
+                            ) : (
+                                <span>
+                                    <Spin
+                                        className={styles.spinPadding}
+                                        indicator={
+                                            <LoadingOutlined
+                                                className={styles.loadingOutline}
+                                                spin
+                                            />
+                                        }
+                                    />
+                                </span>
+                            )}
+                        </div>
+                    )}
+                    </Typography>
+                </Row>
+
                 {isResultView ? (
-                    <Row style={{ display: 'flex', justifyContent: 'center' }}>
-                        <Button type="primary" className={styles.row3WordBtn} onClick={retry}>
+                    <Row className={styles.resultPageRow}>
+                        <Button type="primary" className={styles.resultPageButton} onClick={retry}>
                             Retry
                         </Button>
-                        <Button type="primary" className={styles.row3WordBtn} onClick={getNewWord}>
+                        <Button type="primary" className={styles.resultPageButton} onClick={getNewWord}>
                             New Word
                         </Button>
                     </Row>
                 ) : (
-                    <Row className={styles.row3StartStop}>
+                    <Row className={styles.startStopRecordingRow}>
                         <Button
                             onClick={() => {
                                 !isRecording ? startRecording() : stopRecording()
                             }}
                             disabled={!isInitalized}
-                            danger={isRecording ? true : false}
+                            danger={isRecording}
                             type="primary"
-                            className={styles.StartButton}
+                            className={styles.startStopButton}
                         >
                             {!isRecording ? 'Start Recording' : 'Stop Recording'}
                         </Button>
                     </Row>
                 )}
 
-                <Row className={styles.row4}>
+                <Row className={styles.viewAnswerRow}>
                     <Button
                         onClick={() => setIsAnswerModalOpen(true)}
                         className={styles.viewAnswerButton}
@@ -288,6 +278,7 @@ export default function PracticeModule({ accessToken }) {
         </ConfigProvider>
     )
 }
+
 export const getServerSideProps = async (context) => {
     let accessToken = (await auth0.getSession(context.req, context.res)) || null
     if (accessToken != null) {
@@ -295,3 +286,5 @@ export const getServerSideProps = async (context) => {
     }
     return { props: { accessToken } }
 }
+
+export default PracticeModule;

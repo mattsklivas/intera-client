@@ -4,12 +4,12 @@ import CallTranscriptModal from '../components/modals/CallTranscriptModal'
 import { Row, Divider, List } from 'antd'
 import { InboxOutlined } from '@ant-design/icons'
 
-export default function HistoryComponent(props) {
+const HistoryComponent = ({user, transcripts}) => {
     const [isCallTranscriptModalOpen, setIsCallTranscriptModalOpen] = useState(false)
     const [activeTranscript, setActiveTranscript] = useState(null)
 
     const getUser = (transcript) => {
-        const otherUser = transcript?.users.find((user) => user !== props?.user?.nickname)
+        const otherUser = transcript?.users.find((user) => user !== user?.nickname)
         if (otherUser) {
             return <span className={styles.tabText}>{otherUser}</span>
         } else {
@@ -28,10 +28,10 @@ export default function HistoryComponent(props) {
                 style={{ width: '-webkit-fill-available', height: '-webkit-fill-available' }}
             >
                 <div className={styles.historyTitle}>Call History</div>
-                <div style={{ height: '80vh', overflowY: 'scroll' }}>
-                    {props?.transcripts?.length > 0 ? (
+                <div style={{ height: '100vh', overflowY: 'scroll' }}>
+                    {transcripts?.length > 0 ? (
                         <List
-                            dataSource={props?.transcripts}
+                            dataSource={transcripts}
                             renderItem={(item) =>
                                 item?.messages?.length > 0 && (
                                     <List.Item
@@ -95,7 +95,7 @@ export default function HistoryComponent(props) {
             {isCallTranscriptModalOpen && (
                 <CallTranscriptModal
                     transcript={activeTranscript}
-                    user={props.user}
+                    user={user}
                     hideCallTranscriptModal={() => {
                         setActiveTranscript(null)
                         setIsCallTranscriptModalOpen(false)
@@ -105,3 +105,5 @@ export default function HistoryComponent(props) {
         </>
     )
 }
+
+export default HistoryComponent;
