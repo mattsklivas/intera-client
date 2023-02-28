@@ -14,8 +14,10 @@ import {
 import { LoadingOutlined } from '@ant-design/icons'
 import { React, useState, useEffect } from 'react'
 import fetcher from '../../core/fetcher.js'
+import styles from '../../styles/Modal.module.css'
 
-function CreateMeetingRoomModal(props) {
+
+const CreateMeetingRoomModal = ({ router, accessToken, hideCreateMeetingRoomModal }) => {
     const [form] = Form.useForm()
     const [visible, setVisible] = useState(true)
     const [api, contextHolder] = notification.useNotification()
@@ -30,20 +32,20 @@ function CreateMeetingRoomModal(props) {
 
     const handleOk = async () => {
         setLoading(true)
-        fetcher(props.accessToken, '/api/rooms/register_room', {
+        fetcher(accessToken, '/api/rooms/register_room', {
             method: 'POST',
             body: JSON.stringify({ room_id: roomID, host_type: hostType }),
         })
             .then(async (res) => {
                 if (res.status == 200) {
-                    props.router.push(`/call-page/${roomID}`)
+                    router.push(`/call-page/${roomID}`)
                 } else {
                     api.error({
                         message: `Error ${res.status}: ${res.error}`,
                     })
                     setLoading(false)
                     setVisible(false)
-                    props.hideCreateMeetingRoomModal()
+                    hideCreateMeetingRoomModal()
                 }
             })
             .catch((res) => {
@@ -51,20 +53,20 @@ function CreateMeetingRoomModal(props) {
                     message: 'An unknown error has occurred',
                 })
                 setVisible(false)
-                props.hideCreateMeetingRoomModal()
+                hideCreateMeetingRoomModal()
             })
 
         setVisible(false)
-        props.hideCreateMeetingRoomModal()
+        hideCreateMeetingRoomModal()
     }
 
     const handleCancel = () => {
         setVisible(false)
-        props.hideCreateMeetingRoomModal()
+        hideCreateMeetingRoomModal()
     }
 
     const populateRoomData = async () => {
-        fetcher(props.accessToken, '/api/rooms/create_room_id', {
+        fetcher(accessToken, '/api/rooms/create_room_id', {
             method: 'GET',
         })
             .then(async (res) => {
@@ -84,7 +86,6 @@ function CreateMeetingRoomModal(props) {
     }, [])
 
     return (
-        <>
             <Modal
                 title="Create a Meeting Room"
                 open={visible}
@@ -96,38 +97,24 @@ function CreateMeetingRoomModal(props) {
                 bodyStyle={{ height: 342 }}
             >
                 {contextHolder}
-                <Divider plain style={{ margin: '10px 0' }}>
+                <Divider plain className={styles.meetingInfoDivider}>
                     Meeting Info
                 </Divider>
-                <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                <Space direction="vertical" size="middle" className={styles.addSpace}>
                     <Row type="flex" align="middle">
                         <Col span={24}>
-                            <div
-                                style={{
-                                    paddingBottom: 15,
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <span style={{ paddingRight: 2 }}>Room ID: </span>
+                            <div className={styles.meetingInfoContainer}>
+                                <span>Room ID: </span>
                                 {roomID ? (
-                                    <span
-                                        style={{
-                                            paddingLeft: 2,
-                                            fontWeight: 500,
-                                            color: '#1677ff',
-                                        }}
-                                    >
-                                        {' ' + roomID}
+                                    <span className={styles.roomIdSpan}>
+                                        {roomID}
                                     </span>
                                 ) : (
                                     <Spin
-                                        style={{ paddingLeft: 5 }}
+                                        className={styles.spinLoading}
                                         indicator={
                                             <LoadingOutlined
-                                                style={{
-                                                    fontSize: 16,
-                                                }}
+                                                className={styles.loadingOutline}
                                                 spin
                                             />
                                         }
@@ -153,7 +140,7 @@ function CreateMeetingRoomModal(props) {
                         Guest Invitation
                     </Divider>
                     <Row type="flex" align="middle">
-                        <Col span={24} style={{}}>
+                        <Col span={24}>
                             <Form
                                 form={form}
                                 validateMessages={{
@@ -192,7 +179,7 @@ function CreateMeetingRoomModal(props) {
                                     onClick={() => {
                                         setLoadingMail(true)
                                         console.log(roomID, email)
-                                        fetcher(props.accessToken, '/api/rooms/email_invite', {
+                                        fetcher(accessToken, '/api/rooms/email_invite', {
                                             method: 'POST',
                                             body: JSON.stringify({ room_id: roomID, email: email }),
                                         })
@@ -229,7 +216,7 @@ function CreateMeetingRoomModal(props) {
                                 onClick={() => {
                                     setLoadingMail(true)
                                     console.log(roomID, email)
-                                    fetcher(props.accessToken, '/api/rooms/email_invite', {
+                                    fetcher(accessToken, '/api/rooms/email_invite', {
                                         method: 'POST',
                                         body: JSON.stringify({ room_id: roomID, email: email }),
                                     })
@@ -259,12 +246,13 @@ function CreateMeetingRoomModal(props) {
                         </Col> */}
                     </Row>
                     <Divider plain style={{ margin: 0 }}>
-                        Role Selection <span style={{ color: 'red' }}>*</span>
+                        Role Selection <span className={styles.roleSelectRequired}>*</span>
                     </Divider>
                     <Row>
-                        <Col span={24} style={{ display: 'flex', justifyContent: 'center' }}>
+                        <Col span={24} className={styles.roleSelectOptions}>
                             <Select
                                 defaultValue="Choose Role"
+                                className={styles.rolesOption}
                                 onChange={(value) => setHostType(value)}
                                 options={[
                                     {
@@ -276,13 +264,11 @@ function CreateMeetingRoomModal(props) {
                                         label: 'ASL Signer',
                                     },
                                 ]}
-                                style={{ width: 150 }}
                             />
                         </Col>
                     </Row>
                 </Space>
             </Modal>
-        </>
     )
 }
 

@@ -4,20 +4,18 @@ import cn from 'classnames'
 import styles from '../styles/Chatbox.module.css'
 import fetcher from '../core/fetcher'
 
-const ChatboxComponent = (props) => {
+const ChatboxComponent = ({user, transcript, roomInfo, context, accessToken, invalidateRefresh}) => {
     const chatRef = useRef(null)
     const [api, contextHolder] = notification.useNotification()
     const [isInvalidateLoading, setIsInvalidateLoading] = useState(false)
-    const user = props.user
-    const messages = props.transcript
-    const roomInfo = props.roomInfo
-    const context = props.context
+
+
     const [inputText, setInputText] = useState('')
     const [canInvalidate, setCanInvalidate] = useState(() => {
-        for (let i = messages.length - 1; i >= 0; i--) {
-            if (messages[i].from === user.nickname && messages[i].edited) {
+        for (let i = transcript.length - 1; i >= 0; i--) {
+            if (transcript[i].from === user.nickname && transcript[i].edited) {
                 return false
-            } else if (messages[i].from === user.nickname && !messages[i].edited) {
+            } else if (transcript[i].from === user.nickname && !transcript[i].edited) {
                 return true
             }
         }
@@ -35,14 +33,14 @@ const ChatboxComponent = (props) => {
 
         // Update invalidation state
         updateCanInvalidate()
-    }, [chatRef, messages])
+    }, [chatRef, transcript])
 
     const updateCanInvalidate = async () => {
         let flag = false
-        for (let i = messages.length - 1; i >= 0; i--) {
-            if (messages[i].from === user.nickname && messages[i].edited) {
+        for (let i = transcript.length - 1; i >= 0; i--) {
+            if (transcript[i].from === user.nickname && transcript[i].edited) {
                 break
-            } else if (messages[i].from === user.nickname && !messages[i].edited) {
+            } else if (transcript[i].from === user.nickname && !transcript[i].edited) {
                 flag = true
             }
         }
@@ -50,7 +48,7 @@ const ChatboxComponent = (props) => {
     }
 
     const invalidateMessage = (value) => {
-        let messagesCopy = messages
+        let messagesCopy = transcript
         let messageID = null
         let index = null
 
@@ -64,7 +62,7 @@ const ChatboxComponent = (props) => {
         }
 
         if (messageID) {
-            fetcher(props.accessToken, '/api/transcripts/edit_message', {
+            fetcher(accessToken, '/api/transcripts/edit_message', {
                 method: 'PUT',
                 body: JSON.stringify({
                     room_id: roomInfo.room_id,
@@ -75,7 +73,7 @@ const ChatboxComponent = (props) => {
                 .then((res) => {
                     if (res.status == 200) {
                         // Update chatbox
-                        props.invalidateRefresh()
+                        invalidateRefresh()
 
                         // Clear invalidation input
                         setInputText('')
@@ -132,14 +130,14 @@ const ChatboxComponent = (props) => {
                 >
                     <div className={styles.chatboxOverflow}>
                         <ol className={styles.chatboxMsgList}>
-                            {messages.map((msg, i) => {
+                            {transcript.map((msg, i) => {
                                 return (
                                     <li
                                         key={`chat-wrapper-${i}`}
                                         style={{
                                             background:
                                                 msg.from === user.nickname ? '#1b98e0' : '#dfdfe2',
-                                            marginBottom: i == messages.length - 1 ? 0 : 10,
+                                            marginBottom: i == transcript.length - 1 ? 0 : 10,
                                         }}
                                         className={cn(
                                             styles.chatboxMsgContentWrapper,

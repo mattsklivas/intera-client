@@ -1,19 +1,20 @@
 import { Modal } from 'antd'
 import { React, useState } from 'react'
+import arms from '../../public/arms.jpg'
+import styles from '../../styles/Modal.module.css'
 
-function HelpModal(props) {
+// TODO: Nick add styles to Modal.module.css
+const HelpModal = ({ setIsHelpModalOpen }) => {
     const [visible, setVisible] = useState(true)
     // const link = props.link
     // const word = props.word
 
     const handleClose = () => {
         setVisible(false)
-        props.setIsHelpModalOpen(false)
+        setIsHelpModalOpen(false)
     }
 
-    // Make sure the youtube url is of the format  yt.com/embed/id
     return (
-        <>
             <Modal
                 title={<h2>Using Intera Video System</h2>}
                 open={visible}
@@ -21,58 +22,50 @@ function HelpModal(props) {
                 closable={true}
                 cancelButtonProps={{ style: { display: 'none' } }}
                 okButtonProps={{ style: { display: 'none' } }}
-                width={650}
+                width={600}
                 bodyStyle={{
-                    height: 320,
+                    height: 450,
                     display: 'flex',
+                    flexDirection: 'row',
                     justifyContent: 'center',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                 }}
             >
-                <div>
-                    <h1>Title</h1>
-                    <ul>
-                        <li>Bullet point 1</li>
-                        <li>Bullet point 2</li>
-                        <li>Bullet point 3</li>
-                    </ul>
-                    <img
-                        src="https://imgur.com/a/lczTOPr"
-                        alt="Arms"
-                        width="350px"
-                        height="300px"
-                        layout="responsive"
-                    ></img>
-                </div>
+                <div className={styles.helpContainer}>
+                    <div>
+                        <h2> Arm guidelines </h2>
+                        <ul>
+                            <li> Hands must be visible and in frame when performing sign </li>
+                            <li> Hand enters the frame signaling the start of the sign </li>
+                            <li> Hand leaves the frame signaling the end of the sign </li>
+                        </ul>
+                        <img
+                            src="https://imgur.com/a/lczTOPr"
+                            alt="Arms"
+                            width="350px"
+                            height="300px"
+                            layout="responsive"
+                        />
+                    </div>
+                    <div>
+                        <h2> More guidelines </h2>
+                        <p>
+                            Starting and stopping ASL translation:
+                            <br /> User must have one or more hands shown in the video feed for
+                            translation to being
+                            <br /> Removing both hands from the video feed will terminate translation
+                        </p>
 
-                <div>
-                    <p>
-                        Starting and stopping ASL translation:
-                        <br /> User must have one or more hands shown in the video feed for
-                        translation to being
-                        <br /> Removing both hands from the video feed will terminate translation
-                    </p>
+                        <img src="https://imgur.com/a/5muqDKt" alt="Position" />
+                    </div>
 
-                    <img src="https://imgur.com/a/5muqDKt" alt="Position" />
-                </div>
-                <div>
-                    <img src="https://imgur.com/a/ztCZmy6" alt="Angle" />
+                    <div>
+                        <h2> Even more guidelines </h2>
+                        <img src="https://imgur.com/a/ztCZmy6" alt="Angle" />
+                    </div>
                 </div>
             </Modal>
-        </>
     )
 }
-
-// return (
-//   <>
-
-//     <Modal title="Basic Modal" open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
-//       <p>Some contents...</p>
-//       <p>Some contents...</p>
-//       <p>Some contents...</p>
-//     </Modal>
-//   </>
-// );
-// };
 
 export default HelpModal

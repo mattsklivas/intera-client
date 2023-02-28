@@ -1,3 +1,12 @@
+.homeDiv {
+    width: 100% 
+ }
+ 
+ .historyContainer {
+     width: 30%;
+     height: 100%
+ }
+ 
 .row {
     text-align: center;
 }
@@ -10,11 +19,6 @@
     padding-top: 16%;
 }
 
-.roomButton {
-    width: 190px;
-    height: 40px;
-    margin: 10px 1px;
-}
 
 .loadingRow {
     display: flex;
@@ -26,4 +30,17 @@
 .loadingDiv {
     font-size: large;
     padding: 0 0 5px 15px;
+}
+
+
+/* Room */
+.roomButton {
+    width: 190px;
+    height: 40px;
+    margin: 10px 1px;
+}
+
+.roomText {
+  display: inline-flex;
+  padding-right: 5%;
 }

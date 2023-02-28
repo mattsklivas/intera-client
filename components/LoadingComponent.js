@@ -3,7 +3,7 @@ import { Row, Spin } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import styles from '../styles/Home.module.css'
 
-function LoadingComponent({ msg }) {
+const LoadingComponent = ({ msg }) => {
     return (
         <Row className={styles.loadingRow}>
             <Spin indicator={<LoadingOutlined spin />} />

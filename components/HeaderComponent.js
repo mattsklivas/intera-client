@@ -7,7 +7,7 @@ import Image from 'next/image'
 import logo from '../public/logo.svg'
 import styles from '../styles/Header.module.css'
 
-function Header({ user, roomID, handleLeave }) {
+const Header = ({ user, roomID, handleLeave }) => {
     const router = useRouter()
     const [isLoadingExit, setIsLoadingExit] = useState(false)
     const [isLoadingChange, setIsLoadingChange] = useState(false)
@@ -21,12 +21,9 @@ function Header({ user, roomID, handleLeave }) {
                     <span>User: </span>
                     <span>{user?.nickname || 'N/A'}</span>
                 </div>
-            </Col>
 
-            <Col>
-                <div className={styles.headerHelp}></div>
-                <Button type="text" onClick={() => setIsHelpModalOpen(true)}>
-                    <span style={{ display: 'inline-flex' }}>Help</span>
+                <Button className={styles.headerHelp} onClick={() => setIsHelpModalOpen(true)}>
+                    Help
                 </Button>
             </Col>
 
@@ -39,7 +36,7 @@ function Header({ user, roomID, handleLeave }) {
                 }
             >
                 {['practice-module', 'call-page'].includes(router.pathname.split('/')[1]) ? (
-                    <Button
+                    <Button 
                         // style={{ marginLeft: router.pathname.split('/')[1] === 'practice-module' ? '2%' : 0 }}
                         loading={isLoadingExit}
                         type="primary"

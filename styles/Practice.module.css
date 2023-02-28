@@ -1,8 +1,108 @@
-.main {
+.practiceModuleDiv {
     height: 100vh;
     padding: 20px;
 }
 
+/* Video container */
+.videoContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 2rem;
+}
+
+.videoStream {
+    border: 2px solid #f0f0f0;
+    width: 500px;
+    height: 282px;
+}
+
+.disabledVideoLoader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid #f0f0f0;
+    width: 500px;
+    height: 282px;
+}
+
+
+/* Word to Sign */
+.signWordRow {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px 0 10px 0;
+}
+
+.signWordTypo {
+    font-size: 20px;
+}
+
+.actualSignWord {
+  font-weight: bold
+}
+
+.signResultText { 
+    font-weight: bold;
+    font-style: italic;
+    padding-left: 10px
+}
+
+
+/* Spin/loading word */
+.spinIndicator {
+    padding-left: 10
+}
+
+.loadingOutline {
+    font-size: 20
+}
+
+.loadingDisabledOutline {
+    font-size: 40
+}
+
+
+/* Result page w/ Retry and new word */
+.resultPageRow {
+    display: flex;
+    justify-content: center
+}
+
+.resultPageButton {
+    margin: 10px 5px;
+    width: 130px;
+}
+
+
+/* Start/stop recording */
+.startStopRecordingRow {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+}
+
+.startStopButton {
+    align-items: center;
+}
+
+
+/* View answer */
+.viewAnswerRow {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+}
+
+.viewAnswerButton {
+    width: 130px;
+}
+
+
+/* Note: Not used */
 .logout {
     background: transparent;
     border-color: #e28743;
@@ -17,65 +117,4 @@
     color: #e28743;
     width: 70px;
     height: 30px;
-}
-
-.row1 {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.row1Col1 {
-    border: 2px solid #f0f0f0;
-    width: 400px;
-    height: 300px;
-}
-
-.row2 {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 15px 0 10px 0;
-}
-
-.row3col {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.typo {
-    font-size: 15px;
-}
-
-.row3WordBtn {
-    margin: 10px 5px;
-    width: 130px;
-}
-
-.row3StartStop {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 10px;
-}
-
-.StopButton {
-    background-color: red;
-    color: white;
-}
-
-.StartButton {
-    align-items: center;
-}
-
-.viewAnswerButton {
-    width: 130px;
-}
-
-.row4 {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 10px;
 }

@@ -81,12 +81,12 @@ export default function Home({ accessToken }) {
         return (
             <>
                 {contextHolder}
-                <div styles={{ width: '100%' }}>
+                <div className={styles.homeDiv}>
                     <ConfigProvider theme={theme}>
                         <main className={styles.main}>
                             <Header user={user} />
                             <div className={styles.row}>
-                                <div style={{ width: '30%', height: '100%' }}>
+                                <div className={styles.historyContainer}>
                                     <HistoryComponent transcripts={transcriptHistory} user={user} />
                                 </div>
                             </div>
@@ -96,19 +96,19 @@ export default function Home({ accessToken }) {
                                         className={styles.roomButton}
                                         onClick={() => setIsCreateMeetingRoomModalOpen(true)}
                                     >
-                                        <span style={{ display: 'inline-flex' }}>
-                                            Create Meeting Room&nbsp;
-                                            <MdCreate size={20} />
+                                        <span className={styles.roomText}>
+                                            Create Meeting Room
                                         </span>
+                                        <MdCreate size={17} />
                                     </Button>
                                     <Button
                                         className={styles.roomButton}
                                         onClick={() => setIsJoinMeetingRoomModalOpen(true)}
                                     >
-                                        <span style={{ display: 'inline-flex' }}>
-                                            Join Meeting Room&nbsp;&nbsp;&nbsp;
-                                            <MdSupervisorAccount size={20} />
+                                        <span className={styles.roomText}>
+                                            Join Meeting Room
                                         </span>
+                                        <MdSupervisorAccount size={20} />
                                     </Button>
                                 </div>
                             </div>
