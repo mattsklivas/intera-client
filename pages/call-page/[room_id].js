@@ -449,7 +449,6 @@ export default function CallPage({ accessToken }) {
         }
 
         if (
-            !initialized &&
             typeof transcriptHistory !== 'undefined' &&
             typeof roomInfo !== 'undefined' &&
             typeof user?.nickname !== undefined &&
