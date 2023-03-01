@@ -9,8 +9,6 @@ import styles from '../../styles/Modal.module.css'
 // TODO: Nick add styles to Modal.module.css
 const HelpModal = ({ setIsHelpModalOpen }) => {
     const [visible, setVisible] = useState(true)
-    // const link = props.link
-    // const word = props.word
 
     const handleClose = () => {
         setVisible(false)
@@ -42,7 +40,7 @@ const HelpModal = ({ setIsHelpModalOpen }) => {
                         <li> Hand enters the frame signaling the start of the sign </li>
                         <li> Hand leaves the frame signaling the end of the sign </li>
                     </ul>
-                    <Image src={arms} width="35px" height="30px" />
+                    <Image src={arms} width="35px" height="30px" alt="arms" />
                 </div>
                 <div>
                     <h2> More guidelines </h2>
@@ -53,12 +51,12 @@ const HelpModal = ({ setIsHelpModalOpen }) => {
                         <br /> Removing both hands from the video feed will terminate translation
                     </p>
 
-                    <Image src={position} width="35px" height="30px" />
+                    <Image src={position} width="35px" height="30px" alt="position" />
                 </div>
 
                 <div>
                     <h2> Even more guidelines </h2>
-                    <Image src={angle} width="35px" height="30px" />
+                    <Image src={angle} width="35px" height="30px" alt="angle" />
                 </div>
             </div>
         </Modal>

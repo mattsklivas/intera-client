@@ -3,7 +3,7 @@ import styles from '../styles/Practice.module.css'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { useRouter } from 'next/router'
 import auth0 from '../auth/auth0'
-import { Row, Col, Button, ConfigProvider, Typography, Spin, message } from 'antd'
+import { Row, Col, Button, ConfigProvider, Typography, Spin, notification } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import { useEffect, useRef, useState } from 'react'
 import { theme } from '../core/theme'
@@ -24,12 +24,16 @@ const PracticeModule = ({ accessToken }) => {
     const [isRetry, setIsRetry] = useState(true)
     const [wordYoutubeUrl, setWordYoutubeUrl] = useState(null)
     const [translationResponse, setTranslationResponse] = useState(null)
+    const [api, contextHolder] = notification.useNotification()
     const [video, setVideo] = useState(null)
 
     const startWebcam = async () => {
         // Check to see if browser has camera support
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            message.error('Browser does not support current webcam library')
+            api.error({
+                message: 'Browser does not support current webcam library',
+                maxCount: 0,
+            })
         }
 
         // get webcam stream
