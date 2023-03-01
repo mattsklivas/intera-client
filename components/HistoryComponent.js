@@ -4,7 +4,7 @@ import CallTranscriptModal from '../components/modals/CallTranscriptModal'
 import { Row, Divider, List } from 'antd'
 import { InboxOutlined } from '@ant-design/icons'
 
-const HistoryComponent = ({user, transcripts}) => {
+const HistoryComponent = ({ user, transcripts }) => {
     const [isCallTranscriptModalOpen, setIsCallTranscriptModalOpen] = useState(false)
     const [activeTranscript, setActiveTranscript] = useState(null)
 
@@ -106,4 +106,4 @@ const HistoryComponent = ({user, transcripts}) => {
     )
 }
 
-export default HistoryComponent;
+export default HistoryComponent

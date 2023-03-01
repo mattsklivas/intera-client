@@ -1,7 +1,6 @@
 import { Modal, Input, Space, Button, notification } from 'antd'
 import { React, useState } from 'react'
 import fetcher from '../../core/fetcher'
-import styles from '../../styles/Modal.module.css'
 
 function JoinMeetingRoomModal(props) {
     const [loading, setLoading] = useState(false)
@@ -48,32 +47,32 @@ function JoinMeetingRoomModal(props) {
     }
 
     return (
-            <Modal
-                title="Join a Meeting Room"
-                open={visible}
-                onOk={handleOk}
-                onCancel={handleCancel}
-                okText="Submit"
-                width={250}
-                bodyStyle={{display: "flex", justifyContent: "center", height: "8vh" }}
-                style={{paddingTop: "9%"}}
-                footer={[
-                    <Button key="cancel" onClick={handleCancel}>
-                        Cancel
-                    </Button>,
-                    <Button key="submit" type="primary" loading={loading} onClick={handleOk}>
-                        Submit
-                    </Button>
-                ]}
-            >
-                {contextHolder}
-                <Space>
-                    <Input
-                        placeholder="Enter Meeting Room ID"
-                        onChange={(event) => setRoomID(event.target.value)}
-                    />
-                </Space>
-            </Modal>
+        <Modal
+            title={'Join a Meeting Room'}
+            open={visible}
+            onOk={handleOk}
+            onCancel={handleCancel}
+            okText={'Submit'}
+            width={250}
+            bodyStyle={{ display: 'flex', justifyContent: 'center', height: '8vh' }}
+            style={{ paddingTop: '9%' }}
+            footer={[
+                <Button key="cancel" onClick={handleCancel}>
+                    Cancel
+                </Button>,
+                <Button key={'submit'} type={'primary'} loading={loading} onClick={handleOk}>
+                    Submit
+                </Button>,
+            ]}
+        >
+            {contextHolder}
+            <Space>
+                <Input
+                    placeholder={'Enter Meeting Room ID'}
+                    onChange={(event) => setRoomID(event.target.value)}
+                />
+            </Space>
+        </Modal>
     )
 }
 

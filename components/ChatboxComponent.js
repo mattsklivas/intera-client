@@ -4,11 +4,17 @@ import cn from 'classnames'
 import styles from '../styles/Chatbox.module.css'
 import fetcher from '../core/fetcher'
 
-const ChatboxComponent = ({user, transcript, roomInfo, context, accessToken, invalidateRefresh}) => {
+const ChatboxComponent = ({
+    user,
+    transcript,
+    roomInfo,
+    context,
+    accessToken,
+    invalidateRefresh,
+}) => {
     const chatRef = useRef(null)
     const [api, contextHolder] = notification.useNotification()
     const [isInvalidateLoading, setIsInvalidateLoading] = useState(false)
-
 
     const [inputText, setInputText] = useState('')
     const [canInvalidate, setCanInvalidate] = useState(() => {

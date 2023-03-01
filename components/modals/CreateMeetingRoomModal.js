@@ -16,7 +16,6 @@ import { React, useState, useEffect } from 'react'
 import fetcher from '../../core/fetcher.js'
 import styles from '../../styles/Modal.module.css'
 
-
 const CreateMeetingRoomModal = ({ router, accessToken, hideCreateMeetingRoomModal }) => {
     const [form] = Form.useForm()
     const [visible, setVisible] = useState(true)
@@ -86,133 +85,91 @@ const CreateMeetingRoomModal = ({ router, accessToken, hideCreateMeetingRoomModa
     }, [])
 
     return (
-            <Modal
-                title="Create a Meeting Room"
-                open={visible}
-                onOk={handleOk}
-                onCancel={handleCancel}
-                okButtonProps={{ disabled: hostType === '' || roomID === '', loading: loading }}
-                okText="Continue"
-                width={300}
-                bodyStyle={{ height: 342 }}
-            >
-                {contextHolder}
-                <Divider plain className={styles.meetingInfoDivider}>
-                    Meeting Info
-                </Divider>
-                <Space direction="vertical" size="middle" className={styles.addSpace}>
-                    <Row type="flex" align="middle">
-                        <Col span={24}>
-                            <div className={styles.meetingInfoContainer}>
-                                <span>Room ID: </span>
-                                {roomID ? (
-                                    <span className={styles.roomIdSpan}>
-                                        {roomID}
-                                    </span>
-                                ) : (
-                                    <Spin
-                                        className={styles.spinLoading}
-                                        indicator={
-                                            <LoadingOutlined
-                                                className={styles.loadingOutline}
-                                                spin
-                                            />
-                                        }
-                                    />
-                                )}
-                            </div>
-                            <Button
-                                block="true"
-                                type="primary"
-                                onClick={() => {
-                                    navigator.clipboard.writeText(inviteLink)
+        <Modal
+            title="Create a Meeting Room"
+            open={visible}
+            onOk={handleOk}
+            onCancel={handleCancel}
+            okButtonProps={{ disabled: hostType === '' || roomID === '', loading: loading }}
+            okText="Continue"
+            width={300}
+            bodyStyle={{ height: 342 }}
+        >
+            {contextHolder}
+            <Divider plain className={styles.meetingInfoDivider}>
+                Meeting Info
+            </Divider>
+            <Space direction="vertical" size="middle" className={styles.addSpace}>
+                <Row type="flex" align="middle">
+                    <Col span={24}>
+                        <div className={styles.meetingInfoContainer}>
+                            <span>Room ID: </span>
+                            {roomID ? (
+                                <span className={styles.roomIdSpan}>{roomID}</span>
+                            ) : (
+                                <Spin
+                                    className={styles.spinLoading}
+                                    indicator={
+                                        <LoadingOutlined className={styles.loadingOutline} spin />
+                                    }
+                                />
+                            )}
+                        </div>
+                        <Button
+                            block="true"
+                            type="primary"
+                            onClick={() => {
+                                navigator.clipboard.writeText(inviteLink)
 
-                                    api.info({
-                                        message: 'Meeting link copied to clipboard',
-                                    })
-                                }}
-                            >
-                                Copy Meeting Link
-                            </Button>
-                        </Col>
-                    </Row>
-                    <Divider plain style={{ margin: 0 }}>
-                        Guest Invitation
-                    </Divider>
-                    <Row type="flex" align="middle">
-                        <Col span={24}>
-                            <Form
-                                form={form}
-                                validateMessages={{
-                                    types: {
-                                        email: 'Please enter a valid email',
+                                api.info({
+                                    message: 'Meeting link copied to clipboard',
+                                })
+                            }}
+                        >
+                            Copy Meeting Link
+                        </Button>
+                    </Col>
+                </Row>
+                <Divider plain style={{ margin: 0 }}>
+                    Guest Invitation
+                </Divider>
+                <Row type="flex" align="middle">
+                    <Col span={24}>
+                        <Form
+                            form={form}
+                            validateMessages={{
+                                types: {
+                                    email: 'Please enter a valid email',
+                                },
+                            }}
+                            onFieldsChange={() => {
+                                const errors = form
+                                    .getFieldsError()
+                                    .some((item) => item.errors.length)
+                                setDisableInvite(errors)
+                            }}
+                        >
+                            <Form.Item
+                                name={['email']}
+                                rules={[
+                                    {
+                                        type: 'email',
                                     },
-                                }}
-                                onFieldsChange={() => {
-                                    const errors = form
-                                        .getFieldsError()
-                                        .some((item) => item.errors.length)
-                                    setDisableInvite(errors)
-                                }}
+                                ]}
                             >
-                                <Form.Item
-                                    name={['email']}
-                                    rules={[
-                                        {
-                                            type: 'email',
-                                        },
-                                    ]}
-                                >
-                                    <Input
-                                        block="true"
-                                        placeholder="Enter Email of Guest to Invite"
-                                        onChange={(e) => {
-                                            setEmail(e.target.value)
-                                        }}
-                                    />
-                                </Form.Item>
-                                <Button
+                                <Input
                                     block="true"
-                                    type="primary"
-                                    loading={loadingMail}
-                                    disabled={disableInvite}
-                                    onClick={() => {
-                                        setLoadingMail(true)
-                                        console.log(roomID, email)
-                                        fetcher(accessToken, '/api/rooms/email_invite', {
-                                            method: 'POST',
-                                            body: JSON.stringify({ room_id: roomID, email: email }),
-                                        })
-                                            .then(async (res) => {
-                                                if (res.status == 200) {
-                                                    api.success({
-                                                        message: 'Email sent successfully',
-                                                    })
-                                                    setLoadingMail(false)
-                                                } else {
-                                                    api.error({
-                                                        message: `Error ${res.status}: ${res.error}`,
-                                                    })
-                                                    setLoadingMail(false)
-                                                }
-                                            })
-                                            .catch((e) => {
-                                                api.error({
-                                                    message: 'An unknown error has occurred' + e,
-                                                })
-                                                setLoadingMail(false)
-                                            })
+                                    placeholder="Enter Email of Guest to Invite"
+                                    onChange={(e) => {
+                                        setEmail(e.target.value)
                                     }}
-                                >
-                                    Send Invite
-                                </Button>
-                            </Form>
-                        </Col>
-                        {/* <Col span={24}>
+                                />
+                            </Form.Item>
                             <Button
                                 block="true"
                                 type="primary"
                                 loading={loadingMail}
+                                disabled={disableInvite}
                                 onClick={() => {
                                     setLoadingMail(true)
                                     console.log(roomID, email)
@@ -243,32 +200,69 @@ const CreateMeetingRoomModal = ({ router, accessToken, hideCreateMeetingRoomModa
                             >
                                 Send Invite
                             </Button>
-                        </Col> */}
-                    </Row>
-                    <Divider plain style={{ margin: 0 }}>
-                        Role Selection <span className={styles.roleSelectRequired}>*</span>
-                    </Divider>
-                    <Row>
-                        <Col span={24} className={styles.roleSelectOptions}>
-                            <Select
-                                defaultValue="Choose Role"
-                                className={styles.rolesOption}
-                                onChange={(value) => setHostType(value)}
-                                options={[
-                                    {
-                                        value: 'STT',
-                                        label: 'Speaker',
-                                    },
-                                    {
-                                        value: 'ASL',
-                                        label: 'ASL Signer',
-                                    },
-                                ]}
-                            />
-                        </Col>
-                    </Row>
-                </Space>
-            </Modal>
+                        </Form>
+                    </Col>
+                    {/* <Col span={24}>
+                        <Button
+                            block="true"
+                            type="primary"
+                            loading={loadingMail}
+                            onClick={() => {
+                                setLoadingMail(true)
+                                console.log(roomID, email)
+                                fetcher(accessToken, '/api/rooms/email_invite', {
+                                    method: 'POST',
+                                    body: JSON.stringify({ room_id: roomID, email: email }),
+                                })
+                                    .then(async (res) => {
+                                        if (res.status == 200) {
+                                            api.success({
+                                                message: 'Email sent successfully',
+                                            })
+                                            setLoadingMail(false)
+                                        } else {
+                                            api.error({
+                                                message: `Error ${res.status}: ${res.error}`,
+                                            })
+                                            setLoadingMail(false)
+                                        }
+                                    })
+                                    .catch((e) => {
+                                        api.error({
+                                            message: 'An unknown error has occurred' + e,
+                                        })
+                                        setLoadingMail(false)
+                                    })
+                            }}
+                        >
+                            Send Invite
+                        </Button>
+                    </Col> */}
+                </Row>
+                <Divider plain style={{ margin: 0 }}>
+                    Role Selection <span className={styles.roleSelectRequired}>*</span>
+                </Divider>
+                <Row>
+                    <Col span={24} className={styles.roleSelectOptions}>
+                        <Select
+                            defaultValue="Choose Role"
+                            className={styles.rolesOption}
+                            onChange={(value) => setHostType(value)}
+                            options={[
+                                {
+                                    value: 'STT',
+                                    label: 'Speaker',
+                                },
+                                {
+                                    value: 'ASL',
+                                    label: 'ASL Signer',
+                                },
+                            ]}
+                        />
+                    </Col>
+                </Row>
+            </Space>
+        </Modal>
     )
 }
 
