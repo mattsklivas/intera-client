@@ -86,7 +86,7 @@ export default function CallPage({ accessToken }) {
 
     if (!browserSupportsSpeechRecognition) {
         api.error({
-            message: 'Browser does not support speech to text',
+            message: 'Browser does not support speech to text, please use Chrome',
             maxCount: 0,
         })
     }
