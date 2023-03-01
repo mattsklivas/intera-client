@@ -88,7 +88,7 @@ export default function CallPage({ accessToken }) {
     }
 
     if (!browserSupportsSpeechRecognition) {
-        console.log('Browser does not support speech to text')
+        message.error('Browser does not support speech to text')
     }
 
     // SWR hooks
@@ -325,7 +325,7 @@ export default function CallPage({ accessToken }) {
     }
 
     /* ----------------------RTC---------------------- */
-    
+
     // RTC Connection Reference: https://www.100ms.live/blog/webrtc-python-react
     // *************************************************************************
     const onIceCandidate = (event) => {
