@@ -1,12 +1,22 @@
-export default function fetcher(token, url, options) {
-    const headers = new Headers({
-        Authorization: `Bearer ${token}`,
-        Origin: process.env.CLIENT_URL,
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-    })
+export default function fetcher(token, url, options, video = false) {
+    const headers = new Headers(
+        !video
+            ? {
+                  Authorization: `Bearer ${token}`,
+                  Origin: process.env.CLIENT_URL,
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
+              }
+            : {
+                  Authorization: `Bearer ${token}`,
+                  Origin: process.env.CLIENT_URL,
+                  Accept: 'application/json',
+              }
+    )
 
     url = `${process.env.API_URL}${url}`
+
+    console.log(url)
 
     return new Promise((resolve, reject) => {
         fetch(url, {

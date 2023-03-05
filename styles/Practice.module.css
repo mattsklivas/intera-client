@@ -26,7 +26,6 @@
     height: 282px;
 }
 
-
 /* Word to Sign */
 .signWordRow {
     display: flex;
@@ -40,41 +39,37 @@
 }
 
 .actualSignWord {
-  font-weight: bold
-}
-
-.signResultText { 
     font-weight: bold;
-    font-style: italic;
-    padding-left: 10px
 }
 
+.signResultText {
+    font-weight: bold;
+    padding-left: 5px;
+}
 
 /* Spin/loading word */
 .spinIndicator {
-    padding-left: 10
+    padding-left: 10;
 }
 
 .loadingOutline {
-    font-size: 20
+    font-size: 20;
 }
 
 .loadingDisabledOutline {
-    font-size: 40
+    font-size: 40;
 }
-
 
 /* Result page w/ Retry and new word */
 .resultPageRow {
     display: flex;
-    justify-content: center
+    justify-content: center;
 }
 
 .resultPageButton {
     margin: 10px 5px;
     width: 130px;
 }
-
 
 /* Start/stop recording */
 .startStopRecordingRow {
@@ -88,7 +83,6 @@
     align-items: center;
 }
 
-
 /* View answer */
 .viewAnswerRow {
     display: flex;
@@ -100,7 +94,6 @@
 .viewAnswerButton {
     width: 130px;
 }
-
 
 /* Note: Not used */
 .logout {

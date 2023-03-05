@@ -17,14 +17,18 @@ const Header = ({ user, roomID, handleLeave }) => {
     return (
         <Row className={styles.header}>
             <Col flex={1} className={styles.headerCol1}>
-                <div className={styles.headerUser}>
-                    <span>User: </span>
-                    <span>{user?.nickname || 'N/A'}</span>
+                <div style={{ width: '100%', margin: 'auto' }}>
+                    <div className={styles.headerUser}>
+                        <span>User: </span>
+                        <span>{user?.nickname || 'N/A'}</span>
+                        <Button
+                            className={styles.headerHelp}
+                            onClick={() => setIsHelpModalOpen(true)}
+                        >
+                            Help
+                        </Button>
+                    </div>
                 </div>
-
-                <Button className={styles.headerHelp} onClick={() => setIsHelpModalOpen(true)}>
-                    Help
-                </Button>
             </Col>
 
             <Col
@@ -36,8 +40,8 @@ const Header = ({ user, roomID, handleLeave }) => {
                 }
             >
                 {['practice-module', 'call-page'].includes(router.pathname.split('/')[1]) ? (
-                    <Button 
-                        // style={{ marginLeft: router.pathname.split('/')[1] === 'practice-module' ? '2%' : 0 }}
+                    <Button
+                        style={{ marginRight: '5vw' }}
                         loading={isLoadingExit}
                         type="primary"
                         onClick={() => handleLeave()}
@@ -47,7 +51,7 @@ const Header = ({ user, roomID, handleLeave }) => {
                             : 'Leave Meeting'}
                     </Button>
                 ) : (
-                    <div className={styles.headerLanding}>
+                    <div className={styles.headerLanding} style={{ marginRight: '5vw' }}>
                         <span className={styles.headerTitle}>Intera</span>
                         <Image className={styles.headerLogo} src={logo} height={35} width={35} />
                     </div>

@@ -1,9 +1,9 @@
 .header {
     background: #6d6875;
+    display: flex;
 }
 
 .headerUser {
-    padding: 6px 0 5px 0;
     cursor: default;
 }
 
@@ -32,19 +32,21 @@
 }
 
 .headerCol1 {
-    display: flex;
+    flex: 1;
     color: #ffffff;
     padding: 5px 0 5px 15px;
 }
 
 .headerCol2 {
     display: flex;
+    flex: 1;
     justify-content: center;
     align-items: center;
 }
 
 .headerCol2Call {
     display: flex;
+    flex: 1;
     margin-left: 9vw;
     align-items: center;
 }

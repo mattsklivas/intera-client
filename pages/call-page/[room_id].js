@@ -43,6 +43,7 @@ When the remote video stream can be found onTrack, the remote video feed should 
 
 export default function CallPage({ accessToken }) {
     const userVideo = useRef({})
+    const videoStream = useRef(null)
     const remoteVideo = useRef(null)
     const [isLocalVideoEnabled, setIsLocalVideoEnabled] = useState(false)
     const [isRemoteVideoEnabled, setIsRemoteVideoEnabled] = useState(false)
@@ -219,7 +220,6 @@ export default function CallPage({ accessToken }) {
     useEffect(() => {
         if (spaceCheck) {
             if (latestTranscript !== lastTranscript) {
-                // console.log(latestTranscript)
                 if (latestTranscript != '') {
                     appendMessage(latestTranscript)
                 }
@@ -273,9 +273,26 @@ export default function CallPage({ accessToken }) {
                 },
             })
             .then((stream) => {
-                console.log('stream: ', stream)
                 userVideo.current.srcObject = stream
                 setIsLocalVideoEnabled(true)
+
+                // Create media recorder, and set the stream to it
+                const mediaRecorderObject = new MediaRecorder(stream, { mimeType: 'video/webm' })
+                videoStream.current = mediaRecorderObject
+
+                // Send stream buffer to server
+                videoStream.current.ondataavailable = (e) => {
+                    if (typeof e.data !== 'undefined' && e.data.size !== 0) {
+                        const recordedChunk = new Blob([e.data], { type: 'video/webm' })
+                        socket.emit('stream_buffer', {
+                            user: user?.nickname,
+                            room_id: roomID,
+                            data: recordedChunk,
+                        })
+                    }
+                }
+
+                videoStream.current.start(2000)
 
                 socket.connect()
             })
@@ -436,6 +453,10 @@ export default function CallPage({ accessToken }) {
         })
     })
 
+    socket.on('stream_buffer_response', (data) => {
+        console.log('RECEIVED STREAM BUFFER DATA', data)
+    })
+
     /* ----------------------Setup---------------------- */
 
     useEffect(() => {
@@ -458,9 +479,9 @@ export default function CallPage({ accessToken }) {
             handleMutate()
         }
 
-        if (roomInfo?.active == false && initialized && isLocalVideoEnabled) {
-            handleLeave()
-        }
+        // if (roomInfo?.active == false && initialized && isLocalVideoEnabled) {
+        //     handleLeave()
+        // }
     }, [roomInfo, user])
 
     useEffect(() => {

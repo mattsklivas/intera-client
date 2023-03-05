@@ -20,12 +20,65 @@ const PracticeModule = ({ accessToken }) => {
     const [isRecording, setIsRecording] = useState(false)
     const [isResultView, setIsResultView] = useState(false)
     const [isInitalized, setIsInitalized] = useState(false)
-    const [randomWord, setRandomWord] = useState(null)
     const [isRetry, setIsRetry] = useState(true)
     const [wordYoutubeUrl, setWordYoutubeUrl] = useState(null)
-    const [translationResponse, setTranslationResponse] = useState(null)
     const [api, contextHolder] = notification.useNotification()
     const [video, setVideo] = useState(null)
+    const [isResultLoading, setIsResultLoading] = useState(false)
+
+    // UseRef workarounds for event listener compatibility
+    const [translationResponse, setTranslationResponse] = useState(null)
+    const translationResponseState = useRef(translationResponse)
+    const setTranslationResponseState = (data) => {
+        translationResponseState.current = data
+        setTranslationResponse(data)
+    }
+
+    const [translationAccuracy, setTranslationAccuracy] = useState(null)
+    const translationAccuracyState = useRef(translationAccuracy)
+    const setTranslationAccuracyState = (data) => {
+        translationAccuracyState.current = data
+        setTranslationAccuracy(data)
+    }
+
+    const [randomWord, setRandomWord] = useState(null)
+    const randomWordState = useRef(randomWord)
+    const setRandomWordState = (data) => {
+        randomWordState.current = data
+        setRandomWord(data)
+    }
+
+    const sendAnswer = async (blobsArray) => {
+        const recordedChunk = new Blob(blobsArray, { type: 'video/webm' })
+        const form = new FormData()
+        form.append('video', recordedChunk)
+        form.append('word', randomWordState.current)
+
+        // Send video
+        fetcher(
+            accessToken,
+            '/api/practice/submit_answer',
+            {
+                method: 'POST',
+                body: form,
+            },
+            true
+        )
+            .then((res) => {
+                setTranslationResponseState(res.data.result || 'Error')
+                setTranslationAccuracyState(
+                    res.data.accuracy ? Number(res.data.accuracy).toFixed(2) * 100 : null
+                )
+            })
+            .then(() => {
+                setIsRetry(false)
+                setIsResultLoading(false)
+                setIsResultView(true)
+            })
+            .catch((e) => {
+                console.error('Error on retrieving results: ', e)
+            })
+    }
 
     const startWebcam = async () => {
         // Check to see if browser has camera support
@@ -65,34 +118,11 @@ const PracticeModule = ({ accessToken }) => {
                     blobsArray.push(e.data)
                 }
 
-                // on stop create blob object, and covert to formdata to send to server
+                // On stop create blob object, and covert to formdata to send to server
                 mediaRecorderObject.onstop = (e) => {
-                    const recordedChunk = new Blob(blobsArray, { type: 'video/webm' })
-                    const formD = new FormData()
-                    formD.append('video', recordedChunk)
-
-                    // to check the video data
-                    // console.log(recordedChunk)
-
-                    // this is where you send the video and get the response, usesState values have been set
-                    // fetch('http://localhost:8000/api/upload', {
-                    //     method: 'POST',
-                    //     body: formD,
-                    // })
-                    //     .then((response) => response.json())
-                    //    .then((data) => {
-                    //        setTranslationResponse(data.result)
-                    //        if (data.result == 'bad') {
-                    //            setIsAnswerModalOpen(true)
-                    //        }
-                    //        setIsRetry(false)
-                    // change to result view only if response is received
-                    //        setIsResultView(true)
-                    //    })
-
-                    // change to result view only if response is received
-                    setIsResultView(true)
+                    sendAnswer(blobsArray)
                 }
+
                 setIsRetry(false)
                 setIsInitalized(true)
                 if (isRecording) {
@@ -133,6 +163,7 @@ const PracticeModule = ({ accessToken }) => {
     }
 
     const stopRecording = () => {
+        setIsResultLoading(true)
         if (videoStream.current && isRecording) {
             videoStream.current.stop()
         }
@@ -153,7 +184,7 @@ const PracticeModule = ({ accessToken }) => {
             fetcher(accessToken, '/api/practice/get_word', {
                 method: 'GET',
             }).then((response) => {
-                setRandomWord(response.data.word.toUpperCase())
+                setRandomWordState(response.data.word.toUpperCase())
                 setWordYoutubeUrl(response.data.url)
             })
         }
@@ -204,9 +235,22 @@ const PracticeModule = ({ accessToken }) => {
                         {isResultView ? (
                             <div>
                                 Result:
-                                <span className={styles.signResultText}>
-                                    {translationResponse || 'N/A'}
+                                <span
+                                    className={styles.signResultText}
+                                    style={{
+                                        color:
+                                            translationResponseState.current === 'Correct'
+                                                ? '#73d13d'
+                                                : '#ff4d4f',
+                                    }}
+                                >
+                                    {translationResponseState.current || 'N/A'}
                                 </span>
+                                {translationAccuracyState.current && (
+                                    <span className={styles.signResultText}>
+                                        (Accuracy: {translationAccuracyState.current}%)
+                                    </span>
+                                )}
                             </div>
                         ) : (
                             <div>
@@ -249,10 +293,11 @@ const PracticeModule = ({ accessToken }) => {
                 ) : (
                     <Row className={styles.startStopRecordingRow}>
                         <Button
+                            loading={isResultLoading}
                             onClick={() => {
                                 !isRecording ? startRecording() : stopRecording()
                             }}
-                            disabled={!isInitalized}
+                            disabled={!isInitalized || randomWord === null}
                             danger={isRecording}
                             type="primary"
                             className={styles.startStopButton}
@@ -264,6 +309,7 @@ const PracticeModule = ({ accessToken }) => {
 
                 <Row className={styles.viewAnswerRow}>
                     <Button
+                        disabled={randomWord === null}
                         onClick={() => setIsAnswerModalOpen(true)}
                         className={styles.viewAnswerButton}
                     >
