@@ -49,7 +49,7 @@ const PracticeModule = ({ accessToken }) => {
     }
 
     const sendAnswer = async (blobsArray) => {
-        const recordedChunk = new Blob(blobsArray, { type: 'video/webm' })
+        const recordedChunk = new Blob(blobsArray, { type: 'video/mp4' })
         const form = new FormData()
         form.append('video', recordedChunk)
         form.append('word', randomWordState.current)
@@ -108,7 +108,7 @@ const PracticeModule = ({ accessToken }) => {
                 setVideo(stream)
 
                 // create media recorder, and set the stream to it
-                const mediaRecorderObject = new MediaRecorder(stream, { mimeType: 'video/webm' })
+                const mediaRecorderObject = new MediaRecorder(stream, { mimeType: 'video/mp4' })
                 // set the use ref to the media recorder
                 videoStream.current = mediaRecorderObject
 

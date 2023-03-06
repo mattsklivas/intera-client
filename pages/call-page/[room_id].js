@@ -276,23 +276,27 @@ export default function CallPage({ accessToken }) {
                 userVideo.current.srcObject = stream
                 setIsLocalVideoEnabled(true)
 
-                // Create media recorder, and set the stream to it
-                const mediaRecorderObject = new MediaRecorder(stream, { mimeType: 'video/webm' })
-                videoStream.current = mediaRecorderObject
+                if (userRole === 'ASL') {
+                    // Create media recorder, and set the stream to it
+                    const mediaRecorderObject = new MediaRecorder(stream, {
+                        mimeType: 'video/mp4',
+                    })
+                    videoStream.current = mediaRecorderObject
 
-                // Send stream buffer to server
-                videoStream.current.ondataavailable = (e) => {
-                    if (typeof e.data !== 'undefined' && e.data.size !== 0) {
-                        const recordedChunk = new Blob([e.data], { type: 'video/webm' })
-                        socket.emit('stream_buffer', {
-                            user: user?.nickname,
-                            room_id: roomID,
-                            data: recordedChunk,
-                        })
+                    // Send stream buffer to server
+                    videoStream.current.ondataavailable = (e) => {
+                        if (typeof e.data !== 'undefined' && e.data.size !== 0) {
+                            const recordedChunk = new Blob([e.data], { type: 'video/mp4' })
+                            socket.emit('stream_buffer', {
+                                user: user?.nickname,
+                                room_id: roomID,
+                                data: recordedChunk,
+                            })
+                        }
                     }
-                }
 
-                videoStream.current.start(2000)
+                    videoStream.current.start(2000)
+                }
 
                 socket.connect()
             })
