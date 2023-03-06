@@ -167,7 +167,7 @@ export default function CallPage({ accessToken }) {
             }).then((res) => {
                 if (res.status == 200) {
                     console.log('Room closed')
-                    socket.close()
+                    // socket.close()
                 }
             })
         }
@@ -177,8 +177,6 @@ export default function CallPage({ accessToken }) {
         }
 
         handleMutate()
-
-        router.push('/')
     }
 
     /* ----------------------STT---------------------- */
@@ -266,7 +264,8 @@ export default function CallPage({ accessToken }) {
     const initializeLocalVideo = async () => {
         navigator.mediaDevices
             .getUserMedia({
-                audio: roomInfo?.host_type === 'STT' ? true : false,
+                // audio: roomInfo?.host_type === 'STT' ? true : false,
+                audio: true,
                 video: {
                     width: { ideal: 1280 },
                     height: { ideal: 720 },
@@ -461,6 +460,22 @@ export default function CallPage({ accessToken }) {
         console.log('RECEIVED STREAM BUFFER DATA', data)
     })
 
+    socket.on('disconnect', (data) => {
+        console.log('Disconnected', data)
+        setRemoteNickname('')
+        setIsRemoteVideoEnabled(false)
+        socket.close()
+        router.push('/')
+    })
+
+    socket.on('leave', async (data) => {
+        console.log('Leave', data)
+        await handleLeave().then((res) => {
+            console.log('handleLeave', res)
+            socket.close()
+        })
+    })
+
     /* ----------------------Setup---------------------- */
 
     useEffect(() => {
@@ -483,6 +498,7 @@ export default function CallPage({ accessToken }) {
             handleMutate()
         }
 
+        // todo: needs fix
         // if (roomInfo?.active == false && initialized && isLocalVideoEnabled) {
         //     handleLeave()
         // }
