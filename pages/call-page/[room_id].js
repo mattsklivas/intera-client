@@ -149,14 +149,27 @@ export default function CallPage({ accessToken }) {
 
     const handleMutate = () => {
         socket.emit('mutate', { roomID: roomID })
-        roomInfoMutate().then((res) => {
-            console.log('Mutated', res)
-        })
+        roomInfoMutate()
     }
 
-    const handleLeave = () => {
-        // socketMsg.emit('leave', { room_id: roomID, user: user?.nickname })
+    // leave conditions:
+    // host leaves -> room closes, forces other user out
+    // guest leaves -> room stays open, other user is notified, video stream closes, peerConnection resets
+    const handleLeave = async () => {
         socket.emit('leave', { room_id: roomID, user: user?.nickname })
+        // close video stream
+        if (userVideo?.current?.srcObject) {
+            const userStream = userVideo.current.srcObject
+
+            // Reset peerConnection
+            if (peerConnection) {
+                peerConnection.removeTrack(userStream)
+                peerConnection.close()
+                peerConnection = null
+            }
+            userVideo.current.srcObject.getTracks().forEach((track) => track.stop())
+        }
+
         // Close the room
         if (roomInfo?.users[0] == user?.nickname) {
             fetcher(accessToken, '/api/rooms/close_room', {
@@ -167,16 +180,12 @@ export default function CallPage({ accessToken }) {
             }).then((res) => {
                 if (res.status == 200) {
                     console.log('Room closed')
-                    // socket.close()
                 }
             })
         }
 
-        if (userVideo?.current?.srcObject) {
-            userVideo.current.srcObject.getTracks().forEach((track) => track.stop())
-        }
-
-        handleMutate()
+        // signal other user to reset name, notify user has left, and close video stream/peerConnection
+        router.push('/')
     }
 
     /* ----------------------STT---------------------- */
@@ -188,7 +197,10 @@ export default function CallPage({ accessToken }) {
                 setSpaceBoolCheck(false)
                 SpeechRecognition.startListening({ continuous: true })
                 setSpaceBarPressed(true)
-                message.info('Speech recording started...')
+                message.info({
+                    key: 'STT',
+                    content: 'Speech recording started...',
+                })
             }
         }
         const handleKeyRelease = (event) => {
@@ -200,7 +212,10 @@ export default function CallPage({ accessToken }) {
                     setSpaceBoolCheck(true)
                 }, 500)
 
-                message.info('Speech recording finished...')
+                message.success({
+                    key: 'STT',
+                    content: 'Speech recording finished...',
+                })
             }
         }
         document.addEventListener('keydown', handleKeyPress)
@@ -264,7 +279,6 @@ export default function CallPage({ accessToken }) {
     const initializeLocalVideo = async () => {
         navigator.mediaDevices
             .getUserMedia({
-                // audio: roomInfo?.host_type === 'STT' ? true : false,
                 audio: true,
                 video: {
                     width: { ideal: 1280 },
@@ -327,7 +341,6 @@ export default function CallPage({ accessToken }) {
     // *************************************************************************
     const onIceCandidate = (event) => {
         if (event.candidate) {
-            console.log('Sending ICE candidate')
             dataTransfer({
                 type: 'candidate',
                 candidate: event.candidate,
@@ -336,10 +349,12 @@ export default function CallPage({ accessToken }) {
     }
 
     const onTrack = (event) => {
-        console.log('{{{{{{{{{{{Received track from other user.}}}}}}}}}}}}')
-        console.log('***src object being received', event.streams[0])
         setIsRemoteVideoEnabled(true)
         remoteVideo.current.srcObject = event.streams[0]
+    }
+
+    const onClose = () => {
+        console.log('Connection closed')
     }
 
     const initializePeerConnection = () => {
@@ -347,12 +362,11 @@ export default function CallPage({ accessToken }) {
             peerConnection = new RTCPeerConnection(servers)
             peerConnection.onicecandidate = onIceCandidate
             peerConnection.ontrack = onTrack
-            console.log('***src object being sent out', userVideo.current.srcObject)
+            peerConnection.onclose = onClose
             const userStream = userVideo.current.srcObject
             for (const track of userStream?.getTracks()) {
                 peerConnection.addTrack(track, userStream)
             }
-            console.log('{{{Peer connection created!!}}}')
         } catch (error) {
             console.error('Failed to establish connection: ', error)
         }
@@ -360,38 +374,30 @@ export default function CallPage({ accessToken }) {
 
     const setAndSendLocalDescription = (sessionDescription) => {
         peerConnection.setLocalDescription(sessionDescription)
-        console.log('Local description set')
         dataTransfer(sessionDescription)
     }
 
     const sendOffer = () => {
-        console.log('SENDING OFFER')
         peerConnection.createOffer().then(setAndSendLocalDescription, (error) => {
             console.error('Unable to send offer: ', error)
         })
     }
 
     const sendAnswer = () => {
-        console.log('SENDING Answer')
         peerConnection.createAnswer().then(setAndSendLocalDescription, (error) => {
             console.error('Unable to send answer: ', error)
         })
     }
 
     const handleDataTransfer = (data) => {
-        console.log('(HANDLER)', data.type)
         if (data.type === 'offer') {
-            console.log('[Offer received]')
-
             setRemoteNickname(roomInfo?.users?.find((username) => username !== user?.nickname))
             initializePeerConnection()
             peerConnection.setRemoteDescription(new RTCSessionDescription(data))
             sendAnswer()
         } else if (data.type === 'answer') {
-            console.log('[Answer received]')
             peerConnection?.setRemoteDescription(new RTCSessionDescription(data))
         } else if (data.type === 'candidate') {
-            console.log('[Candidate received]')
             peerConnection?.addIceCandidate(new RTCIceCandidate(data.candidate))
         } else {
             console.log('Unrecognized data received...')
@@ -402,7 +408,6 @@ export default function CallPage({ accessToken }) {
     /* ----------------------Signaling---------------------- */
 
     const dataTransfer = (data) => {
-        console.log('$$ sending data transfer $$')
         socket.emit('data_transfer', {
             user: user?.nickname,
             room_id: roomID,
@@ -411,29 +416,19 @@ export default function CallPage({ accessToken }) {
     }
 
     socket.on('data_transfer', (data) => {
-        console.log('Data received: ', data)
         handleDataTransfer(data.body)
     })
 
     // Following a succesful join, establish a peer connection
     // and send an offer to the other user
     socket.on('ready', (data) => {
-        console.log('Ready to connect!', data)
-        socket.emit('ping', { room_id: roomID })
         initializePeerConnection()
         sendOffer()
-    })
-
-    // Following a succesful join, establish a peer connection
-    // and send an offer to the other user
-    socket.on('pong', (data) => {
-        console.log('pong', data)
     })
 
     socket.on('connect', (data) => {
         if (!data && !initialized) {
             setInitialized(true)
-            socket.emit('ping', { room_id: roomID })
             socket.emit('join', { user: user?.nickname, room_id: roomID })
         }
     })
@@ -441,39 +436,28 @@ export default function CallPage({ accessToken }) {
     // Following a succesful join, establish a peer connection
     // and send an offer to the other user
     socket.on('mutate', (data) => {
-        console.log('mutate', data)
-        roomInfoMutate().then((res) => {
-            console.log('roomInfoMutate', res)
-        })
+        roomInfoMutate()
     })
 
     // Following a succesful join, establish a peer connection
     // and send an offer to the other user
     socket.on('ready', (data) => {
-        console.log('Message Ready', data)
-        roomInfoMutate().then((res) => {
-            console.log('roomInfoMutate', res)
-        })
+        roomInfoMutate()
     })
 
     socket.on('stream_buffer_response', (data) => {
-        console.log('RECEIVED STREAM BUFFER DATA', data)
+        // console.log('RECEIVED STREAM BUFFER DATA', data)
     })
 
     socket.on('disconnect', (data) => {
-        console.log('Disconnected', data)
-        setRemoteNickname('')
+        setRemoteNickname(null)
         setIsRemoteVideoEnabled(false)
-        socket.close()
-        router.push('/')
     })
 
-    socket.on('leave', async (data) => {
-        console.log('Leave', data)
-        await handleLeave().then((res) => {
-            console.log('handleLeave', res)
-            socket.close()
-        })
+    socket.on('leave', (data) => {
+        if (data.user == user?.nickname) {
+            handleLeave()
+        }
     })
 
     /* ----------------------Setup---------------------- */
@@ -485,24 +469,27 @@ export default function CallPage({ accessToken }) {
             typeof roomInfo !== 'undefined' &&
             roomInfo.users.length == 2
         ) {
+            setUserRole(getType())
             setRemoteNickname(roomInfo.users.find((username) => username !== user.nickname))
         }
 
         if (
+            !initialized &&
             typeof transcriptHistory !== 'undefined' &&
             typeof roomInfo !== 'undefined' &&
             typeof user?.nickname !== undefined &&
             roomInfo?.active == true
         ) {
             setUserRole(getType())
-            handleMutate()
+            if (roomInfo?.users.length == 2) {
+                setRemoteNickname(roomInfo.users.find((username) => username !== user.nickname))
+            }
         }
 
-        // todo: needs fix
-        // if (roomInfo?.active == false && initialized && isLocalVideoEnabled) {
-        //     handleLeave()
-        // }
-    }, [roomInfo, user])
+        if (roomInfo && !roomInfo?.active) {
+            handleLeave()
+        }
+    }, [roomInfo, user, initialized])
 
     useEffect(() => {
         if (transcriptHistoryError?.status == 401) {
@@ -521,9 +508,11 @@ export default function CallPage({ accessToken }) {
         ) {
             // If room if full, redirect to home page
             router.push(`/?full_room=${roomID}`)
-        } else {
-            initializeLocalVideo()
         }
+    }, [roomInfo, user, transcriptHistoryError, roomInfoError])
+
+    useEffect(() => {
+        initializeLocalVideo()
 
         return function cleanup() {
             peerConnection?.close()

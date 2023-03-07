@@ -10,6 +10,7 @@ import {
     Divider,
     Spin,
     Form,
+    message,
 } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import { React, useState, useEffect } from 'react'
@@ -169,30 +170,39 @@ const CreateMeetingRoomModal = ({ router, accessToken, hideCreateMeetingRoomModa
                                 block="true"
                                 type="primary"
                                 loading={loadingMail}
-                                disabled={disableInvite}
+                                disabled={disableInvite || hostType === ''}
                                 onClick={() => {
                                     setLoadingMail(true)
-                                    console.log(roomID, email)
+                                    message.info({
+                                        key: 'email',
+                                        content: 'Sending email and creating room...',
+                                    })
+
                                     fetcher(accessToken, '/api/rooms/email_invite', {
                                         method: 'POST',
                                         body: JSON.stringify({ room_id: roomID, email: email }),
                                     })
                                         .then(async (res) => {
                                             if (res.status == 200) {
-                                                api.success({
-                                                    message: 'Email sent successfully',
+                                                message.success({
+                                                    content: 'Email sent successfully',
+                                                    key: 'email',
                                                 })
                                                 setLoadingMail(false)
+
+                                                // handleOk()
                                             } else {
-                                                api.error({
-                                                    message: `Error ${res.status}: ${res.error}`,
+                                                message.error({
+                                                    content: `Error ${res.status}: ${res.error}`,
+                                                    key: 'email',
                                                 })
                                                 setLoadingMail(false)
                                             }
                                         })
                                         .catch((e) => {
-                                            api.error({
-                                                message: 'An unknown error has occurred' + e,
+                                            message.error({
+                                                content: 'An unknown error has occurred' + e,
+                                                key: 'email',
                                             })
                                             setLoadingMail(false)
                                         })
@@ -202,42 +212,6 @@ const CreateMeetingRoomModal = ({ router, accessToken, hideCreateMeetingRoomModa
                             </Button>
                         </Form>
                     </Col>
-                    {/* <Col span={24}>
-                        <Button
-                            block="true"
-                            type="primary"
-                            loading={loadingMail}
-                            onClick={() => {
-                                setLoadingMail(true)
-                                console.log(roomID, email)
-                                fetcher(accessToken, '/api/rooms/email_invite', {
-                                    method: 'POST',
-                                    body: JSON.stringify({ room_id: roomID, email: email }),
-                                })
-                                    .then(async (res) => {
-                                        if (res.status == 200) {
-                                            api.success({
-                                                message: 'Email sent successfully',
-                                            })
-                                            setLoadingMail(false)
-                                        } else {
-                                            api.error({
-                                                message: `Error ${res.status}: ${res.error}`,
-                                            })
-                                            setLoadingMail(false)
-                                        }
-                                    })
-                                    .catch((e) => {
-                                        api.error({
-                                            message: 'An unknown error has occurred' + e,
-                                        })
-                                        setLoadingMail(false)
-                                    })
-                            }}
-                        >
-                            Send Invite
-                        </Button>
-                    </Col> */}
                 </Row>
                 <Divider plain style={{ margin: 0 }}>
                     Role Selection <span className={styles.roleSelectRequired}>*</span>
