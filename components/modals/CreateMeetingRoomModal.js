@@ -190,7 +190,7 @@ const CreateMeetingRoomModal = ({ router, accessToken, hideCreateMeetingRoomModa
                                                 })
                                                 setLoadingMail(false)
 
-                                                // handleOk()
+                                                handleOk()
                                             } else {
                                                 message.error({
                                                     content: `Error ${res.status}: ${res.error}`,
