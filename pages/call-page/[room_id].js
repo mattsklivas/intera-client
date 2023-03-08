@@ -292,14 +292,14 @@ export default function CallPage({ accessToken }) {
                 if (userRole === 'ASL') {
                     // Create media recorder, and set the stream to it
                     const mediaRecorderObject = new MediaRecorder(stream, {
-                        mimeType: 'video/mp4',
+                        mimeType: 'video/webm',
                     })
                     videoStream.current = mediaRecorderObject
 
                     // Send stream buffer to server
                     videoStream.current.ondataavailable = (e) => {
                         if (typeof e.data !== 'undefined' && e.data.size !== 0) {
-                            const recordedChunk = new Blob([e.data], { type: 'video/mp4' })
+                            const recordedChunk = new Blob([e.data], { type: 'video/webm' })
                             socket.emit('stream_buffer', {
                                 user: user?.nickname,
                                 room_id: roomID,
