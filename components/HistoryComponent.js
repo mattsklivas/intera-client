@@ -9,7 +9,8 @@ const HistoryComponent = ({ user, transcripts }) => {
     const [activeTranscript, setActiveTranscript] = useState(null)
 
     const getUser = (transcript) => {
-        const otherUser = transcript?.users.find((user) => user !== user?.nickname)
+        const otherUser = transcript?.users.find((other) => other != user?.nickname)
+
         if (otherUser) {
             return <span className={styles.tabText}>{otherUser}</span>
         } else {

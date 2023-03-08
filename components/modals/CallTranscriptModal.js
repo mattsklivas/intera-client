@@ -26,14 +26,28 @@ const CallTranscriptModal = ({ user, transcript, hideCallTranscriptModal }) => {
         return role === 'ASL' ? 'ASL Signer' : 'Speaker'
     }
 
+    const getUser = (transcript) => {
+        const otherUser = transcript?.users.find((other) => other != user?.nickname)
+
+        if (otherUser) {
+            return <span className={styles.tabText}>{otherUser}</span>
+        } else {
+            return (
+                <span className={styles.tabText} style={{ fontStyle: 'italic' }}>
+                    Unattended
+                </span>
+            )
+        }
+    }
+
     return (
         <Modal
             title={
                 <>
-                    {transcript?.users.find((user) => user !== user?.nickname) ? (
+                    {transcript?.users.find((other) => other !== user?.nickname) ? (
                         <p className={styles.noMargin}>
                             {`Conversation with: ${transcript?.users.find(
-                                (user) => user !== user?.nickname
+                                (other) => other !== user?.nickname
                             )}`}
                         </p>
                     ) : (
