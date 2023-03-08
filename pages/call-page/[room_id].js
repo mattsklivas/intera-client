@@ -592,7 +592,8 @@ export default function CallPage({ accessToken }) {
     } else if (isLoading) {
         return <LoadingComponent msg="Loading..." />
     } else if (!user && !isLoading) {
-        router.push('/api/auth/login')
+        console.log('||||||||||||||||||||||||||||||', router.asPath)
+        router.push('/api/auth/login?state=' + +router.asPath)
     }
 }
 
