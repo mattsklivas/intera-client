@@ -52,7 +52,7 @@ const PracticeModule = ({ accessToken }) => {
         const recordedChunk = new Blob(blobsArray, { type: 'video/webm' })
         const form = new FormData()
         form.append('video', recordedChunk)
-        form.append('word', randomWordState.current.toLowerCase())
+        form.append('word', randomWordState.current)
 
         // Send video
         fetcherNN(
@@ -184,7 +184,7 @@ const PracticeModule = ({ accessToken }) => {
             fetcher(accessToken, '/api/practice/get_word', {
                 method: 'GET',
             }).then((response) => {
-                setRandomWordState(response.data.word.toUpperCase())
+                setRandomWordState(response.data.word)
                 setWordYoutubeUrl(response.data.url)
             })
         }
@@ -233,24 +233,38 @@ const PracticeModule = ({ accessToken }) => {
                 <Row className={styles.signWordRow}>
                     <Typography className={styles.signWordTypo}>
                         {isResultView ? (
-                            <div>
-                                Result:
-                                <span
-                                    className={styles.signResultText}
-                                    style={{
-                                        color:
-                                            translationResponseState.current === 'Correct'
-                                                ? '#73d13d'
-                                                : '#ff4d4f',
-                                    }}
-                                >
-                                    {translationResponseState.current || 'N/A'}
-                                </span>
-                                {translationConfidenceState.current && (
-                                    <span className={styles.signResultText}>
-                                        (Confidence: {translationConfidenceState.current}%)
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <div style={{ paddingBottom: 5 }}>
+                                    <span> Word Attempted: </span>
+                                    <span className={styles.actualSignWord}>
+                                        {formatWord(randomWord)}
                                     </span>
-                                )}
+                                </div>
+                                <div>
+                                    Result:
+                                    <span
+                                        className={styles.signResultText}
+                                        style={{
+                                            color:
+                                                translationResponseState.current === 'Correct'
+                                                    ? '#73d13d'
+                                                    : '#ff4d4f',
+                                        }}
+                                    >
+                                        {translationResponseState.current || 'N/A'}
+                                    </span>
+                                    {translationConfidenceState.current && (
+                                        <span className={styles.signResultText}>
+                                            (Confidence: {translationConfidenceState.current}%)
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         ) : (
                             <div>

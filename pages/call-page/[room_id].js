@@ -320,12 +320,10 @@ export default function CallPage({ accessToken }) {
 
     // Get the communication type of the user
     const getType = () => {
-        console.log('roomInfo', roomInfo, user, userRole, roomInfo?.users[0] === user?.nickname)
         if (userRole === null) {
             if (roomInfo?.users[0] === user?.nickname) {
                 return roomInfo?.host_type
             } else {
-                console.log('huh?')
                 if (roomInfo?.host_type === 'ASL') {
                     return 'STT'
                 } else {
@@ -592,7 +590,6 @@ export default function CallPage({ accessToken }) {
     } else if (isLoading) {
         return <LoadingComponent msg="Loading..." />
     } else if (!user && !isLoading) {
-        console.log('||||||||||||||||||||||||||||||', router.asPath)
         router.push('/api/auth/login?state=' + +router.asPath)
     }
 }
