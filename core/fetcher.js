@@ -16,8 +16,6 @@ export function fetcher(token, url, options, video = false) {
 
     url = `${process.env.API_URL}${url}`
 
-    console.log(url)
-
     return new Promise((resolve, reject) => {
         fetch(url, {
             method: options.method,
