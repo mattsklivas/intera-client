@@ -30,10 +30,10 @@ const CallTranscriptModal = ({ user, transcript, hideCallTranscriptModal }) => {
         <Modal
             title={
                 <>
-                    {transcript?.users.find((user) => user !== user?.nickname) ? (
+                    {transcript?.users.find((other) => other !== user?.nickname) ? (
                         <p className={styles.noMargin}>
                             {`Conversation with: ${transcript?.users.find(
-                                (user) => user !== user?.nickname
+                                (other) => other !== user?.nickname
                             )}`}
                         </p>
                     ) : (

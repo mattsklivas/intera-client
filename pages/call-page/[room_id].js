@@ -52,7 +52,6 @@ export default function CallPage({ accessToken }) {
     const [spaceBarPressed, setSpaceBarPressed] = useState(false)
     const router = useRouter()
     const roomID = getQuery(router, 'room_id')
-    const [initialized, setInitialized] = useState(false)
     const { user, error, isLoading } = useUser()
     const [remoteNickname, setRemoteNickname] = useState(null)
     const [api, contextHolder] = notification.useNotification()
@@ -193,6 +192,7 @@ export default function CallPage({ accessToken }) {
     // User input for push to talk
     useEffect(() => {
         const handleKeyPress = (event) => {
+            console.log('spaceCheck', spaceBarPressed, userRole)
             if (event.keyCode === 32 && !spaceBarPressed && userRole === 'STT') {
                 setSpaceBoolCheck(false)
                 SpeechRecognition.startListening({ continuous: true })
@@ -320,10 +320,12 @@ export default function CallPage({ accessToken }) {
 
     // Get the communication type of the user
     const getType = () => {
-        if (userRole == null) {
+        console.log('roomInfo', roomInfo, user, userRole, roomInfo?.users[0] === user?.nickname)
+        if (userRole === null) {
             if (roomInfo?.users[0] === user?.nickname) {
                 return roomInfo?.host_type
             } else {
+                console.log('huh?')
                 if (roomInfo?.host_type === 'ASL') {
                     return 'STT'
                 } else {
@@ -427,8 +429,7 @@ export default function CallPage({ accessToken }) {
     })
 
     socket.on('connect', (data) => {
-        if (!data && !initialized) {
-            setInitialized(true)
+        if (!data) {
             socket.emit('join', { user: user?.nickname, room_id: roomID })
         }
     })
@@ -463,33 +464,15 @@ export default function CallPage({ accessToken }) {
     /* ----------------------Setup---------------------- */
 
     useEffect(() => {
-        if (
-            !remoteNickname &&
-            typeof user?.nickname !== 'undefined' &&
-            typeof roomInfo !== 'undefined' &&
-            roomInfo.users.length == 2
-        ) {
+        if (roomInfo && user) {
             setUserRole(getType())
-            setRemoteNickname(roomInfo.users.find((username) => username !== user.nickname))
-        }
-
-        if (
-            !initialized &&
-            typeof transcriptHistory !== 'undefined' &&
-            typeof roomInfo !== 'undefined' &&
-            typeof user?.nickname !== undefined &&
-            roomInfo?.active == true
-        ) {
-            setUserRole(getType())
-            if (roomInfo?.users.length == 2) {
-                setRemoteNickname(roomInfo.users.find((username) => username !== user.nickname))
-            }
+            setRemoteNickname(roomInfo?.users?.find((username) => username !== user?.nickname))
         }
 
         if (roomInfo && !roomInfo?.active) {
             handleLeave()
         }
-    }, [roomInfo, user, initialized])
+    }, [roomInfo, user])
 
     useEffect(() => {
         if (transcriptHistoryError?.status == 401) {
@@ -609,7 +592,8 @@ export default function CallPage({ accessToken }) {
     } else if (isLoading) {
         return <LoadingComponent msg="Loading..." />
     } else if (!user && !isLoading) {
-        router.push('/api/auth/login')
+        console.log('||||||||||||||||||||||||||||||', router.asPath)
+        router.push('/api/auth/login?state=' + +router.asPath)
     }
 }
 

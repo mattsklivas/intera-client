@@ -53,6 +53,13 @@ export default function Home({ accessToken }) {
 
     // Wait for state variable initialization to show the page content
     useEffect(() => {
+        const state = router.query.state
+        console.log('state', state, router)
+        if (state) {
+            let id = state.split('/call-page/')[1]
+            console.log('id', id)
+            router.push(`/call-page/${id}`)
+        }
         // If JWT is expired, force a logout
         if (transcriptHistoryError?.status == 401) {
             router.push('/api/auth/logout')
@@ -96,18 +103,14 @@ export default function Home({ accessToken }) {
                                         className={styles.roomButton}
                                         onClick={() => setIsCreateMeetingRoomModalOpen(true)}
                                     >
-                                        <span className={styles.roomText}>
-                                            Create Meeting Room
-                                        </span>
+                                        <span className={styles.roomText}>Create Meeting Room</span>
                                         <MdCreate size={17} />
                                     </Button>
                                     <Button
                                         className={styles.roomButton}
                                         onClick={() => setIsJoinMeetingRoomModalOpen(true)}
                                     >
-                                        <span className={styles.roomText}>
-                                            Join Meeting Room
-                                        </span>
+                                        <span className={styles.roomText}>Join Meeting Room</span>
                                         <MdSupervisorAccount size={20} />
                                     </Button>
                                 </div>
