@@ -14,7 +14,7 @@ import {
 } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import { React, useState, useEffect } from 'react'
-import fetcher from '../../core/fetcher.js'
+import { fetcher } from '../../core/fetcher.js'
 import styles from '../../styles/Modal.module.css'
 
 const CreateMeetingRoomModal = ({ router, accessToken, hideCreateMeetingRoomModal }) => {

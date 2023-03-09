@@ -2,7 +2,7 @@ import { React, useState, useEffect, useRef } from 'react'
 import { Input, Space, Button, notification } from 'antd'
 import cn from 'classnames'
 import styles from '../styles/Chatbox.module.css'
-import fetcher from '../core/fetcher'
+import { fetcher } from '../core/fetcher'
 
 const ChatboxComponent = ({
     user,

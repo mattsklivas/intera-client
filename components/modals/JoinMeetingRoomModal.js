@@ -1,6 +1,6 @@
 import { Modal, Input, Space, Button, notification } from 'antd'
 import { React, useState } from 'react'
-import fetcher from '../../core/fetcher'
+import { fetcher } from '../../core/fetcher'
 
 function JoinMeetingRoomModal(props) {
     const [loading, setLoading] = useState(false)

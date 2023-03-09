@@ -15,7 +15,7 @@ import ChatboxComponent from '../../components/ChatboxComponent'
 import useTranscriptHistory from '../../hooks/useTranscriptHistory'
 import useRoomInfo from '../../hooks/useRoomInfo'
 import styles from '../../styles/CallPage.module.css'
-import fetcher from '../../core/fetcher'
+import { fetcher } from '../../core/fetcher'
 import socketio from 'socket.io-client'
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
 
