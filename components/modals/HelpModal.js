@@ -17,7 +17,7 @@ const HelpModal = ({ setIsHelpModalOpen }) => {
 
     return (
         <Modal
-            title={<h2>Using Intera Video System</h2>}
+            title={<h2 style={{ margin: '5px 0' }}>Using The Intera Video System</h2>}
             open={visible}
             onCancel={handleClose}
             closable={true}
@@ -30,33 +30,45 @@ const HelpModal = ({ setIsHelpModalOpen }) => {
                 flexDirection: 'row',
                 justifyContent: 'center',
                 alignItems: 'flex-start',
+                maxWidth: '100%',
+                overflowY: 'scroll',
             }}
         >
             <div className={styles.helpContainer}>
                 <div>
-                    <h2> Arm guidelines </h2>
+                    <h2> Arm/hand placement while gesturing </h2>
                     <ul>
-                        <li> Hands must be visible and in frame when performing sign </li>
+                        <li> Hands must be visible and in frame when performing a sign </li>
                         <li> Hand enters the frame signaling the start of the sign </li>
                         <li> Hand leaves the frame signaling the end of the sign </li>
                     </ul>
-                    <Image src={arms} width="35px" height="30px" alt="arms" />
+                    <div style={{ marginLeft: '1vw', width: '500px' }}>
+                        <Image src={arms} width={500} layout="intrinsic" alt="arms" />
+                    </div>
                 </div>
                 <div>
-                    <h2> More guidelines </h2>
-                    <p>
-                        Starting and stopping ASL translation:
-                        <br /> User must have one or more hands shown in the video feed for
-                        translation to being
-                        <br /> Removing both hands from the video feed will terminate translation
-                    </p>
-
-                    <Image src={position} width="35px" height="30px" alt="position" />
+                    <h2> Starting and stopping ASL translation </h2>
+                    <ul>
+                        <li>
+                            {' '}
+                            User must have one or more hands shown in the video feed for translation
+                            to being{' '}
+                        </li>
+                        <li>
+                            {' '}
+                            Removing both hands from the video feed will terminate translation{' '}
+                        </li>
+                    </ul>
+                    <div style={{ marginLeft: '1vw', width: '500px' }}>
+                        <Image src={position} width={500} layout="intrinsic" alt="position" />
+                    </div>
                 </div>
 
                 <div>
-                    <h2> Even more guidelines </h2>
-                    <Image src={angle} width="35px" height="30px" alt="angle" />
+                    <h2> Body positioning </h2>
+                    <div style={{ marginLeft: '1vw', width: '500px' }}>
+                        <Image src={angle} width={500} layout="intrinsic" alt="angle" />
+                    </div>
                 </div>
             </div>
         </Modal>
