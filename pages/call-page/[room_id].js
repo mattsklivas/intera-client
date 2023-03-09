@@ -192,7 +192,6 @@ export default function CallPage({ accessToken }) {
     // User input for push to talk
     useEffect(() => {
         const handleKeyPress = (event) => {
-            console.log('spaceCheck', spaceBarPressed, userRole)
             if (event.keyCode === 32 && !spaceBarPressed && userRole === 'STT') {
                 setSpaceBoolCheck(false)
                 SpeechRecognition.startListening({ continuous: true })
@@ -462,6 +461,38 @@ export default function CallPage({ accessToken }) {
     /* ----------------------Setup---------------------- */
 
     useEffect(() => {
+        if (user && roomInfo && roomInfo?.users.length == 1) {
+            if (roomInfo?.users[0] !== user?.nickname) {
+                message.info({
+                    content: `Adding ${user?.nickname} to room...`,
+                    key: 'join-room-info',
+                })
+                fetcher(accessToken, '/api/rooms/join_room', {
+                    method: 'PUT',
+                    body: JSON.stringify({ room_id: roomID, user_id: user?.nickname }),
+                })
+                    .then((res) => {
+                        if (res.status != 200) {
+                            message.error({
+                                content: `Error ${res.status}: ${res.error}`,
+                                key: 'join-room-info',
+                            })
+                        } else {
+                            message.info({
+                                content: 'Joined room successfull',
+                                key: 'join-room-info',
+                            })
+                        }
+                    })
+                    .catch((err) => {
+                        message.error({
+                            content: `Error ${err.status}: ${err.error}`,
+                            key: 'join-room-info',
+                        })
+                    })
+            }
+        }
+
         if (roomInfo && user) {
             setUserRole(getType())
             setRemoteNickname(roomInfo?.users?.find((username) => username !== user?.nickname))
