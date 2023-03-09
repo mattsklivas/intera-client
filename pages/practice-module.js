@@ -34,11 +34,11 @@ const PracticeModule = ({ accessToken }) => {
         setTranslationResponse(data)
     }
 
-    const [translationAccuracy, setTranslationAccuracy] = useState(null)
-    const translationAccuracyState = useRef(translationAccuracy)
-    const setTranslationAccuracyState = (data) => {
-        translationAccuracyState.current = data
-        setTranslationAccuracy(data)
+    const [translationConfidence, setTranslationConfidence] = useState(null)
+    const translationConfidenceState = useRef(translationConfidence)
+    const setTranslationConfidenceState = (data) => {
+        translationConfidenceState.current = data
+        setTranslationConfidence(data)
     }
 
     const [randomWord, setRandomWord] = useState(null)
@@ -66,8 +66,8 @@ const PracticeModule = ({ accessToken }) => {
         )
             .then((res) => {
                 setTranslationResponseState(res.data.result || 'Error')
-                setTranslationAccuracyState(
-                    res.data.accuracy ? Number(res.data.accuracy).toFixed(2) * 100 : null
+                setTranslationConfidenceState(
+                    res.data.confidence ? Number(res.data.confidence).toFixed(2) * 100 : null
                 )
             })
             .then(() => {
@@ -246,9 +246,9 @@ const PracticeModule = ({ accessToken }) => {
                                 >
                                     {translationResponseState.current || 'N/A'}
                                 </span>
-                                {translationAccuracyState.current && (
+                                {translationConfidenceState.current && (
                                     <span className={styles.signResultText}>
-                                        (Accuracy: {translationAccuracyState.current}%)
+                                        (Confidence: {translationConfidenceState.current}%)
                                     </span>
                                 )}
                             </div>
