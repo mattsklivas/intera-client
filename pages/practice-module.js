@@ -52,7 +52,7 @@ const PracticeModule = ({ accessToken }) => {
         const recordedChunk = new Blob(blobsArray, { type: 'video/webm' })
         const form = new FormData()
         form.append('video', recordedChunk)
-        form.append('word', randomWordState.current)
+        form.append('word', randomWordState.current.toLowerCase())
 
         // Send video
         fetcherNN(
