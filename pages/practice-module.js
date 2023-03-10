@@ -60,10 +60,15 @@ const PracticeModule = ({ accessToken }) => {
             body: form,
         })
             .then((res) => {
-                setTranslationResponseState(res.data.result || 'Error')
-                setTranslationConfidenceState(
-                    res.data.confidence ? (Number(res.data.confidence) * 100).toFixed(2) : null
-                )
+                if (res.error) {
+                    setTranslationResponseState('Error')
+                    setTranslationConfidenceState(null)
+                } else {
+                    setTranslationResponseState(res.data.result || 'Error')
+                    setTranslationConfidenceState(
+                        res.data.confidence ? Number(res.data.confidence).toFixed(2) * 100 : null
+                    )
+                }
             })
             .then(() => {
                 setIsRetry(false)
@@ -72,6 +77,10 @@ const PracticeModule = ({ accessToken }) => {
             })
             .catch((e) => {
                 console.error('Error on retrieving results: ', e)
+                setTranslationResponseState('Error')
+                setTranslationConfidenceState(null)
+                setIsResultLoading(false)
+                setIsResultView(true)
             })
     }
 
@@ -107,14 +116,15 @@ const PracticeModule = ({ accessToken }) => {
                 // set the use ref to the media recorder
                 videoStream.current = mediaRecorderObject
 
-                const blobsArray = []
+                let blobsArray = []
                 // send data to array
                 mediaRecorderObject.ondataavailable = (e) => {
-                    blobsArray.push(e.data)
+                    blobsArray = [e.data]
                 }
 
                 // On stop create blob object, and covert to formdata to send to server
                 mediaRecorderObject.onstop = (e) => {
+                    console.log(blobsArray)
                     sendAnswer(blobsArray)
                 }
 
