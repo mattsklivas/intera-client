@@ -1,5 +1,5 @@
 import { React, useState, useEffect, useRef } from 'react'
-import { ConfigProvider, Button, Spin, message, notification } from 'antd'
+import { ConfigProvider, Spin, message, notification } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import '@babel/polyfill'
 import { useRouter } from 'next/router'
@@ -15,7 +15,7 @@ import ChatboxComponent from '../../components/ChatboxComponent'
 import useTranscriptHistory from '../../hooks/useTranscriptHistory'
 import useRoomInfo from '../../hooks/useRoomInfo'
 import styles from '../../styles/CallPage.module.css'
-import { fetcher } from '../../core/fetcher'
+import { fetcher, fetcherNN } from '../../core/fetchers'
 import socketio from 'socket.io-client'
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
 
@@ -187,9 +187,9 @@ export default function CallPage({ accessToken }) {
         router.push('/')
     }
 
-    /* ----------------------STT---------------------- */
+    /* ----------------------STT/ASL-to-Text---------------------- */
 
-    // User input for push to talk
+    // User input for push to talk/ASL-to-Text
     useEffect(() => {
         const handleKeyPress = (event) => {
             if (event.keyCode === 32 && !spaceBarPressed && userRole === 'STT') {
@@ -233,7 +233,7 @@ export default function CallPage({ accessToken }) {
         if (spaceCheck) {
             if (latestTranscript !== lastTranscript) {
                 if (latestTranscript != '') {
-                    appendMessage(latestTranscript)
+                    appendSTTMessage(latestTranscript)
                 }
                 setLastTranscript(latestTranscript)
             }
@@ -241,7 +241,7 @@ export default function CallPage({ accessToken }) {
     }, [spaceCheck, latestTranscript, lastTranscript])
 
     // Add a STT message
-    const appendMessage = async (message) => {
+    const appendSTTMessage = async (message) => {
         fetcher(accessToken, '/api/transcripts/create_message', {
             method: 'POST',
             body: JSON.stringify({
@@ -265,6 +265,38 @@ export default function CallPage({ accessToken }) {
                 api.error({
                     message: 'An unknown error has occurred',
                 })
+            })
+    }
+
+    // Add an ASL-to-Text message
+    const appendASLMessage = async (blobsArray) => {
+        const recordedChunk = new Blob(blobsArray, { type: 'video/webm' })
+        const form = new FormData()
+        form.append('video', recordedChunk)
+        form.append('room_id', roomInfo.room_id)
+        form.append('from_user', user.nickname)
+        form.append(
+            'to_user',
+            roomInfo.users.find((username) => username !== user.nickname) || 'N/A'
+        )
+
+        // Send video
+        fetcherNN(accessToken, '/submit_answer', {
+            method: 'POST',
+            body: form,
+        })
+            .then((res) => {
+                if (res.status == 200) {
+                    // Emit mutate message over websocket to other user
+                    handleMutate()
+                } else {
+                    api.error({
+                        message: `Error ${res.status}: ${res.error}`,
+                    })
+                }
+            })
+            .catch((e) => {
+                console.error('Error on retrieving results: ', e)
             })
     }
 
@@ -537,12 +569,12 @@ export default function CallPage({ accessToken }) {
                 <HeaderComponent user={user} roomID={roomID} handleLeave={handleLeave} />
                 <div className={styles.callWrapper}>
                     <div style={{ width: '20%' }}>
-                        <Button
+                        {/* <Button
                             style={{ position: 'absolute', left: 10, top: 46 }}
                             onClick={() => appendMessage('Example message')}
                         >
                             Send Message (temporary)
-                        </Button>
+                        </Button> */}
                         <HistoryComponent transcripts={transcriptHistory} user={user} />
                     </div>
                     <div style={{ width: '40%' }}>

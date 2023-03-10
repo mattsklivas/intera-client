@@ -8,7 +8,7 @@ import { LoadingOutlined } from '@ant-design/icons'
 import { useEffect, useRef, useState } from 'react'
 import { theme } from '../core/theme'
 import AnswerModal from '../components/modals/AnswerModal'
-import { fetcher, fetcherNN } from '../core/fetcher'
+import { fetcher, fetcherNN } from '../core/fetchers'
 
 const PracticeModule = ({ accessToken }) => {
     const [isAnswerModalOpen, setIsAnswerModalOpen] = useState(false)
@@ -55,15 +55,10 @@ const PracticeModule = ({ accessToken }) => {
         form.append('word', randomWordState.current)
 
         // Send video
-        fetcherNN(
-            accessToken,
-            '/submit_answer',
-            {
-                method: 'POST',
-                body: form,
-            },
-            true
-        )
+        fetcherNN(accessToken, '/submit_answer', {
+            method: 'POST',
+            body: form,
+        })
             .then((res) => {
                 setTranslationResponseState(res.data.result || 'Error')
                 setTranslationConfidenceState(

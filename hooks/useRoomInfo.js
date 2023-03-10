@@ -1,5 +1,5 @@
 import useSWR from 'swr'
-import hookFetcher from '../core/hookFetcher'
+import { hookFetcher } from '../core/fetchers'
 
 // Fetch a room's info
 export default function useRoomInfo(roomID, token) {

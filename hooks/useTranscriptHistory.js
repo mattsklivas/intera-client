@@ -1,5 +1,5 @@
 import useSWR from 'swr'
-import hookFetcher from '../core/hookFetcher'
+import { hookFetcher } from '../core/fetchers'
 
 // Fetch past transcripts for a given user
 export default function useTranscriptHistory(nickname, token) {
