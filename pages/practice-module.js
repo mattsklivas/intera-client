@@ -67,7 +67,7 @@ const PracticeModule = ({ accessToken }) => {
             .then((res) => {
                 setTranslationResponseState(res.data.result || 'Error')
                 setTranslationConfidenceState(
-                    res.data.confidence ? Number(res.data.confidence).toFixed(2) * 100 : null
+                    res.data.confidence ? (Number(res.data.confidence) * 100).toFixed(2) : null
                 )
             })
             .then(() => {
