@@ -1,9 +1,11 @@
-import { Modal } from 'antd'
 import { React, useState } from 'react'
+import { Modal, Spin } from 'antd'
+import { LoadingOutlined } from '@ant-design/icons'
 import styles from '../../styles/Modal.module.css'
 
 const AnswerModal = ({ link, word, hideAnswerModal }) => {
     const [visible, setVisible] = useState(true)
+    const [loading, setLoading] = useState(true)
 
     const handleClose = () => {
         setVisible(false)
@@ -35,11 +37,34 @@ const AnswerModal = ({ link, word, hideAnswerModal }) => {
                 alignItems: 'center',
             }}
         >
+            {loading && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        backgroundColor: '#f3f3f3',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Spin indicator={<LoadingOutlined spin />} />
+                </div>
+            )}
             <iframe
                 src={link}
                 className={styles.ytVideoIframe}
+                onLoad={() => {
+                    setLoading(false)
+                }}
                 style={{
                     allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+                    display: loading ? 'none' : 'block',
+                    width: '100%',
+                    height: '100%',
                 }}
                 allowFullScreen
             />
