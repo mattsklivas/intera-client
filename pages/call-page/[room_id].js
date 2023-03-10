@@ -190,37 +190,94 @@ export default function CallPage({ accessToken }) {
 
     // User input for push to talk/ASL-to-Text
     useEffect(() => {
-        const handleKeyPress = (event) => {
-            if (event.keyCode === 32 && !spaceBarPressed && userRole === 'STT') {
-                setSpaceBoolCheck(false)
-                SpeechRecognition.startListening({ continuous: true })
-                setSpaceBarPressed(true)
-                message.info({
-                    key: 'STT',
-                    content: 'Speech recording started...',
-                })
+        if (userRole === 'STT') {
+            const handleKeyPress = (event) => {
+                if (event.keyCode === 32 && !spaceBarPressed) {
+                    setSpaceBoolCheck(false)
+                    SpeechRecognition.startListening({ continuous: true })
+                    setSpaceBarPressed(true)
+                    message.info({
+                        key: 'STT',
+                        content: 'Speech recording started...',
+                    })
+                }
             }
-        }
-        const handleKeyRelease = (event) => {
-            if (event.keyCode === 32 && spaceBarPressed && userRole === 'STT') {
-                SpeechRecognition.stopListening()
-                setSpaceBarPressed(false)
-                setTimeout(() => {
-                    resetTranscript()
-                    setSpaceBoolCheck(true)
-                }, 500)
+            const handleKeyRelease = (event) => {
+                if (event.keyCode === 32 && spaceBarPressed) {
+                    SpeechRecognition.stopListening()
+                    setSpaceBarPressed(false)
+                    setTimeout(() => {
+                        resetTranscript()
+                        setSpaceBoolCheck(true)
+                    }, 500)
 
-                message.success({
-                    key: 'STT',
-                    content: 'Speech recording finished...',
-                })
+                    message.success({
+                        key: 'STT',
+                        content: 'Speech recording finished...',
+                    })
+                }
             }
-        }
-        document.addEventListener('keydown', handleKeyPress)
-        document.addEventListener('keyup', handleKeyRelease)
-        return () => {
-            document.removeEventListener('keydown', handleKeyPress)
-            document.removeEventListener('keyup', handleKeyRelease)
+            document.addEventListener('keydown', handleKeyPress)
+            document.addEventListener('keyup', handleKeyRelease)
+            return () => {
+                document.removeEventListener('keydown', handleKeyPress)
+                document.removeEventListener('keyup', handleKeyRelease)
+            }
+        } else if (userRole === 'ASL') {
+            const handleKeyPress = (event) => {
+                if (event.keyCode === 32) {
+                    // Start recording
+                    if (!spaceBarPressed) {
+                        // Create media recorder, and set the stream to it
+                        // const mediaRecorderObject = new MediaRecorder(userVideo.current.srcObject, {
+                        //     mimeType: 'video/webm',
+                        // })
+                        // videoStream.current = mediaRecorderObject
+
+                        // // Send stream buffer to server
+                        // videoStream.current.ondataavailable = (e) => {
+                        //     if (typeof e.data !== 'undefined' && e.data.size !== 0) {
+                        //         const recordedChunk = new Blob([e.data], { type: 'video/webm' })
+                        //         socket.emit('stream_buffer', {
+                        //             user: user?.nickname,
+                        //             room_id: roomID,
+                        //             data: recordedChunk,
+                        //         })
+                        //     }
+                        // }
+
+                        // videoStream.current.start(2000)
+
+                        setSpaceBarPressed(true)
+                        message.info({
+                            key: 'ASL',
+                            content: 'ASL gesture recording started...',
+                        })
+                        // Stop recording
+                    } else {
+                        // SpeechRecognition.stopListening()
+                        setSpaceBarPressed(false)
+                        // setTimeout(() => {
+                        //     // resetTranscript()
+                        //     // setSpaceBoolCheck(true)
+                        //     setSpaceBarPressed(false)
+                        //     message.success({
+                        //         key: 'ASL',
+                        //         content: 'ASL gesture recording finished...',
+                        //     })
+                        // }, 10000)
+
+                        message.success({
+                            key: 'ASL',
+                            content: 'ASL gesture recording finished...',
+                        })
+                    }
+                }
+            }
+            document.addEventListener('keypress', handleKeyPress)
+            return () => {
+                document.removeEventListener('keypress', handleKeyPress)
+            }
         }
     }, [spaceBarPressed, userRole])
 
