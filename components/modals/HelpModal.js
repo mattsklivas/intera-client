@@ -34,7 +34,7 @@ const HelpModal = ({ setIsHelpModalOpen, isPractice = false, isCall = false }) =
                 overflowY: 'scroll',
             }}
         >
-            <div className={styles.helpContainer} style={{ marginRight: '1vw' }}>
+            <div className={styles.helpContainer}>
                 {isPractice && (
                     <div>
                         <h2>The Practice Module</h2>
@@ -126,7 +126,7 @@ const HelpModal = ({ setIsHelpModalOpen, isPractice = false, isCall = false }) =
                         <Image src={position} width={700} layout="intrinsic" alt="position" />
                     </div>
                 </div>
-                <div>
+                <div style={{ marginRight: '5%' }}>
                     <h2>2. Body positioning </h2>
                     <ul>
                         <li>
