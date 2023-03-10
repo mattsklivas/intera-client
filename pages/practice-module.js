@@ -141,7 +141,6 @@ const PracticeModule = ({ accessToken }) => {
     const stopWebcam = async () => {
         if (videoStream.current && isRecording) {
             videoStream.current.stop()
-            // videoReference.current.srcObject = null
         }
         if (video) {
             video.getTracks().forEach((track) => track.stop())

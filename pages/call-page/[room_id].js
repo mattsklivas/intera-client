@@ -1,5 +1,5 @@
 import { React, useState, useEffect, useRef } from 'react'
-import { ConfigProvider, Spin, message, notification } from 'antd'
+import { ConfigProvider, Spin, message, notification, Space } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import '@babel/polyfill'
 import { useRouter } from 'next/router'
@@ -51,14 +51,22 @@ export default function CallPage({ accessToken }) {
     const [spaceBarPressed, setSpaceBarPressed] = useState(false)
     const router = useRouter()
     const roomID = getQuery(router, 'room_id')
-    const { user, error, isLoading } = useUser()
     const [remoteNickname, setRemoteNickname] = useState(null)
     const [api, contextHolder] = notification.useNotification()
+    const [isRecording, setIsRecording] = useState(false)
     let peerConnection
-
     const [spaceCheck, setSpaceBoolCheck] = useState(false)
     const [latestTranscript, setLatestTranscript] = useState('')
     const [lastTranscript, setLastTranscript] = useState('')
+    const { user, error, isLoading } = useUser()
+
+    // Notify user when processing video
+    const [isSendingASL, setIsSendingASL] = useState(false)
+    const isSendingASLRef = useRef(isSendingASL)
+    const setIsSendingASLState = (data) => {
+        isSendingASLRef.current = data
+        setIsSendingASL(data)
+    }
 
     const servers = {
         iceServers: [
@@ -101,6 +109,9 @@ export default function CallPage({ accessToken }) {
         mutate: roomInfoMutate,
     } = useRoomInfo(roomID || '', accessToken)
 
+    const userRef = useRef(user)
+    const roomInfoRef = useRef(roomInfo)
+
     const getVideoPlaceholder = () => {
         return (
             <div
@@ -113,7 +124,10 @@ export default function CallPage({ accessToken }) {
                 <div
                     style={{
                         width: '55%',
-                        aspectRatio: 'auto 4 / 3',
+                        // For 480p
+                        // aspectRatio: 'auto 4 / 3',
+                        // For 720p
+                        aspectRatio: 'auto 16 / 9',
                         border: '2px solid #f0f0f0',
                     }}
                 >
@@ -190,6 +204,11 @@ export default function CallPage({ accessToken }) {
 
     // User input for push to talk/ASL-to-Text
     useEffect(() => {
+        // Ensure the roomInfo and user refs are updated before proceeding
+        userRef.current = user
+        roomInfoRef.current = roomInfo
+        isSendingASLRef.current = isSendingASL
+
         if (userRole === 'STT') {
             const handleKeyPress = (event) => {
                 if (event.keyCode === 32 && !spaceBarPressed) {
@@ -213,7 +232,7 @@ export default function CallPage({ accessToken }) {
 
                     message.success({
                         key: 'STT',
-                        content: 'Speech recording finished...',
+                        content: 'Speech recording stopped...',
                     })
                 }
             }
@@ -228,49 +247,9 @@ export default function CallPage({ accessToken }) {
                 if (event.keyCode === 32) {
                     // Start recording
                     if (!spaceBarPressed) {
-                        // Create media recorder, and set the stream to it
-                        // const mediaRecorderObject = new MediaRecorder(userVideo.current.srcObject, {
-                        //     mimeType: 'video/webm',
-                        // })
-                        // videoStream.current = mediaRecorderObject
-
-                        // // Send stream buffer to server
-                        // videoStream.current.ondataavailable = (e) => {
-                        //     if (typeof e.data !== 'undefined' && e.data.size !== 0) {
-                        //         const recordedChunk = new Blob([e.data], { type: 'video/webm' })
-                        //         socket.emit('stream_buffer', {
-                        //             user: user?.nickname,
-                        //             room_id: roomID,
-                        //             data: recordedChunk,
-                        //         })
-                        //     }
-                        // }
-
-                        // videoStream.current.start(2000)
-
-                        setSpaceBarPressed(true)
-                        message.info({
-                            key: 'ASL',
-                            content: 'ASL gesture recording started...',
-                        })
-                        // Stop recording
+                        startRecording()
                     } else {
-                        // SpeechRecognition.stopListening()
-                        setSpaceBarPressed(false)
-                        // setTimeout(() => {
-                        //     // resetTranscript()
-                        //     // setSpaceBoolCheck(true)
-                        //     setSpaceBarPressed(false)
-                        //     message.success({
-                        //         key: 'ASL',
-                        //         content: 'ASL gesture recording finished...',
-                        //     })
-                        // }, 10000)
-
-                        message.success({
-                            key: 'ASL',
-                            content: 'ASL gesture recording finished...',
-                        })
+                        stopRecording('manual')
                     }
                 }
             }
@@ -280,6 +259,15 @@ export default function CallPage({ accessToken }) {
             }
         }
     }, [spaceBarPressed, userRole])
+
+    // Automatically stop recording video after 10 seconds
+    useEffect(() => {
+        if (userRole === 'ASL' && spaceBarPressed) {
+            setTimeout(() => {
+                stopRecording('auto')
+            }, 10000)
+        }
+    }, [spaceBarPressed])
 
     useEffect(() => {
         setLatestTranscript(transcript)
@@ -326,18 +314,20 @@ export default function CallPage({ accessToken }) {
 
     // Add an ASL-to-Text message
     const appendASLMessage = async (blobsArray) => {
+        setIsSendingASLState(true)
         const recordedChunk = new Blob(blobsArray, { type: 'video/webm' })
         const form = new FormData()
         form.append('video', recordedChunk)
-        form.append('room_id', roomInfo.room_id)
-        form.append('from_user', user.nickname)
+        form.append('room_id', roomInfoRef.current.room_id)
+        form.append('from_user', userRef.current.nickname)
         form.append(
             'to_user',
-            roomInfo.users.find((username) => username !== user.nickname) || 'N/A'
+            roomInfoRef.current.users.find((username) => username !== userRef.current.nickname) ||
+                'N/A'
         )
 
         // Send video
-        fetcherNN(accessToken, '/submit_answer', {
+        fetcherNN(accessToken, '/process_sign', {
             method: 'POST',
             body: form,
         })
@@ -350,10 +340,40 @@ export default function CallPage({ accessToken }) {
                         message: `Error ${res.status}: ${res.error}`,
                     })
                 }
+                setIsSendingASLState(false)
             })
             .catch((e) => {
                 console.error('Error on retrieving results: ', e)
+                setIsSendingASLState(false)
             })
+    }
+
+    const startRecording = () => {
+        if (videoStream.current && !isRecording) {
+            setSpaceBarPressed(true)
+            setIsRecording(true)
+            message.info({
+                key: 'ASL',
+                content: 'ASL gesture recording started...',
+            })
+            videoStream.current.start()
+        }
+    }
+
+    // Control stopping of the video recording
+    const stopRecording = async (source) => {
+        if (videoStream.current && videoStream.current.state !== 'inactive' && isRecording) {
+            setSpaceBarPressed(false)
+            setIsRecording(false)
+            videoStream.current.stop()
+            message.success({
+                key: 'ASL',
+                content:
+                    source === 'auto'
+                        ? 'ASL gesture recording stopped automatically...'
+                        : 'ASL gesture recording stopped...',
+            })
+        }
     }
 
     // Refresh chatbox for both users upon invalidation
@@ -376,26 +396,21 @@ export default function CallPage({ accessToken }) {
                 userVideo.current.srcObject = stream
                 setIsLocalVideoEnabled(true)
 
-                if (userRole === 'ASL') {
-                    // Create media recorder, and set the stream to it
-                    const mediaRecorderObject = new MediaRecorder(stream, {
-                        mimeType: 'video/webm',
-                    })
-                    videoStream.current = mediaRecorderObject
+                const mediaRecorderObject = new MediaRecorder(stream, {
+                    mimeType: 'video/webm',
+                })
+                // set the use ref to the media recorder
+                videoStream.current = mediaRecorderObject
 
-                    // Send stream buffer to server
-                    videoStream.current.ondataavailable = (e) => {
-                        if (typeof e.data !== 'undefined' && e.data.size !== 0) {
-                            const recordedChunk = new Blob([e.data], { type: 'video/webm' })
-                            socket.emit('stream_buffer', {
-                                user: user?.nickname,
-                                room_id: roomID,
-                                data: recordedChunk,
-                            })
-                        }
-                    }
+                let blobsArray = []
+                // send data to array
+                mediaRecorderObject.ondataavailable = (e) => {
+                    blobsArray = [e.data]
+                }
 
-                    videoStream.current.start(2000)
+                // On stop create blob object, and covert to formdata to send to server
+                mediaRecorderObject.onstop = (e) => {
+                    appendASLMessage(blobsArray)
                 }
 
                 socket.connect()
@@ -698,6 +713,26 @@ export default function CallPage({ accessToken }) {
                                             }}
                                         ></video>
                                         {!isLocalVideoEnabled && getVideoPlaceholder()}
+                                        {userRole === 'ASL' && isSendingASLRef.current && (
+                                            <div style={{ marginTop: 25 }}>
+                                                <Space>
+                                                    <span style={{ fontSize: 25 }}>
+                                                        Processing recorded ASL gestures
+                                                    </span>
+                                                    <Spin
+                                                        indicator={
+                                                            <LoadingOutlined
+                                                                style={{
+                                                                    margin: '5px 0 0 7px',
+                                                                    fontSize: 30,
+                                                                }}
+                                                                spin
+                                                            />
+                                                        }
+                                                    />
+                                                </Space>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
