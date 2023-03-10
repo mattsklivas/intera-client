@@ -109,14 +109,14 @@ const PracticeModule = ({ accessToken }) => {
 
                 // create useref to show the video on display
                 // todo possible issue if user allows video but leaves before it is setup
-                videoReference.current.srcObject = stream
+                if (videoReference?.current) videoReference.current.srcObject = stream
 
                 setVideo(stream)
 
                 // create media recorder, and set the stream to it
                 const mediaRecorderObject = new MediaRecorder(stream, { mimeType: 'video/webm' })
                 // set the use ref to the media recorder
-                videoStream.current = mediaRecorderObject
+                if (videoStream?.current) videoStream.current = mediaRecorderObject
 
                 let blobsArray = []
                 // send data to array
