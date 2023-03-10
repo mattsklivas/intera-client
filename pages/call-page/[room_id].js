@@ -197,7 +197,8 @@ export default function CallPage({ accessToken }) {
         }
 
         // signal other user to reset name, notify user has left, and close video stream/peerConnection
-        practice ? router.push('/') : router.push('/practice-module')
+        // practice ? router.push('/') : router.push('/practice-module')
+        router.push('/')
     }
 
     /* ----------------------STT/ASL-to-Text---------------------- */
