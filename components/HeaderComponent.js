@@ -89,6 +89,8 @@ const Header = ({ user, roomID, handleLeave }) => {
                 <HelpModal
                     isHelpModalOpen={isHelpModalOpen}
                     setIsHelpModalOpen={setIsHelpModalOpen}
+                    isPractice={router.asPath.includes('/practice-module')}
+                    isCall={router.asPath.includes('/call-page')}
                 />
             )}
         </Row>

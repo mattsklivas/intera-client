@@ -206,7 +206,6 @@ const PracticeModule = ({ accessToken }) => {
             })
     }
 
-    // TODO : change result text color based on server response
     return (
         <ConfigProvider theme={theme}>
             <HeaderComponent user={user} handleLeave={handleLeave} />

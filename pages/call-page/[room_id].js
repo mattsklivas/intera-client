@@ -167,7 +167,7 @@ export default function CallPage({ accessToken }) {
     // leave conditions:
     // host leaves -> room closes, forces other user out
     // guest leaves -> room stays open, other user is notified, video stream closes, peerConnection resets
-    const handleLeave = async () => {
+    const handleLeave = async (practice = false) => {
         socket.emit('leave', { room_id: roomID, user: user?.nickname })
         // close video stream
         if (userVideo?.current?.srcObject) {
@@ -197,7 +197,7 @@ export default function CallPage({ accessToken }) {
         }
 
         // signal other user to reset name, notify user has left, and close video stream/peerConnection
-        router.push('/')
+        practice ? router.push('/') : router.push('/practice-module')
     }
 
     /* ----------------------STT/ASL-to-Text---------------------- */
