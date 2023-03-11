@@ -336,6 +336,14 @@ export default function CallPage({ accessToken }) {
                 if (res.status == 200) {
                     // Emit mutate message over websocket to other user
                     handleMutate()
+
+                    if (res.data.prediction.startsWith('[')) {
+                        api.info({
+                            message: `Info: Low confidence in ASL prediction (${parseFloat(
+                                Number(res.data.confidence) * 100
+                            ).toFixed(2)}%)`,
+                        })
+                    }
                 } else {
                     api.error({
                         message: `Error ${res.status}: ${res.error}`,
