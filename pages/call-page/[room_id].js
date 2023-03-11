@@ -385,7 +385,7 @@ export default function CallPage({ accessToken }) {
     /* ----------------------Video---------------------- */
 
     const initializeLocalVideo = async () => {
-        await navigator.mediaDevices
+        navigator.mediaDevices
             .getUserMedia({
                 audio: true,
                 video: {
@@ -394,7 +394,8 @@ export default function CallPage({ accessToken }) {
                 },
             })
             .then((stream) => {
-                if (userVideo?.current) userVideo.current.srcObject = stream
+                if (userVideo?.current?.srcObject !== undefined)
+                    userVideo.current.srcObject = stream
                 setIsLocalVideoEnabled(true)
 
                 const mediaRecorderObject = new MediaRecorder(stream, {
@@ -402,7 +403,7 @@ export default function CallPage({ accessToken }) {
                 })
 
                 // set the use ref to the media recorder
-                if (videoStream?.current) videoStream.current = mediaRecorderObject
+                videoStream.current = mediaRecorderObject
 
                 let blobsArray = []
                 // send data to array
