@@ -338,8 +338,9 @@ export default function CallPage({ accessToken }) {
                     handleMutate()
 
                     if (res.data.prediction.startsWith('[')) {
-                        api.info({
-                            message: `Info: Low confidence in ASL prediction (${parseFloat(
+                        message.info({
+                            key: 'lowConf',
+                            content: `Info: Low confidence in ASL prediction (${parseFloat(
                                 Number(res.data.confidence) * 100
                             ).toFixed(2)}%)`,
                         })

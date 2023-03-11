@@ -3,7 +3,7 @@ import styles from '../styles/Practice.module.css'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { useRouter } from 'next/router'
 import auth0 from '../auth/auth0'
-import { Row, Col, Button, ConfigProvider, Typography, Spin, notification } from 'antd'
+import { Row, Col, Button, ConfigProvider, Typography, Spin, notification, message } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import { useEffect, useRef, useState } from 'react'
 import { theme } from '../core/theme'
@@ -150,6 +150,19 @@ const PracticeModule = ({ accessToken }) => {
         }
         setIsRecording(false)
     }
+
+    // Automatically stop recording video after 10 seconds
+    useEffect(() => {
+        if (isRecording) {
+            setTimeout(() => {
+                stopRecording()
+                message.info({
+                    key: 'ASL',
+                    content: 'ASL gesture recording stopped automatically...',
+                })
+            }, 10000)
+        }
+    }, [isRecording])
 
     const retry = () => {
         setIsResultView(false)
