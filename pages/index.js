@@ -26,7 +26,7 @@ export default function Home({ accessToken }) {
     const invalidRoomID = getQuery(router, 'invalid_room')
     const expiredRoomID = getQuery(router, 'expired_room')
     const fullRoomID = getQuery(router, 'full_room')
-    const deviceId = getQuery(router, 'missing_device')
+    const deviceNotFound = getQuery(router, 'missing_device')
 
     // Get the error notification message
     let errorMsg = ''
@@ -39,10 +39,10 @@ export default function Home({ accessToken }) {
     } else if (fullRoomID) {
         // If a room is full
         errorMsg = `Error: Room '${fullRoomID}' is full.`
-    } else if (deviceId) {
+    } else if (deviceNotFound) {
         // If a room is full
         errorMsg =
-            'Error: Please ensure you have a working microphone and camera connected to your device.'
+            'Error: Must have a working, permission-granted mic and video to connect to a call.'
     } else {
         errorMsg = 'An unknown error has occurred.'
     }
@@ -80,7 +80,7 @@ export default function Home({ accessToken }) {
             invalidRoomID != null ||
             expiredRoomID != null ||
             fullRoomID != null ||
-            deviceId != null
+            deviceNotFound != null
         ) {
             api.error({
                 message: errorMsg,

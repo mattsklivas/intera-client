@@ -420,7 +420,7 @@ export default function CallPage({ accessToken }) {
             })
             .catch((error) => {
                 console.error('Stream not found: ', error)
-                router.push('/?missing_device')
+                router.push('/?missing_device=true')
             })
     }
 
