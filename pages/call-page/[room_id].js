@@ -68,6 +68,23 @@ export default function CallPage({ accessToken }) {
         setIsSendingASL(data)
     }
 
+    window.addEventListener('beforeunload', function (e) {
+        if (roomInfo?.users[0] == user?.nickname) {
+            fetcher(accessToken, '/api/rooms/close_room', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    room_id: roomID,
+                }),
+            }).then((res) => {
+                if (res.status == 200) {
+                    console.log('Room closed')
+                }
+            })
+        }
+
+        return
+    })
+
     const servers = {
         iceServers: [
             {
