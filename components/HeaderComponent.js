@@ -65,6 +65,7 @@ const Header = ({ user, roomID, handleLeave }) => {
                     ) : (
                         <Button
                             loading={isLoadingChange}
+                            disabled={router.asPath.includes('/call-page')}
                             onClick={() => {
                                 setIsLoadingChange(true)
                                 router.push('/practice-module')
