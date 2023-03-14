@@ -3,7 +3,7 @@ import styles from '../styles/Practice.module.css'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { useRouter } from 'next/router'
 import auth0 from '../auth/auth0'
-import { Row, Col, Button, ConfigProvider, Typography, Spin, notification, message } from 'antd'
+import { Row, Col, Button, ConfigProvider, Typography, Spin, notification } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import { useEffect, useRef, useState } from 'react'
 import { theme } from '../core/theme'
@@ -48,7 +48,13 @@ const PracticeModule = ({ accessToken }) => {
         setRandomWord(data)
     }
 
+    // timers
+    const [nnTimes, setNnTimes] = useState([])
+    const [nnAvgTime, setNnAvgTime] = useState(0)
+
     const sendAnswer = async (blobsArray) => {
+        let startTime = performance.now()
+
         const recordedChunk = new Blob(blobsArray, { type: 'video/webm' })
         const form = new FormData()
         form.append('video', recordedChunk)
@@ -83,6 +89,23 @@ const PracticeModule = ({ accessToken }) => {
                 setTranslationConfidenceState(null)
                 setIsResultLoading(false)
                 setIsResultView(true)
+            })
+            .finally(() => {
+                // calculate average time
+                let endTime = performance.now()
+                let time = endTime - startTime
+
+                let avgTime = 0
+                let arr = nnTimes
+                arr.push(time)
+                arr.forEach((nnTime) => {
+                    avgTime += nnTime
+                })
+
+                avgTime = avgTime / arr.length
+                setNnTimes(arr)
+                console.log(nnTimes, avgTime) // 3.85 second average with 20 signs
+                setNnAvgTime(avgTime)
             })
     }
 
@@ -143,7 +166,7 @@ const PracticeModule = ({ accessToken }) => {
 
     const stopWebcam = async () => {
         if (videoStream.current && isRecording) {
-            videoStream.current.stop()
+            videoStream.current?.stop()
         }
         if (video) {
             video.getTracks().forEach((track) => track.stop())
@@ -151,18 +174,19 @@ const PracticeModule = ({ accessToken }) => {
         setIsRecording(false)
     }
 
-    // Automatically stop recording video after 10 seconds
-    useEffect(() => {
-        if (isRecording) {
-            setTimeout(() => {
-                stopRecording()
-                message.info({
-                    key: 'ASL',
-                    content: 'ASL gesture recording stopped automatically...',
-                })
-            }, 10000)
-        }
-    }, [isRecording])
+    // TODO: Commenting out since it breaks functionality
+    // // Automatically stop recording video after 10 seconds
+    // useEffect(() => {
+    //     if (isRecording) {
+    //         setTimeout(() => {
+    //             stopRecording()
+    //             message.info({
+    //                 key: 'ASL',
+    //                 content: 'ASL gesture recording stopped automatically...',
+    //             })
+    //         }, 10000)
+    //     }
+    // }, [isRecording])
 
     const retry = () => {
         setIsResultView(false)
@@ -177,6 +201,7 @@ const PracticeModule = ({ accessToken }) => {
 
     const startRecording = () => {
         if (videoStream.current && !isRecording) {
+            console.log('start recording', videoStream.current)
             videoStream.current.start()
         }
         setIsRecording(true)
@@ -184,7 +209,8 @@ const PracticeModule = ({ accessToken }) => {
 
     const stopRecording = () => {
         setIsResultLoading(true)
-        if (videoStream.current && isRecording) {
+        if (videoStream.current && videoStream.current.state !== 'inactive' && isRecording) {
+            console.log('stop recording', videoStream.current)
             videoStream.current.stop()
         }
         setIsRecording(false)
