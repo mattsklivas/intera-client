@@ -4,7 +4,14 @@ import cn from 'classnames'
 import styles from '../styles/Chatbox.module.css'
 import { fetcher } from '../core/fetchers'
 
-const ChatboxComponent = ({ user, transcript, roomInfo, context, accessToken, inputRefresh }) => {
+const ChatboxComponent = ({
+    user,
+    transcript,
+    roomInfo,
+    context,
+    accessToken,
+    invalidateRefresh,
+}) => {
     const chatRef = useRef(null)
     const [api, contextHolder] = notification.useNotification()
     const [isInvalidateLoading, setIsInvalidateLoading] = useState(false)
@@ -72,7 +79,7 @@ const ChatboxComponent = ({ user, transcript, roomInfo, context, accessToken, in
                 .then((res) => {
                     if (res.status == 200) {
                         // Update chatbox
-                        inputRefresh()
+                        invalidateRefresh()
 
                         // Clear invalidation input
                         setInputText('')
@@ -94,6 +101,7 @@ const ChatboxComponent = ({ user, transcript, roomInfo, context, accessToken, in
                     setIsInvalidateLoading(false)
                 })
                 .catch((res) => {
+                    console.log('ERROR', res)
                     api.error({
                         message: 'An unknown error has occurred',
                     })
