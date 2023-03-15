@@ -60,6 +60,13 @@ export default function CallPage({ accessToken }) {
     const [lastTranscript, setLastTranscript] = useState('')
     const { user, error, isLoading } = useUser()
 
+    const [recordingStartTime, setRecordingStartTime] = useState(null)
+    const recordingStartTimeState = useRef(recordingStartTime)
+    const setRecordingStartTimeState = (data) => {
+        recordingStartTimeState.current = data
+        setRecordingStartTime(data)
+    }
+
     // Notify user when processing video
     const [isSendingASL, setIsSendingASL] = useState(false)
     const isSendingASLRef = useRef(isSendingASL)
@@ -197,6 +204,7 @@ export default function CallPage({ accessToken }) {
                 peerConnection = null
             }
             userVideo.current.srcObject.getTracks().forEach((track) => track.stop())
+            userVideo.current = null // Added to ensure unmounting of webcam
         }
 
         // Close the room
@@ -229,7 +237,11 @@ export default function CallPage({ accessToken }) {
 
         if (userRole === 'STT') {
             const handleKeyPress = (event) => {
-                if (event.keyCode === 32 && !spaceBarPressed) {
+                if (
+                    event.keyCode === 32 &&
+                    !spaceBarPressed &&
+                    document.activeElement?.id !== 'invalidate'
+                ) {
                     setSpaceBoolCheck(false)
                     SpeechRecognition.startListening({ continuous: true })
                     setSpaceBarPressed(true)
@@ -240,7 +252,11 @@ export default function CallPage({ accessToken }) {
                 }
             }
             const handleKeyRelease = (event) => {
-                if (event.keyCode === 32 && spaceBarPressed) {
+                if (
+                    event.keyCode === 32 &&
+                    spaceBarPressed &&
+                    document.activeElement?.id !== 'invalidate'
+                ) {
                     SpeechRecognition.stopListening()
                     setSpaceBarPressed(false)
                     setTimeout(() => {
@@ -262,7 +278,7 @@ export default function CallPage({ accessToken }) {
             }
         } else if (userRole === 'ASL') {
             const handleKeyPress = (event) => {
-                if (event.keyCode === 32) {
+                if (event.keyCode === 32 && document.activeElement?.id !== 'invalidate') {
                     // Start recording
                     if (!spaceBarPressed) {
                         startRecording()
@@ -281,9 +297,12 @@ export default function CallPage({ accessToken }) {
     // Automatically stop recording video after 10 seconds
     useEffect(() => {
         if (userRole === 'ASL' && spaceBarPressed) {
-            setTimeout(() => {
+            let timer = setTimeout(() => {
                 stopRecording('auto')
             }, 10000)
+            return () => {
+                clearTimeout(timer)
+            }
         }
     }, [spaceBarPressed])
 
@@ -332,51 +351,71 @@ export default function CallPage({ accessToken }) {
 
     // Add an ASL-to-Text message
     const appendASLMessage = async (blobsArray) => {
-        setIsSendingASLState(true)
-        const recordedChunk = new Blob(blobsArray, { type: 'video/webm' })
-        const form = new FormData()
-        form.append('video', recordedChunk)
-        form.append('room_id', roomInfoRef.current.room_id)
-        form.append('from_user', userRef.current.nickname)
-        form.append(
-            'to_user',
-            roomInfoRef.current.users.find((username) => username !== userRef.current.nickname) ||
-                'N/A'
-        )
+        // Get the recording length
+        const endTime = new Date()
+        const elapsedTime = (endTime - recordingStartTimeState.current) / 1000
 
-        // Send video
-        fetcherNN(accessToken, '/process_sign', {
-            method: 'POST',
-            body: form,
-        })
-            .then((res) => {
-                if (res.status == 200) {
-                    // Emit mutate message over websocket to other user
-                    handleMutate()
+        // Don't send answer if recording less than 2 seconds
+        if (elapsedTime >= 2) {
+            setIsSendingASLState(true)
+            const recordedChunk = new Blob(blobsArray, { type: 'video/webm' })
+            const form = new FormData()
+            form.append('video', recordedChunk)
+            form.append('room_id', roomInfoRef.current.room_id)
+            form.append('from_user', userRef.current.nickname)
+            form.append(
+                'to_user',
+                roomInfoRef.current.users.find(
+                    (username) => username !== userRef.current.nickname
+                ) || 'N/A'
+            )
 
-                    if (res.data.prediction.startsWith('[')) {
-                        message.info({
-                            key: 'lowConf',
-                            content: `Info: Low confidence in ASL prediction (${parseFloat(
-                                Number(res.data.confidence) * 100
-                            ).toFixed(2)}%)`,
+            // Send video
+            fetcherNN(accessToken, '/process_sign', {
+                method: 'POST',
+                body: form,
+            })
+                .then((res) => {
+                    if (res.status == 200) {
+                        // Emit mutate message over websocket to other user
+                        handleMutate()
+
+                        if (res.data.prediction.startsWith('[INFO:')) {
+                            message.info({
+                                key: 'lowConf',
+                                content: `INFO: Low confidence in ASL prediction (${parseFloat(
+                                    Number(res.data.confidence) * 100
+                                ).toFixed(2)}%)`,
+                            })
+                        } else if (res.data.prediction.startsWith('[ERROR:')) {
+                            message.error({
+                                key: 'predictFail',
+                                content: 'ERROR: Unable to predict ASL gesture(s)',
+                            })
+                        }
+                    } else {
+                        api.error({
+                            message: `Error ${res.status}: ${res.error}`,
                         })
                     }
-                } else {
-                    api.error({
-                        message: `Error ${res.status}: ${res.error}`,
-                    })
-                }
-                setIsSendingASLState(false)
+                    setIsSendingASLState(false)
+                })
+                .catch((e) => {
+                    console.error('Error on retrieving results: ', e)
+                    setIsSendingASLState(false)
+                })
+        } else {
+            message.info({
+                key: 'ASL',
+                content: 'ASL gesture recording must be longer than 2 seconds...',
             })
-            .catch((e) => {
-                console.error('Error on retrieving results: ', e)
-                setIsSendingASLState(false)
-            })
+            setIsSendingASLState(false)
+        }
     }
 
     const startRecording = () => {
         if (videoStream.current && !isRecording) {
+            recordingStartTimeState.current = new Date()
             setSpaceBarPressed(true)
             setIsRecording(true)
             message.info({

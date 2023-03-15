@@ -60,10 +60,24 @@ const Header = ({ user, roomID, handleLeave }) => {
 
             <Col flex={1} className={styles.headerCol3}>
                 <Space size={10}>
-                    {router.pathname === '/practice-module' ? (
+                    {/* {router.pathname === '/practice-module' ? (
                         <></>
                     ) : (
                         <Button
+                            type="primary"
+                            loading={isLoadingChange}
+                            disabled={router.asPath.includes('/call-page')}
+                            onClick={() => {
+                                setIsLoadingChange(true)
+                                router.push('/practice-module')
+                            }}
+                        >
+                            Practice Module
+                        </Button>
+                    )} */}
+                    {router.pathname === '/' && (
+                        <Button
+                            type="primary"
                             loading={isLoadingChange}
                             disabled={router.asPath.includes('/call-page')}
                             onClick={() => {

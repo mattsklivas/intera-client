@@ -91,7 +91,9 @@ const PracticeModule = ({ accessToken }) => {
                         message.error({
                             key: 'ASL',
                             duration: 5,
-                            content: res?.error || 'Error: An unknown error has occured.',
+                            content: `${
+                                res?.error || 'Error: An unknown error has occured.'
+                            } ${'(Please follow guidelines in help section)'}`,
                         })
                     } else {
                         setTranslationResponseState(res.data.result || 'Error')

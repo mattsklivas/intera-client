@@ -4,14 +4,7 @@ import cn from 'classnames'
 import styles from '../styles/Chatbox.module.css'
 import { fetcher } from '../core/fetchers'
 
-const ChatboxComponent = ({
-    user,
-    transcript,
-    roomInfo,
-    context,
-    accessToken,
-    invalidateRefresh,
-}) => {
+const ChatboxComponent = ({ user, transcript, roomInfo, context, accessToken, inputRefresh }) => {
     const chatRef = useRef(null)
     const [api, contextHolder] = notification.useNotification()
     const [isInvalidateLoading, setIsInvalidateLoading] = useState(false)
@@ -79,7 +72,7 @@ const ChatboxComponent = ({
                 .then((res) => {
                     if (res.status == 200) {
                         // Update chatbox
-                        invalidateRefresh()
+                        inputRefresh()
 
                         // Clear invalidation input
                         setInputText('')
@@ -211,12 +204,14 @@ const ChatboxComponent = ({
                         <div style={{ paddingTop: '1vh' }}>
                             <Space>
                                 <Input
+                                    id="invalidate"
                                     disabled={!canInvalidate}
                                     status="error"
                                     style={{ width: '30vw' }}
                                     value={inputText}
                                     onChange={(event) => setInputText(event.target.value)}
                                     onPressEnter={() => {
+                                        setInputText('')
                                         setIsInvalidateLoading(true)
                                         invalidateMessage(inputText)
                                     }}
@@ -228,6 +223,7 @@ const ChatboxComponent = ({
                                     loading={isInvalidateLoading}
                                     disabled={!canInvalidate}
                                     onClick={() => {
+                                        setInputText('')
                                         setIsInvalidateLoading(true)
                                         invalidateMessage(inputText)
                                     }}
