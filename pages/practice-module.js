@@ -3,7 +3,7 @@ import styles from '../styles/Practice.module.css'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { useRouter } from 'next/router'
 import auth0 from '../auth/auth0'
-import { Row, Col, Button, ConfigProvider, Typography, Spin, notification } from 'antd'
+import { Row, Col, Button, ConfigProvider, Typography, Spin, notification, message } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import { useEffect, useRef, useState } from 'react'
 import { theme } from '../core/theme'
@@ -25,6 +25,14 @@ const PracticeModule = ({ accessToken }) => {
     const [api, contextHolder] = notification.useNotification()
     const [video, setVideo] = useState(null)
     const [isResultLoading, setIsResultLoading] = useState(false)
+    const [isNewWordLoading, setIsNewWordLoading] = useState(false)
+
+    const [recordingStartTime, setRecordingStartTime] = useState(null)
+    const recordingStartTimeState = useRef(recordingStartTime)
+    const setRecordingStartTimeState = (data) => {
+        recordingStartTimeState.current = data
+        setRecordingStartTime(data)
+    }
 
     // UseRef workarounds for event listener compatibility
     const [translationResponse, setTranslationResponse] = useState(null)
@@ -53,60 +61,90 @@ const PracticeModule = ({ accessToken }) => {
     const [nnAvgTime, setNnAvgTime] = useState(0)
 
     const sendAnswer = async (blobsArray) => {
-        let startTime = performance.now()
+        // Get the recording length
+        const endTime = new Date()
+        const elapsedTime = (endTime - recordingStartTimeState.current) / 1000
 
-        const recordedChunk = new Blob(blobsArray, { type: 'video/webm' })
-        const form = new FormData()
-        form.append('video', recordedChunk)
-        form.append('word', randomWordState.current)
+        // Don't send answer if recording less than 2 seconds
+        if (elapsedTime >= 2) {
+            message.info({
+                key: 'ASL',
+                content: 'Processing ASL gesture recording...',
+            })
 
-        // Send video
-        fetcherNN(accessToken, '/submit_answer', {
-            method: 'POST',
-            body: form,
-        })
-            .then((res) => {
-                if (res.error) {
+            let startTime = performance.now()
+
+            const recordedChunk = new Blob(blobsArray, { type: 'video/webm' })
+            const form = new FormData()
+            form.append('video', recordedChunk)
+            form.append('word', randomWordState.current)
+
+            // Send video
+            fetcherNN(accessToken, '/submit_answer', {
+                method: 'POST',
+                body: form,
+            })
+                .then((res) => {
+                    if (res.error) {
+                        setTranslationResponseState('Error')
+                        setTranslationConfidenceState(null)
+                        message.error({
+                            key: 'ASL',
+                            duration: 5,
+                            content: res?.error || 'Error: An unknown error has occured.',
+                        })
+                    } else {
+                        setTranslationResponseState(res.data.result || 'Error')
+                        setTranslationConfidenceState(
+                            res.data.confidence
+                                ? parseFloat(Number(res.data.confidence) * 100).toFixed(2)
+                                : null
+                        )
+                    }
+                })
+                .then(() => {
+                    setIsRetry(false)
+                    setIsResultLoading(false)
+                    setIsResultView(true)
+                })
+                .catch((e) => {
+                    console.error('Error on retrieving results: ', e)
+                    message.error({
+                        key: 'ASL',
+                        duration: 5,
+                        content:
+                            'Error in request handling: ' + res?.error ||
+                            'An unknown error has occured.',
+                    })
                     setTranslationResponseState('Error')
                     setTranslationConfidenceState(null)
-                } else {
-                    setTranslationResponseState(res.data.result || 'Error')
-                    setTranslationConfidenceState(
-                        res.data.confidence
-                            ? parseFloat(Number(res.data.confidence) * 100).toFixed(2)
-                            : null
-                    )
-                }
-            })
-            .then(() => {
-                setIsRetry(false)
-                setIsResultLoading(false)
-                setIsResultView(true)
-            })
-            .catch((e) => {
-                console.error('Error on retrieving results: ', e)
-                setTranslationResponseState('Error')
-                setTranslationConfidenceState(null)
-                setIsResultLoading(false)
-                setIsResultView(true)
-            })
-            .finally(() => {
-                // calculate average time
-                let endTime = performance.now()
-                let time = endTime - startTime
-
-                let avgTime = 0
-                let arr = nnTimes
-                arr.push(time)
-                arr.forEach((nnTime) => {
-                    avgTime += nnTime
+                    setIsResultLoading(false)
+                    setIsResultView(true)
                 })
+                .finally(() => {
+                    // calculate average time
+                    let endTime = performance.now()
+                    let time = endTime - startTime
 
-                avgTime = avgTime / arr.length
-                setNnTimes(arr)
-                console.log(nnTimes, avgTime) // 3.85 second average with 20 signs
-                setNnAvgTime(avgTime)
+                    let avgTime = 0
+                    let arr = nnTimes
+                    arr.push(time)
+                    arr.forEach((nnTime) => {
+                        avgTime += nnTime
+                    })
+
+                    avgTime = avgTime / arr.length
+                    setNnTimes(arr)
+                    console.log(nnTimes, avgTime) // 3.85 second average with 20 signs
+                    setNnAvgTime(avgTime)
+                })
+        } else {
+            message.info({
+                key: 'ASL',
+                content: 'ASL gesture recording must be longer than 2 seconds...',
             })
+            setIsResultLoading(false)
+        }
     }
 
     const startWebcam = async () => {
@@ -156,37 +194,31 @@ const PracticeModule = ({ accessToken }) => {
 
                 setIsRetry(false)
                 setIsInitalized(true)
-                if (isRecording) {
-                    setTimeout(() => {
-                        stopWebcam()
-                    }, 10000)
-                }
             })
     }
 
+    // Used to set 10 second max on video recordings
+    useEffect(() => {
+        if (isRecording) {
+            let timer = setTimeout(() => {
+                setIsResultLoading(true)
+                stopRecording()
+                message.info({
+                    key: 'ASL',
+                    content: 'ASL gesture recording stopped automatically...',
+                })
+            }, 10000)
+            return () => {
+                clearTimeout(timer)
+            }
+        }
+    }, [isRecording])
+
     const stopWebcam = async () => {
-        if (videoStream.current && isRecording) {
-            videoStream.current?.stop()
-        }
-        if (video) {
-            video.getTracks().forEach((track) => track.stop())
-        }
+        await video?.getTracks().forEach((track) => track.stop())
+        setVideo(null)
         setIsRecording(false)
     }
-
-    // TODO: Commenting out since it breaks functionality
-    // // Automatically stop recording video after 10 seconds
-    // useEffect(() => {
-    //     if (isRecording) {
-    //         setTimeout(() => {
-    //             stopRecording()
-    //             message.info({
-    //                 key: 'ASL',
-    //                 content: 'ASL gesture recording stopped automatically...',
-    //             })
-    //         }, 10000)
-    //     }
-    // }, [isRecording])
 
     const retry = () => {
         setIsResultView(false)
@@ -194,6 +226,7 @@ const PracticeModule = ({ accessToken }) => {
     }
 
     const getNewWord = () => {
+        setIsNewWordLoading(true)
         setIsRetry(true)
         setIsResultView(false)
         setTranslationResponse(null)
@@ -202,6 +235,7 @@ const PracticeModule = ({ accessToken }) => {
     const startRecording = () => {
         if (videoStream.current && !isRecording) {
             console.log('start recording', videoStream.current)
+            setRecordingStartTimeState(new Date())
             videoStream.current.start()
         }
         setIsRecording(true)
@@ -230,6 +264,7 @@ const PracticeModule = ({ accessToken }) => {
             fetcher(accessToken, '/api/practice/get_word', {
                 method: 'GET',
             }).then((response) => {
+                setIsNewWordLoading(false)
                 setRandomWordState(response.data.word)
                 setWordYoutubeUrl(response.data.url)
             })
@@ -314,7 +349,7 @@ const PracticeModule = ({ accessToken }) => {
                         ) : (
                             <div>
                                 <span> Sign the word: </span>
-                                {randomWord ? (
+                                {randomWord && !isNewWordLoading ? (
                                     <span className={styles.actualSignWord}>
                                         {formatWord(randomWord)}
                                     </span>
