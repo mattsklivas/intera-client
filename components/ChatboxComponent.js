@@ -161,14 +161,14 @@ const ChatboxComponent = ({
                                                     : 'none',
                                             }}
                                         >
-                                            {msg.text}
+                                            <span>{msg.text}</span>
                                         </div>
                                         {msg.edited && (
                                             <div
                                                 key={`chat-msg-edited-${i}`}
                                                 style={{ paddingTop: 10 }}
                                             >
-                                                {msg.corrected}
+                                                <span>{msg.corrected}</span>
                                             </div>
                                         )}
                                         <div
