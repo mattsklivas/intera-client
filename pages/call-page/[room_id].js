@@ -440,6 +440,10 @@ export default function CallPage({ accessToken }) {
                         : 'ASL gesture recording stopped...',
             })
         }
+
+        setTimeout(() => {
+            message.destroy('ASL')
+        }, 3000)
     }
 
     // Refresh chatbox for both users upon invalidation

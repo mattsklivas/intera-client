@@ -115,8 +115,7 @@ const PracticeModule = ({ accessToken }) => {
                         key: 'ASL',
                         duration: 5,
                         content:
-                            'Error in request handling: ' + res?.error ||
-                            'An unknown error has occured.',
+                            'Error in request handling: ' + e || 'An unknown error has occured.',
                     })
                     setTranslationResponseState('Error')
                     setTranslationConfidenceState(null)
@@ -139,6 +138,10 @@ const PracticeModule = ({ accessToken }) => {
                     setNnTimes(arr)
                     console.log(nnTimes, avgTime) // 3.85 second average with 20 signs
                     setNnAvgTime(avgTime)
+
+                    setTimeout(() => {
+                        message.destroy('ASL')
+                    }, 3000)
                 })
         } else {
             message.info({
