@@ -1,6 +1,7 @@
 import HeaderComponent from '../components/HeaderComponent'
 import styles from '../styles/Practice.module.css'
 import { useUser } from '@auth0/nextjs-auth0/client'
+import LoadingComponent from '../components/LoadingComponent'
 import { useRouter } from 'next/router'
 import auth0 from '../auth/auth0'
 import { Row, Col, Button, ConfigProvider, Typography, Spin, notification, message } from 'antd'
@@ -260,12 +261,13 @@ const PracticeModule = ({ accessToken }) => {
     }
 
     useEffect(() => {
-        // TODO: Modify startWebcam as it will only be called once to prevent creating new instance on every new word
-        startWebcam()
-    }, [])
+        if (!isLoading && user) {
+            startWebcam()
+        }
+    }, [isLoading, user])
 
     useEffect(() => {
-        if (isRetry) {
+        if (!isLoading && accessToken && isRetry) {
             fetcher(accessToken, '/api/practice/get_word', {
                 method: 'GET',
             }).then((response) => {
@@ -274,7 +276,7 @@ const PracticeModule = ({ accessToken }) => {
                 setWordYoutubeUrl(response.data.url)
             })
         }
-    }, [isResultView])
+    }, [isLoading, isResultView])
 
     const handleLeave = async () => {
         await stopWebcam()
@@ -286,147 +288,157 @@ const PracticeModule = ({ accessToken }) => {
             })
     }
 
-    return (
-        <ConfigProvider theme={theme}>
-            <HeaderComponent user={user} handleLeave={handleLeave} />
-            <div className={styles.practiceModuleDiv}>
-                <Row className={styles.videoContainer}>
-                    <Col>
-                        <video
-                            ref={videoReference}
-                            autoPlay
-                            className={styles.videoStream}
-                            style={{
-                                display: isVideoEnabled ? 'inline' : 'none',
-                            }}
-                        />
-                        {!isVideoEnabled && (
-                            <div className={styles.disabledVideoLoader}>
-                                <Spin
-                                    indicator={
-                                        <LoadingOutlined
-                                            className={styles.loadingDisabledOutline}
-                                            spin
-                                        />
-                                    }
-                                />
-                            </div>
-                        )}
-                    </Col>
-                </Row>
-
-                <Row className={styles.signWordRow}>
-                    <Typography className={styles.signWordTypo}>
-                        {isResultView ? (
-                            <div
+    if (user && !isLoading) {
+        return (
+            <ConfigProvider theme={theme}>
+                <HeaderComponent user={user} handleLeave={handleLeave} />
+                <div className={styles.practiceModuleDiv}>
+                    <Row className={styles.videoContainer}>
+                        <Col>
+                            <video
+                                ref={videoReference}
+                                autoPlay
+                                className={styles.videoStream}
                                 style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
+                                    display: isVideoEnabled ? 'inline' : 'none',
                                 }}
-                            >
-                                <div style={{ paddingBottom: 5 }}>
-                                    <span> Word Attempted: </span>
-                                    <span className={styles.actualSignWord}>
-                                        {formatWord(randomWord)}
-                                    </span>
+                            />
+                            {!isVideoEnabled && (
+                                <div className={styles.disabledVideoLoader}>
+                                    <Spin
+                                        indicator={
+                                            <LoadingOutlined
+                                                className={styles.loadingDisabledOutline}
+                                                spin
+                                            />
+                                        }
+                                    />
                                 </div>
+                            )}
+                        </Col>
+                    </Row>
+
+                    <Row className={styles.signWordRow}>
+                        <Typography className={styles.signWordTypo}>
+                            {isResultView ? (
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                    }}
+                                >
+                                    <div style={{ paddingBottom: 5 }}>
+                                        <span> Word Attempted: </span>
+                                        <span className={styles.actualSignWord}>
+                                            {formatWord(randomWord)}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        Result:
+                                        <span
+                                            className={styles.signResultText}
+                                            style={{
+                                                color:
+                                                    translationResponseState.current === 'Correct'
+                                                        ? '#73d13d'
+                                                        : '#ff4d4f',
+                                            }}
+                                        >
+                                            {translationResponseState.current || 'N/A'}
+                                        </span>
+                                        {translationConfidenceState.current && (
+                                            <span className={styles.signResultText}>
+                                                (Confidence: {translationConfidenceState.current}%)
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
                                 <div>
-                                    Result:
-                                    <span
-                                        className={styles.signResultText}
-                                        style={{
-                                            color:
-                                                translationResponseState.current === 'Correct'
-                                                    ? '#73d13d'
-                                                    : '#ff4d4f',
-                                        }}
-                                    >
-                                        {translationResponseState.current || 'N/A'}
-                                    </span>
-                                    {translationConfidenceState.current && (
-                                        <span className={styles.signResultText}>
-                                            (Confidence: {translationConfidenceState.current}%)
+                                    <span> Sign the word: </span>
+                                    {randomWord && !isNewWordLoading ? (
+                                        <span className={styles.actualSignWord}>
+                                            {formatWord(randomWord)}
+                                        </span>
+                                    ) : (
+                                        <span>
+                                            <Spin
+                                                className={styles.spinPadding}
+                                                indicator={
+                                                    <LoadingOutlined
+                                                        className={styles.loadingOutline}
+                                                        spin
+                                                    />
+                                                }
+                                            />
                                         </span>
                                     )}
                                 </div>
-                            </div>
-                        ) : (
-                            <div>
-                                <span> Sign the word: </span>
-                                {randomWord && !isNewWordLoading ? (
-                                    <span className={styles.actualSignWord}>
-                                        {formatWord(randomWord)}
-                                    </span>
-                                ) : (
-                                    <span>
-                                        <Spin
-                                            className={styles.spinPadding}
-                                            indicator={
-                                                <LoadingOutlined
-                                                    className={styles.loadingOutline}
-                                                    spin
-                                                />
-                                            }
-                                        />
-                                    </span>
-                                )}
-                            </div>
-                        )}
-                    </Typography>
-                </Row>
+                            )}
+                        </Typography>
+                    </Row>
 
-                {isResultView ? (
-                    <Row className={styles.resultPageRow}>
-                        <Button type="primary" className={styles.resultPageButton} onClick={retry}>
-                            Retry
-                        </Button>
+                    {isResultView ? (
+                        <Row className={styles.resultPageRow}>
+                            <Button
+                                type="primary"
+                                className={styles.resultPageButton}
+                                onClick={retry}
+                            >
+                                Retry
+                            </Button>
+                            <Button
+                                type="primary"
+                                className={styles.resultPageButton}
+                                onClick={getNewWord}
+                            >
+                                New Word
+                            </Button>
+                        </Row>
+                    ) : (
+                        <Row className={styles.startStopRecordingRow}>
+                            <Button
+                                loading={isResultLoading}
+                                onClick={() => {
+                                    !isRecording ? startRecording() : stopRecording()
+                                }}
+                                disabled={!isInitalized || randomWord === null}
+                                danger={isRecording}
+                                type="primary"
+                                className={styles.startStopButton}
+                            >
+                                {!isRecording ? 'Start Recording' : 'Stop Recording'}
+                            </Button>
+                        </Row>
+                    )}
+
+                    <Row className={styles.viewAnswerRow}>
                         <Button
-                            type="primary"
-                            className={styles.resultPageButton}
-                            onClick={getNewWord}
+                            disabled={randomWord === null}
+                            onClick={() => setIsAnswerModalOpen(true)}
+                            className={styles.viewAnswerButton}
                         >
-                            New Word
+                            View Answer
                         </Button>
                     </Row>
-                ) : (
-                    <Row className={styles.startStopRecordingRow}>
-                        <Button
-                            loading={isResultLoading}
-                            onClick={() => {
-                                !isRecording ? startRecording() : stopRecording()
-                            }}
-                            disabled={!isInitalized || randomWord === null}
-                            danger={isRecording}
-                            type="primary"
-                            className={styles.startStopButton}
-                        >
-                            {!isRecording ? 'Start Recording' : 'Stop Recording'}
-                        </Button>
-                    </Row>
+                </div>
+                {isAnswerModalOpen && (
+                    <AnswerModal
+                        word={randomWord}
+                        link={wordYoutubeUrl}
+                        hideAnswerModal={() => {
+                            setIsAnswerModalOpen(false)
+                        }}
+                    />
                 )}
-
-                <Row className={styles.viewAnswerRow}>
-                    <Button
-                        disabled={randomWord === null}
-                        onClick={() => setIsAnswerModalOpen(true)}
-                        className={styles.viewAnswerButton}
-                    >
-                        View Answer
-                    </Button>
-                </Row>
-            </div>
-            {isAnswerModalOpen && (
-                <AnswerModal
-                    word={randomWord}
-                    link={wordYoutubeUrl}
-                    hideAnswerModal={() => {
-                        setIsAnswerModalOpen(false)
-                    }}
-                />
-            )}
-        </ConfigProvider>
-    )
+            </ConfigProvider>
+        )
+    } else if (isLoading) {
+        return <LoadingComponent msg="Loading..." />
+    } else if (!user && !isLoading) {
+        router.push(`/api/auth/login?returnTo=${encodeURIComponent('/practice-module')}`)
+    }
 }
 
 export const getServerSideProps = async (context) => {

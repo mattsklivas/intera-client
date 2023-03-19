@@ -51,6 +51,7 @@ export default function CallPage({ accessToken }) {
     const [spaceBarPressed, setSpaceBarPressed] = useState(false)
     const router = useRouter()
     const roomID = getQuery(router, 'room_id')
+    const [isRoomIdFound, setIsRoomIdFound] = useState(false)
     const [remoteNickname, setRemoteNickname] = useState(null)
     const [api, contextHolder] = notification.useNotification()
     const [isRecording, setIsRecording] = useState(false)
@@ -75,22 +76,28 @@ export default function CallPage({ accessToken }) {
         setIsSendingASL(data)
     }
 
-    window.addEventListener('beforeunload', function (e) {
-        if (roomInfo?.users[0] == user?.nickname) {
-            fetcher(accessToken, '/api/rooms/close_room', {
-                method: 'PUT',
-                body: JSON.stringify({
-                    room_id: roomID,
-                }),
-            }).then((res) => {
-                if (res.status == 200) {
-                    console.log('Room closed')
-                }
-            })
-        }
+    if (typeof window != 'undefined' && accessToken) {
+        window.addEventListener('beforeunload', function (e) {
+            if (roomInfo?.users[0] == user?.nickname) {
+                fetcher(accessToken, '/api/rooms/close_room', {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        room_id: roomID,
+                    }),
+                }).then((res) => {
+                    if (res.status == 200) {
+                        console.log('Room closed')
+                    }
+                })
+            }
 
-        return
-    })
+            return
+        })
+    }
+
+    useEffect(() => {
+        setIsRoomIdFound(true)
+    }, [roomID])
 
     const servers = {
         iceServers: [
@@ -637,7 +644,7 @@ export default function CallPage({ accessToken }) {
     /* ----------------------Setup---------------------- */
 
     useEffect(() => {
-        if (user && roomInfo && roomInfo?.users.length == 1) {
+        if (user && accessToken && roomInfo && roomInfo?.users.length == 1) {
             if (roomInfo?.users[0] !== user?.nickname) {
                 message.info({
                     content: `Adding ${user?.nickname} to room...`,
@@ -669,15 +676,15 @@ export default function CallPage({ accessToken }) {
             }
         }
 
-        if (roomInfo && user) {
+        if (roomInfo && user && accessToken) {
             setUserRole(getType())
             setRemoteNickname(roomInfo?.users?.find((username) => username !== user?.nickname))
         }
 
-        if (roomInfo && !roomInfo?.active) {
+        if (roomInfo && !roomInfo?.active && accessToken) {
             handleLeave()
         }
-    }, [roomInfo, user])
+    }, [roomInfo, user, accessToken])
 
     useEffect(() => {
         if (transcriptHistoryError?.status == 401) {
@@ -700,14 +707,16 @@ export default function CallPage({ accessToken }) {
     }, [roomInfo, user, transcriptHistoryError, roomInfoError])
 
     useEffect(() => {
-        initializeLocalVideo()
+        if (user && !isLoading && roomID) {
+            initializeLocalVideo()
 
-        return function cleanup() {
-            peerConnection?.close()
+            return function cleanup() {
+                peerConnection?.close()
+            }
         }
-    }, [])
+    }, [isLoading, user, roomID])
 
-    if (user && !isLoading) {
+    if (user && !isLoading && isRoomIdFound) {
         return (
             <ConfigProvider theme={theme}>
                 <HeaderComponent user={user} roomID={roomID} handleLeave={handleLeave} />
@@ -814,10 +823,10 @@ export default function CallPage({ accessToken }) {
                 </div>
             </ConfigProvider>
         )
-    } else if (isLoading) {
+    } else if (isLoading || !isRoomIdFound) {
         return <LoadingComponent msg="Loading..." />
-    } else if (!user && !isLoading) {
-        router.push('/api/auth/login?state=' + +router.asPath)
+    } else if (!user && !isLoading && isRoomIdFound) {
+        router.push(`/api/auth/login?returnTo=${encodeURIComponent(`/call-page/${roomID}`)}`)
     }
 }
 
