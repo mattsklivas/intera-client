@@ -59,7 +59,6 @@ const PracticeModule = ({ accessToken }) => {
 
     // timers
     const [nnTimes, setNnTimes] = useState([])
-    const [nnAvgTime, setNnAvgTime] = useState(0)
 
     const sendAnswer = async (blobsArray) => {
         // Get the recording length
@@ -126,19 +125,18 @@ const PracticeModule = ({ accessToken }) => {
                 .finally(() => {
                     // calculate average time
                     let endTime = performance.now()
-                    let time = endTime - startTime
 
                     let avgTime = 0
-                    let arr = nnTimes
-                    arr.push(time)
-                    arr.forEach((nnTime) => {
+                    let nnList = nnTimes
+                    nnList.push(endTime - startTime)
+                    nnList.forEach((nnTime) => {
                         avgTime += nnTime
                     })
 
-                    avgTime = avgTime / arr.length
-                    setNnTimes(arr)
-                    console.log(nnTimes, avgTime) // 3.85 second average with 20 signs
-                    setNnAvgTime(avgTime)
+                    avgTime /= nnList.length
+                    setNnTimes(nnList)
+                    console.log('List Neural Network Times: ', nnList)
+                    console.log('Average Neural Network Response: ', avgTime) // 3.85 second average with 20 signs
 
                     setTimeout(() => {
                         message.destroy('ASL')
