@@ -119,6 +119,7 @@ const CreateMeetingRoomModal = ({ router, accessToken, hideCreateMeetingRoomModa
                         <Button
                             block="true"
                             type="primary"
+                            disabled={inviteLink === ''}
                             onClick={() => {
                                 navigator.clipboard.writeText(inviteLink)
 
@@ -170,7 +171,7 @@ const CreateMeetingRoomModal = ({ router, accessToken, hideCreateMeetingRoomModa
                                 block="true"
                                 type="primary"
                                 loading={loadingMail}
-                                disabled={disableInvite || hostType === ''}
+                                disabled={disableInvite || hostType === '' || email === ''}
                                 onClick={() => {
                                     setLoadingMail(true)
                                     message.info({

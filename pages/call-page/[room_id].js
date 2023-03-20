@@ -60,9 +60,24 @@ export default function CallPage({ accessToken }) {
     const [latestTranscript, setLatestTranscript] = useState('')
     const [lastTranscript, setLastTranscript] = useState('')
     const { user, error, isLoading } = useUser()
+    const [loadPage, setLoadPage] = useState(false)
+
+    const { data: transcriptHistory, error: transcriptHistoryError } = useTranscriptHistory(
+        user ? user?.nickname : '',
+        accessToken
+    )
+    const {
+        data: roomInfo,
+        error: roomInfoError,
+        mutate: roomInfoMutate,
+    } = useRoomInfo(roomID || '', accessToken)
+
+    const userRef = useRef(user)
+    const roomInfoRef = useRef(roomInfo)
 
     const [recordingStartTime, setRecordingStartTime] = useState(null)
     const recordingStartTimeState = useRef(recordingStartTime)
+
     const setRecordingStartTimeState = (data) => {
         recordingStartTimeState.current = data
         setRecordingStartTime(data)
@@ -78,7 +93,7 @@ export default function CallPage({ accessToken }) {
 
     if (typeof window != 'undefined' && accessToken) {
         window.addEventListener('beforeunload', function (e) {
-            if (roomInfo?.users[0] == user?.nickname) {
+            if (roomInfo && user && roomInfo?.users[0] === user?.nickname) {
                 fetcher(accessToken, '/api/rooms/close_room', {
                     method: 'PUT',
                     body: JSON.stringify({
@@ -94,6 +109,17 @@ export default function CallPage({ accessToken }) {
             return
         })
     }
+
+    useEffect(() => {
+        if (
+            user &&
+            roomInfo &&
+            roomInfo?.users.find((username) => username === user?.nickname) &&
+            !loadPage
+        ) {
+            setLoadPage(true)
+        }
+    }, [user, roomInfo])
 
     useEffect(() => {
         setIsRoomIdFound(true)
@@ -128,20 +154,6 @@ export default function CallPage({ accessToken }) {
             maxCount: 0,
         })
     }
-
-    // SWR hooks
-    const { data: transcriptHistory, error: transcriptHistoryError } = useTranscriptHistory(
-        user ? user?.nickname : '',
-        accessToken
-    )
-    const {
-        data: roomInfo,
-        error: roomInfoError,
-        mutate: roomInfoMutate,
-    } = useRoomInfo(roomID || '', accessToken)
-
-    const userRef = useRef(user)
-    const roomInfoRef = useRef(roomInfo)
 
     const getVideoPlaceholder = () => {
         return (
@@ -215,7 +227,7 @@ export default function CallPage({ accessToken }) {
         }
 
         // Close the room
-        if (roomInfo?.users[0] == user?.nickname) {
+        if (roomInfo?.users[0] === user?.nickname) {
             fetcher(accessToken, '/api/rooms/close_room', {
                 method: 'PUT',
                 body: JSON.stringify({
@@ -229,7 +241,6 @@ export default function CallPage({ accessToken }) {
         }
 
         // signal other user to reset name, notify user has left, and close video stream/peerConnection
-        // practice ? router.push('/') : router.push('/practice-module')
         router.push('/')
     }
 
@@ -573,14 +584,25 @@ export default function CallPage({ accessToken }) {
 
     const handleDataTransfer = (data) => {
         if (data.type === 'offer') {
-            setRemoteNickname(roomInfo?.users?.find((username) => username !== user?.nickname))
-            initializePeerConnection()
-            peerConnection.setRemoteDescription(new RTCSessionDescription(data))
-            sendAnswer()
+            try {
+                initializePeerConnection()
+                peerConnection.setRemoteDescription(new RTCSessionDescription(data))
+                sendAnswer()
+            } catch (error) {
+                console.error('Unable to handle offer: ', error)
+            }
         } else if (data.type === 'answer') {
-            peerConnection?.setRemoteDescription(new RTCSessionDescription(data))
+            try {
+                peerConnection?.setRemoteDescription(new RTCSessionDescription(data))
+            } catch (error) {
+                console.error('Unable to handle answer: ', error)
+            }
         } else if (data.type === 'candidate') {
-            peerConnection?.addIceCandidate(new RTCIceCandidate(data.candidate))
+            try {
+                peerConnection?.addIceCandidate(new RTCIceCandidate(data.candidate))
+            } catch (error) {
+                console.error('Unable to handle candidate: ', error)
+            }
         } else {
             console.log('Unrecognized data received...')
         }
@@ -665,6 +687,7 @@ export default function CallPage({ accessToken }) {
                                 content: 'Joined room successfull',
                                 key: 'join-room-info',
                             })
+                            roomInfoMutate()
                         }
                     })
                     .catch((err) => {
@@ -706,17 +729,18 @@ export default function CallPage({ accessToken }) {
         }
     }, [roomInfo, user, transcriptHistoryError, roomInfoError])
 
+    // only want to start video init once all the page items have loaded -> user, roomInfo, roomId etc)
     useEffect(() => {
-        if (user && !isLoading && roomID) {
+        if (user && !isLoading && roomID && loadPage) {
             initializeLocalVideo()
 
             return function cleanup() {
                 peerConnection?.close()
             }
         }
-    }, [isLoading, user, roomID])
+    }, [isLoading, user, roomID, loadPage])
 
-    if (user && !isLoading && isRoomIdFound) {
+    if (user && !isLoading && isRoomIdFound && loadPage) {
         return (
             <ConfigProvider theme={theme}>
                 <HeaderComponent user={user} roomID={roomID} handleLeave={handleLeave} />
