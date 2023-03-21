@@ -636,14 +636,17 @@ export default function CallPage({ accessToken }) {
         if (data.type === 'offer') {
             try {
                 initializePeerConnection()
-                peerConnection.setRemoteDescription(new RTCSessionDescription(data))
+
+                peerConnection?.setRemoteDescription(new RTCSessionDescription(data))
                 sendAnswer()
             } catch (error) {
                 console.error('Unable to handle offer: ', error)
             }
         } else if (data.type === 'answer') {
             try {
-                peerConnection?.setRemoteDescription(new RTCSessionDescription(data))
+                if (peerConnection && peerConnection?.signalingState !== 'stable') {
+                    peerConnection?.setRemoteDescription(new RTCSessionDescription(data))
+                }
             } catch (error) {
                 console.error('Unable to handle answer: ', error)
             }
