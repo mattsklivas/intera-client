@@ -1,6 +1,6 @@
 import { React, useState } from 'react'
 import { Modal } from 'antd'
-import Image from 'next/image'
+import Image from 'next/legacy/image'
 import arms from '../../public/arms.jpg'
 import angle from '../../public/angle.jpg'
 import position from '../../public/position.jpg'

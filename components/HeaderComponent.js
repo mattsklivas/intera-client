@@ -3,7 +3,7 @@ import { React, useState } from 'react'
 import { Row, Col, Space, Button } from 'antd'
 import HelpModal from './modals/HelpModal.js'
 import { useRouter } from 'next/router'
-import Image from 'next/image'
+import Image from 'next/legacy/image'
 import logo from '../public/logo.svg'
 import styles from '../styles/Header.module.css'
 
