@@ -96,16 +96,17 @@ const PracticeModule = ({ accessToken }) => {
                             } ${'(Please follow guidelines in help section)'}`,
                         })
                     } else {
+                        console.log(Number(res.data.confidence))
                         if (Number(res.data.confidence) < 0.6) {
                             setTranslationResponseState('Unclassified')
+                            setTranslationConfidenceState(null)
+                        } else {
+                            setTranslationResponseState(res.data.result || 'Error')
                             setTranslationConfidenceState(
                                 res.data.confidence
                                     ? parseFloat(Number(res.data.confidence) * 100).toFixed(2)
                                     : null
                             )
-                        } else {
-                            setTranslationResponseState(res.data.result || 'Error')
-                            setTranslationConfidenceState(null)
                         }
                     }
                 })
