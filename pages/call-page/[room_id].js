@@ -7,6 +7,7 @@ import { useUser } from '@auth0/nextjs-auth0/client'
 import auth0 from '../../auth/auth0'
 import LoadingComponent from '../../components/LoadingComponent'
 import HeaderComponent from '../../components/HeaderComponent'
+import { browserName } from 'react-device-detect'
 import { theme } from '../../core/theme'
 import { getQuery } from '../../core/utils'
 import HistoryComponent from '../../components/HistoryComponent'
@@ -768,7 +769,9 @@ export default function CallPage({ accessToken }) {
     }, [roomInfo, user, accessToken])
 
     useEffect(() => {
-        if (transcriptHistoryError?.status == 401) {
+        if (browserName !== 'Chrome') {
+            router.push('/')
+        } else if (transcriptHistoryError?.status == 401) {
             router.push('/api/auth/logout')
         } else if (roomInfoError?.status == 404) {
             // If room ID is invalid, redirect to home page
@@ -785,7 +788,7 @@ export default function CallPage({ accessToken }) {
             // If room if full, redirect to home page
             router.push(`/?full_room=${roomID}`)
         }
-    }, [roomInfo, user, transcriptHistoryError, roomInfoError])
+    }, [browserName, roomInfo, user, transcriptHistoryError, roomInfoError])
 
     // only want to start video init once all the page items have loaded -> user, roomInfo, roomId etc)
     useEffect(() => {

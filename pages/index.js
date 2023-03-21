@@ -8,6 +8,8 @@ import Header from '../components/HeaderComponent'
 import { Button, ConfigProvider, notification } from 'antd'
 import JoinMeetingRoomModal from '../components/modals/JoinMeetingRoomModal'
 import CreateMeetingRoomModal from '../components/modals/CreateMeetingRoomModal'
+import { browserName } from 'react-device-detect'
+import InvalidBrowserModal from '../components/modals/InvalidBrowserModal'
 import HistoryComponent from '../components/HistoryComponent'
 import { MdCreate, MdSupervisorAccount } from 'react-icons/md'
 import useTranscriptHistory from '../hooks/useTranscriptHistory'
@@ -108,6 +110,7 @@ export default function Home({ accessToken }) {
                             <div>
                                 <div className={styles.rightColumn}>
                                     <Button
+                                        disabled={browserName !== 'Chrome'}
                                         className={styles.roomButton}
                                         onClick={() => setIsCreateMeetingRoomModalOpen(true)}
                                     >
@@ -115,6 +118,7 @@ export default function Home({ accessToken }) {
                                         <MdCreate size={17} />
                                     </Button>
                                     <Button
+                                        disabled={browserName !== 'Chrome'}
                                         className={styles.roomButton}
                                         onClick={() => setIsJoinMeetingRoomModalOpen(true)}
                                     >
@@ -144,6 +148,7 @@ export default function Home({ accessToken }) {
                                 }}
                             />
                         )}
+                        {!isLoading && browserName !== 'Chrome' && <InvalidBrowserModal />}
                     </ConfigProvider>
                 </div>
             </>
