@@ -212,7 +212,7 @@ export default function CallPage({ accessToken }) {
             credentials: true,
         },
         transports: ['websocket'],
-        // autoConnect: false,
+        autoConnect: false,
     })
 
     // leave conditions:
@@ -686,14 +686,16 @@ export default function CallPage({ accessToken }) {
 
     socket.on('connect', (data) => {
         if (!data) {
-            socket.emit('join', { user: user?.nickname, room_id: roomID })
             socket.emit('mutate', { room_id: roomID })
+        } else {
+            socket.emit('join', { user: user?.nickname, room_id: roomID })
         }
     })
 
     socket_message.on('connect', (data) => {
         if (!data) {
-            console.log('msg connected')
+            socket_message.emit('mutate', { room_id: roomID })
+        } else {
             socket_message.emit('join_msg', { user: user?.nickname, room_id: roomID })
         }
     })
@@ -701,13 +703,11 @@ export default function CallPage({ accessToken }) {
     // Following a succesful join, establish a peer connection
     // and send an offer to the other user
     socket_message.on('mutate', (data) => {
-        console.log('mutate received', data)
         roomInfoMutate()
     })
 
     socket_message.on('pong', (data) => {
         console.log('pong', data)
-        // roomInfoMutate()
     })
 
     // Following a succesful join, establish a peer connection
@@ -717,7 +717,6 @@ export default function CallPage({ accessToken }) {
     })
 
     socket.on('disconnect', (data) => {
-        console.log('disconnected', data)
         setRemoteNickname(null)
         setIsRemoteVideoEnabled(false)
     })
@@ -729,15 +728,14 @@ export default function CallPage({ accessToken }) {
     })
 
     const handleMutate = () => {
-        console.log('handle mutate')
+        if (socket_message.connected) {
+            socket_message.emit('mutate', { room_id: roomID })
+        } else {
+            socket_message.connect()
+        }
         socket_message.emit('mutate', { room_id: roomID })
         roomInfoMutate()
     }
-
-    // setInterval(() => {
-    //     socket_message.emit('mutate', { room_id: roomID, user: user?.nickname })
-    // }, 5000)
-
     /* ----------------------Setup---------------------- */
 
     useEffect(() => {
