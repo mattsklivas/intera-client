@@ -1,6 +1,6 @@
 import { React, useState } from 'react'
 import { Modal } from 'antd'
-import Image from 'next/legacy/image'
+import Image from 'next/image'
 import arms from '../../public/arms.jpg'
 import angle from '../../public/angle.jpg'
 import position from '../../public/position.jpg'
@@ -123,7 +123,15 @@ const HelpModal = ({ setIsHelpModalOpen, isPractice = false, isCall = false }) =
                         </li>
                     </ul>
                     <div style={{ marginLeft: '1vw', width: '700px' }}>
-                        <Image src={position} width={700} layout="intrinsic" alt="position" />
+                        <Image
+                            src={position}
+                            width={700}
+                            alt="position"
+                            style={{
+                                maxWidth: '100%',
+                                height: 'auto',
+                            }}
+                        />
                     </div>
                 </div>
                 <div style={{ marginRight: '5%' }}>
@@ -141,7 +149,15 @@ const HelpModal = ({ setIsHelpModalOpen, isPractice = false, isCall = false }) =
                         </li>
                     </ul>
                     <div style={{ marginLeft: '1vw', width: '700px' }}>
-                        <Image src={angle} width={700} layout="intrinsic" alt="angle" />
+                        <Image
+                            src={angle}
+                            width={700}
+                            alt="angle"
+                            style={{
+                                maxWidth: '100%',
+                                height: 'auto',
+                            }}
+                        />
                     </div>
                 </div>
                 <div>
@@ -165,7 +181,15 @@ const HelpModal = ({ setIsHelpModalOpen, isPractice = false, isCall = false }) =
                         </li>
                     </ul>
                     <div style={{ marginLeft: '1vw', width: '700px' }}>
-                        <Image src={arms} width={700} layout="intrinsic" alt="arms" />
+                        <Image
+                            src={arms}
+                            width={700}
+                            alt="arms"
+                            style={{
+                                maxWidth: '100%',
+                                height: 'auto',
+                            }}
+                        />
                     </div>
                 </div>
             </div>

@@ -3,7 +3,7 @@ import { React, useState } from 'react'
 import { Row, Col, Space, Button } from 'antd'
 import HelpModal from './modals/HelpModal.js'
 import { useRouter } from 'next/router'
-import Image from 'next/legacy/image'
+import Image from 'next/image'
 import logo from '../public/logo.svg'
 import styles from '../styles/Header.module.css'
 
@@ -53,7 +53,16 @@ const Header = ({ user, roomID, handleLeave }) => {
                 ) : (
                     <div className={styles.headerLanding} style={{ marginRight: '5vw' }}>
                         <span className={styles.headerTitle}>Intera</span>
-                        <Image className={styles.headerLogo} src={logo} height={35} width={35} />
+                        <Image
+                            className={styles.headerLogo}
+                            src={logo}
+                            height={35}
+                            width={35}
+                            style={{
+                                maxWidth: '100%',
+                                height: 'auto',
+                            }}
+                        />
                     </div>
                 )}
             </Col>
