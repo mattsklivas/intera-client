@@ -1,3 +1,4 @@
+/* eslint-disable indent */
 import HeaderComponent from '../components/HeaderComponent'
 import styles from '../styles/Practice.module.css'
 import { useUser } from '@auth0/nextjs-auth0/client'
@@ -354,11 +355,13 @@ const PracticeModule = ({ accessToken }) => {
                                         >
                                             {translationResponseState.current || 'N/A'}
                                         </span>
-                                        {translationConfidenceState.current && (
-                                            <span className={styles.signResultText}>
-                                                (Confidence: {translationConfidenceState.current}%)
-                                            </span>
-                                        )}
+                                        {translationConfidenceState.current &&
+                                            translationResponseState?.current === 'Correct' && (
+                                                <span className={styles.signResultText}>
+                                                    (Confidence:{' '}
+                                                    {translationConfidenceState.current}%)
+                                                </span>
+                                            )}
                                     </div>
                                 </div>
                             ) : (
