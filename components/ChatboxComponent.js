@@ -223,6 +223,7 @@ const ChatboxComponent = ({
                                         setIsInvalidateLoading(true)
                                         invalidateMessage(inputText)
                                     }}
+                                    autoComplete="off"
                                     placeholder="Invalidate latest message..."
                                 />
                                 <Button
