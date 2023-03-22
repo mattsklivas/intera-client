@@ -433,12 +433,20 @@ export default function CallPage({ accessToken }) {
                         handleMutate()
 
                         if (res.data.prediction.startsWith('[INFO:')) {
-                            message.info({
-                                key: 'lowConf',
-                                content: `INFO: Low confidence in ASL prediction (${parseFloat(
-                                    Number(res.data.confidence) * 100
-                                ).toFixed(2)}%)`,
-                            })
+                            if (Number(res.data.confidence) == 0) {
+                                message.info({
+                                    key: 'noConf',
+                                    content:
+                                        '[INFO: No ASL gesture registered. Please refer to the help menu.]',
+                                })
+                            } else {
+                                message.info({
+                                    key: 'lowConf',
+                                    content: `INFO: Low confidence in ASL prediction (${parseFloat(
+                                        Number(res.data.confidence) * 100
+                                    ).toFixed(2)}%)`,
+                                })
+                            }
                         } else if (res.data.prediction.startsWith('[ERROR:')) {
                             message.error({
                                 key: 'predictFail',
